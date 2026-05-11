@@ -1,0 +1,54 @@
+<?php
+
+namespace App\Form;
+
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\NotNull;
+
+class VoyageAffectationPersonnelFormType extends AbstractType
+{
+    public function buildForm(FormBuilderInterface $builder, array $options): void
+    {
+        $personnelChoices = [];
+        foreach($options['personnels'] as $p) {
+            $type = $p['typepersonnel']['libelle'] ?? 'N/A';
+            $label = $p['prenom'] . ' ' . $p['nom'] . ' (' . $type . ')';
+            $personnelChoices[$label] = $p['id'];
+        }
+
+        $builder
+            ->add('personnel', ChoiceType::class, [
+                'label' => 'Personnel à affecter',
+                'choices' => $personnelChoices,
+                'placeholder' => '-- Sélectionner un personnel --',
+                'constraints' => [
+                    new NotNull()
+                ]
+            ])
+            ->add('motif', TextType::class, [
+                'label' => 'Motif',
+                'constraints' => [
+                    new NotBlank()
+                ],
+                'attr' => [
+                    'placeholder' => 'Ex: Chauffeur affecté pour ce voyage...'
+                ]
+            ])
+        ;
+    }
+
+    public function configureOptions(OptionsResolver $resolver): void
+    {
+        $resolver->setDefaults([
+            'csrf_protection' => true,
+            'csrf_field_name' => '_token',
+            'csrf_token_id' => 'voyageaffectpersonal',
+            'personnels' => []
+        ]);
+    }
+}

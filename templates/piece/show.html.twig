@@ -1,0 +1,114 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}La pièce - {{ piece.libelle }}{% endblock %}
+
+{% block body %}
+{% set SEUIL = 5 %}
+{% set stock = piece.stockinitial %}
+<div class="flex flex-col mb-5 gap-3 sm:flex-row sm:items-start sm:justify-between sm:mb-5">
+    <div>
+        <h1 class="text-2xl font-bold tracking-[-0.55px] leading-tight mb-1">Fiche de la pièce #{{ piece.id }}</h1>
+        <p class="text-sm font-light text-muted-foreground">
+            Créé le {{ piece.createdAt|date("m/d/Y à H:i") }}
+             {% if stock <= 0 %}
+                <span class="tag tag-primary font-semibold">
+                    Rupture de stock
+                </span>
+            {% elseif stock <= SEUIL %}
+                <span class="tag tag-red font-semibold">
+                    ⚠ Stock critique
+                </span>
+            {% else %}
+                <span class="tag tag-green font-semibold">
+                    En stock
+                </span>
+            {% endif %}
+        </p>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap sm:shrink-0">
+        <a href="{{ path('piece.index') }}" class="btn btn-secondary flex-1 justify-center sm:flex-none">
+            <svg class="h-5 w-5" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron-left"></use></svg>
+            Retour
+        </a>
+        {% if is_granted('PIECE_MODIFIER') %}
+        <a href="{{ path('piece.edit', {id: piece.id}) }}" class="btn btn-primary flex-1 justify-center sm:flex-none">
+            <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+            Modifier
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-cols-3 gap-4 mb-5">
+    <div class="card p-4 text-center {{ stock >= SEUIL ? 'bg-destructive' : '' }}">
+        <p class="text-lg uppercase tracking-wide mb-1">Stock actuel</p>
+        <p class="text-3xl font-black tabular-nums mb-1 {{ stock <= 0 ? 'text-red-600' : stock <= SEUIL ? 'text-orange-600' : 'text-green-600' }}">
+            {{ stock }}
+        </p>
+        <p class="text-xs text-muted-foreground">unité(s)</p>
+    </div>
+    <div class="card p-4 text-center">
+        <p class="text-lg uppercase tracking-wide mb-1">Prix unitaire</p>
+        <p class="text-3xl font-black tabular-nums mb-1">
+            {{ piece.prixunitaire is not null ? piece.prixunitaire|number_format(0, ',', ' ') : '..' }}
+        </p>
+        <p class="text-xs text-muted-foreground">FCFA</p>
+    </div>
+    <div class="card p-4 text-center">
+        <p class="text-lg uppercase tracking-wide mb-1">Valeur stock</p>
+        <p class="text-3xl font-black tabular-nums text-primary mb-1">
+            {{ (stock * (piece.prixunitaire ?? 0))|number_format(0, ',', ' ') }}
+        </p>
+        <p class="text-xs text-muted-foreground">FCFA</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-4">
+        <div class="card p-6">
+            <h2 class="text-2xl font-semibold uppercase tracking-wide mb-4">Fiche pièce</h2>
+            <dl class="text-sm divide-y">
+                <div class="flex justify-between items-center py-2.5">
+                    <dt>Désignation</dt>
+                    <dd class="font-semibold">{{ piece.libelle }}</dd>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <dt>Type de pièce</dt>
+                    <dd>{{ piece.typepiece.libelle ?? '..' }}</dd>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <dt>Marque</dt>
+                    <dd>{{ piece.marquepiece.libelle ?? '..' }}</dd>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <dt>Modèle compatible</dt>
+                    <dd>{{ piece.model.libelle ?? '..' }}</dd>
+                </div>
+            </dl>
+        </div>
+
+    </div>
+
+    <div class="space-y-4">
+        <div class="card p-5 space-y-2">
+            <h2 class="text-lg font-semibold uppercase mb-3">Actions</h2>
+            <div class="flex flex-col align-items-center justify-center">
+                {% if is_granted('PIECE_MODIFIER') %}
+                    <div class="flex items-start mb-2">
+                        <a href="{{ path('piece.ajustement', { id: piece.id }) }}" class="btn btn-primary">
+                            Ajuster le stock
+                        </a>
+                    </div>
+                {% endif %}
+                {% if is_granted('INVENTAIRE_VOIR') %}
+                    <div class="flex items-start">
+                        <a href="{{ path('inventaire.index') }}" class="btn btn-secondary">
+                            Voir les mouvements
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

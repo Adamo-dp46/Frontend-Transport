@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Historiques des mouvements{% endblock %}
+
+{% block body %}
+<h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2] mb-4">Historiques des mouvements de stock</h1>
+{#
+    <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="rounded-xl border bg-card shadow-sm p-4">
+            <p class="text-xs text-muted-foreground uppercase tracking-wide mb-1">Mouvements</p>
+            <p class="text-3xl font-bold tabular-nums">{{ nb_mouvements }}</p>
+        </div>
+        <div class="rounded-xl border bg-card shadow-sm p-4">
+            <p class="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total entrées</p>
+            <p class="text-3xl font-bold tabular-nums text-green-600">+{{ total_entrees }}</p>
+        </div>
+        <div class="rounded-xl border bg-card shadow-sm p-4">
+            <p class="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total sorties</p>
+            <p class="text-3xl font-bold tabular-nums text-red-600">-{{ total_sorties }}</p>
+        </div>
+    </div>
+#}
+<div {{ react_component('InventaireTable', {
+        inventaires: items,
+        meta: meta,
+        queryParams: queryParams,
+        pieces: pieces,
+        typesmouvement: typesmouvement,
+        typesreference: typesreference
+    }) }} class="mb-3"
+>
+    <div class="flex items-center justify-center gap-6">
+        <twig:Spinner class="size-8" />
+    </div>
+</div>
+{% endblock %}

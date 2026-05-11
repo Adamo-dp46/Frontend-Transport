@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bagage{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col mb-6">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Bagage</h1>
+    </div>
+    <form method="get" action="{{ path('stats.bagage') }}" class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        <input type="date" name="debut" value="{{ debut }}" class="input input-sm" />
+        <span class="text-muted-foreground text-sm">→</span>
+        <input type="date" name="fin" value="{{ fin }}" class="input input-sm" />
+        <button type="submit" class="bg-blue-900 p-2 rounded-2xl">
+            Filtrer
+        </button>
+    </form>
+</div>
+
+<section class="mb-10">
+    <h2 class="text-lg font-medium mb-4">Bagages</h2>
+    {# KPI #}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground mb-1">Total bagages</p>
+            <p class="text-2xl font-semibold">{{ bagage.totalBagages }}</p>
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground mb-1">Recette totale</p>
+            <p class="text-2xl font-semibold">{{ bagage.recetteTotale | number_format(0, ',', ' ') }} FCFA</p>
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground mb-1">Poids total</p>
+            <p class="text-2xl font-semibold">{{ bagage.poidsTotal }} kg</p>
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground mb-1">Perdus</p>
+            <p class="text-2xl font-semibold {{ bagage.perdus > 0 ? 'text-red-500' : '' }}">{{ bagage.perdus }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        {# Statuts — doughnut #}
+        <div class="card p-4">
+            <p class="text-sm font-medium mb-3">Répartition par statut</p>
+            <canvas id="chartBagageStatuts" height="160"
+                data-values="{{ [
+                    {statut: 'Enregistré', total: bagage.enregistres},
+                    {statut: 'Embarqué',   total: bagage.embarques},
+                    {statut: 'Livré',      total: bagage.livres},
+                    {statut: 'Perdu',      total: bagage.perdus}
+                ] | json_encode }}">
+            </canvas>
+        </div>
+
+        {# Recettes par jour — barres #}
+        <div class="card p-4 md:col-span-2">
+            <p class="text-sm font-medium mb-3">Recettes par jour</p>
+            <canvas id="chartBagageParJour" height="160"
+                data-values="{{ bagage.recettesParJour | map(r => {label: r.label, montant: r.montant, nbbagages: r.nbbagages, poids: r.poids}) | json_encode }}">
+            </canvas>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

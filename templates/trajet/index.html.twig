@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}La liste des trajets{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Gestion des trajets</h1>
+        <p class="text-muted-foreground text-sm">
+            Définissez les lignes commerciales. La création d'un trajet génère automatiquement le premier voyage associé
+        </p>
+    </div>
+    <div class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        {% if is_granted('TRAJET_CREER') %}
+        <a href="{{ path('trajet.new') }}" class="btn btn-primary max-sm:flex-1 max-sm:justify-center">
+            <svg class="h-4 w-4" aria-hidden="true">
+                <use href="{{ asset('sprite.svg') }}#new"></use>
+            </svg>
+            Nouveau trajet
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div {{ react_component('Exploitation/TrajetTable', {
+        trajets: trajets,
+        canEdit: is_granted('TRAJET_MODIFIER'),
+        canDelete: is_granted('TRAJET_SUPPRIMER'),
+        csrfDelete: csrf_token('delete_trajet')
+    }) }}
+>
+    <div class="flex items-center justify-center gap-6">
+        <twig:Spinner class="size-8" />
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Agent{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col mb-6">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Billetterie</h1>
+    </div>
+    <form method="get" action="{{ path('billetterie') }}" class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        <input type="date" name="debut" value="{{ debut }}" class="input input-sm" />
+        <span class="text-muted-foreground text-sm">→</span>
+        <input type="date" name="fin" value="{{ fin }}" class="input input-sm" />
+        <button type="submit" class="bg-blue-900 p-2 rounded-2xl">
+            Filtrer
+        </button>
+    </form>
+</div>
+
+<section class="mb-10">
+    <h2 class="text-lg font-medium mb-4">Agents</h2>
+
+    {# KPI #}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground mb-1">Total agents</p>
+            <p class="text-2xl font-semibold">{{ agents.totalAgents }}</p>
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground mb-1">Actifs sur la période</p>
+            <p class="text-2xl font-semibold">{{ agents.agentsActifs }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {# Classement par recette — barres horizontales #}
+        <div class="card p-4">
+            <p class="text-sm font-medium mb-3">Classement par recette</p>
+            <canvas id="chartAgentsRecette" height="160"
+                data-values="{{ agents.performances | map(a => {
+                    label: a.prenom ~ ' ' ~ a.nom,
+                    recette: a.recette,
+                    nbtickets: a.nbtickets,
+                    actif: a.actif
+                }) | json_encode }}">
+            </canvas>
+        </div>
+
+        {# Tableau performances #}
+        <div class="card p-4">
+            <p class="text-sm font-medium mb-3">Détail performances</p>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-muted-foreground border-b">
+                        <th class="pb-2 font-medium">Agent</th>
+                        <th class="pb-2 font-medium text-right">Tickets</th>
+                        <th class="pb-2 font-medium text-right">Recette</th>
+                        <th class="pb-2 font-medium text-right">Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in agents.performances %}
+                    <tr class="border-b last:border-0">
+                        <td class="py-2">{{ a.prenom }} {{ a.nom }}</td>
+                        <td class="py-2 text-right">{{ a.nbtickets }}</td>
+                        <td class="py-2 text-right">{{ a.recette | number_format(0, ',', ' ') }} FCFA</td>
+                        <td class="py-2 text-right">
+                            <span class="text-xs px-2 py-0.5 rounded-full {{ a.actif ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
+                                {{ a.actif ? 'Actif' : 'Inactif' }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

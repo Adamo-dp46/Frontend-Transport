@@ -1,0 +1,100 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Trajet{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col mb-6">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Trajet performance</h1>
+    </div>
+    <form method="get" action="{{ path('trajets') }}" class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        <input type="date" name="debut" value="{{ debut }}" class="input input-sm" />
+        <span class="text-muted-foreground text-sm">→</span>
+        <input type="date" name="fin" value="{{ fin }}" class="input input-sm" />
+        <button type="submit" class="bg-blue-900 p-2 rounded-2xl">
+            Filtrer
+        </button>
+    </form>
+</div>
+
+<section class="mb-10">
+    <h2 class="text-lg font-medium mb-4">Trajets</h2>
+
+    {# KPI #}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground mb-1">Total trajets</p>
+            <p class="text-2xl font-semibold">{{ trajets.totalTrajets }}</p>
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground mb-1">Trajet le plus actif</p>
+            <p class="text-2xl font-semibold">
+                {% if trajets.performances|length > 0 %}
+                    {{ trajets.performances[0].provenance }} → {{ trajets.performances[0].destination }}
+                {% else %}
+                    —
+                {% endif %}
+            </p>
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground mb-1">Trajet le moins actif</p>
+            <p class="text-2xl font-semibold">
+                {% set dernierTrajet = trajets.performances|last %}
+                {% if dernierTrajet is defined and dernierTrajet.nbvoyages == 0 %}
+                    {{ dernierTrajet.provenance }} → {{ dernierTrajet.destination }}
+                {% else %}
+                    —
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {# Recettes par trajet — barres horizontales #}
+        <div class="card p-4">
+            <p class="text-sm font-medium mb-3">Recettes par trajet</p>
+            <canvas id="chartTrajetsRecette" height="160"
+                data-values="{{ trajets.performances | map(t => {
+                    label: t.provenance ~ ' → ' ~ t.destination,
+                    recette: t.recette,
+                    nbvoyages: t.nbvoyages,
+                    nbtickets: t.nbtickets
+                }) | json_encode }}">
+            </canvas>
+        </div>
+
+        {# Tableau détail #}
+        <div class="card p-4">
+            <p class="text-sm font-medium mb-3">Détail par trajet</p>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-muted-foreground border-b">
+                        <th class="pb-2 font-medium">Trajet</th>
+                        <th class="pb-2 font-medium text-right">Voyages</th>
+                        <th class="pb-2 font-medium text-right">Tickets</th>
+                        <th class="pb-2 font-medium text-right">Recette</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in trajets.performances %}
+                    <tr class="border-b last:border-0">
+                        <td class="py-2">
+                            <span class="font-medium">{{ t.provenance }}</span>
+                            <span class="text-muted-foreground"> → </span>
+                            <span class="font-medium">{{ t.destination }}</span>
+                            <br>
+                            <span class="text-xs text-muted-foreground">{{ t.codetrajet }}</span>
+                        </td>
+                        <td class="py-2 text-right">{{ t.nbvoyages }}</td>
+                        <td class="py-2 text-right">{{ t.nbtickets }}</td>
+                        <td class="py-2 text-right">{{ t.recette | number_format(0, ',', ' ') }} FCFA</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

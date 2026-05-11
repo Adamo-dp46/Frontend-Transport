@@ -1,0 +1,384 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier le courrier{% endblock %}
+
+{% block body %}
+<div class="flex items-center gap-3 mb-4">
+    <a href="{{ path('courrier.index') }}" class="btn-icon">
+        <svg class="h-5 w-5" aria-hidden="true" width="14" height="14">
+            <use href="{{ asset('sprite.svg') }}#chevron-left"></use>
+        </svg>
+    </a>
+    <div>
+        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Modifier le courrier</h1>
+    </div>
+</div>
+{#
+    {% include 'courrier/_form.html.twig' with {button: 'Modifier', courrier: courrier, gares: gares, voyages: voyages} %}
+#}
+<form action="{{ path('courrier.edit', { id: courrier.id }) }}" method="post" class="space-y-4">
+
+    {# -- Informations -- #}
+    <div class="rounded-xl border bg-card shadow-sm p-6">
+        <h2 class="text-lg font-semibold mb-4">Informations</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="form-group">
+                <label class="form-label" for="nomexpediteur">Nom expéditeur <span class="text-red-500">*</span></label>
+                <input type="text" id="nomexpediteur" name="nomexpediteur" class="input"
+                       value="{{ courrier.nomexpediteur }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="contactexpediteur">Contact expéditeur <span class="text-red-500">*</span></label>
+                <input type="text" id="contactexpediteur" name="contactexpediteur" class="input"
+                       value="{{ courrier.contactexpediteur }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="nomdestinataire">Nom destinataire <span class="text-red-500">*</span></label>
+                <input type="text" id="nomdestinataire" name="nomdestinataire" class="input"
+                       value="{{ courrier.nomdestinataire }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="contactdestinataire">Contact destinataire <span class="text-red-500">*</span></label>
+                <input type="text" id="contactdestinataire" name="contactdestinataire" class="input"
+                       value="{{ courrier.contactdestinataire }}" required>
+            </div>
+        </div>
+    </div>
+
+    {# -- Itinéraire -- #}
+    <div class="rounded-xl border bg-card shadow-sm p-6">
+        <h2 class="text-lg font-semibold mb-4">Itinéraire</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="form-group">
+                <label class="form-label" for="gareDepart">Gare de départ <span class="text-red-500">*</span></label>
+                <select id="gareDepart" name="gareDepart" class="input" required>
+                    <option value="">-- Choisir --</option>
+                    {% for gare in gares %}
+                        <option value="{{ gare.id }}"
+                            {{ courrier.garedepart.id is defined and courrier.garedepart.id == gare.id ? 'selected' : '' }}>
+                            {{ gare.libelle }} ({{ gare.ville }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="gareArrivee">Gare d'arrivée <span class="text-red-500">*</span></label>
+                <select id="gareArrivee" name="gareArrivee" class="input" required>
+                    <option value="">-- Choisir --</option>
+                    {% for gare in gares %}
+                        <option value="{{ gare.id }}"
+                            {{ courrier.garearrivee.id is defined and courrier.garearrivee.id == gare.id ? 'selected' : '' }}>
+                            {{ gare.libelle }} ({{ gare.ville }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="voyage">Voyage (optionnel)</label>
+                <select id="voyage" name="voyage" class="input">
+                    <option value="">-- Aucun --</option>
+                    {% for v in voyages %}
+                        <option value="{{ v.id }}"
+                            {{ courrier.voyage is not null and courrier.voyage.id == v.id ? 'selected' : '' }}>
+                            {{ v.codevoyage }} — {{ v.provenance }} → {{ v.destination }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    {# -- Paiement -- #}
+    <div class="rounded-xl border bg-card shadow-sm p-6">
+        <h2 class="text-lg font-semibold mb-4">Paiement</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="form-group">
+                <label class="form-label" for="modepaiement">Mode de paiement <span class="text-red-500">*</span></label>
+                <select id="modepaiement" name="modepaiement" class="input" required>
+                    <option value="ENVOI" {{ courrier.modepaiement == 'ENVOI' ? 'selected' : '' }}>Payé à l'envoi</option>
+                    <option value="RECEPTION" {{ courrier.modepaiement == 'RECEPTION' ? 'selected' : '' }}>Payé à la réception</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="fraissuivi">Frais de suivi SMS (FCFA)</label>
+                <input type="number" id="fraissuivi" name="fraissuivi" class="input" min="0"
+                       value="{{ courrier.fraissuivi ?? '' }}">
+            </div>
+        </div>
+    </div>
+
+    {# -- Colis -- #}
+    <div class="rounded-xl border bg-card shadow-sm p-4">
+        <div class="flex items-center justify-between px-2 py-4 border-b mb-2">
+            <h2 class="text-2xl font-light">Colis</h2>
+            <button type="button" id="btn-add-colis" class="btn btn-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Ajouter un colis
+            </button>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm" id="table-colis">
+                <thead>
+                    <tr class="border-b bg-muted/40">
+                        <th class="text-left px-3 py-3 font-semibold">Nature</th>
+                        <th class="text-left px-3 py-3 font-semibold">Désignation</th>
+                        <th class="text-left px-3 py-3 font-semibold">Emballage</th>
+                        <th class="text-left px-3 py-3 font-semibold">Type</th>
+                        <th class="text-left px-3 py-3 font-semibold">Poids (kg)</th>
+                        <th class="text-left px-3 py-3 font-semibold">Tranche tarifaire</th>
+                        <th class="text-left px-3 py-3 font-semibold">Valeur (FCFA)</th>
+                        <th class="text-left px-3 py-3 font-semibold">Taxe</th>
+                        <th class="w-12"></th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-colis">
+                    {% for detail in courrier.detailcourriers ?? [] %}
+                    <tr class="colis-ligne border-b">
+                        <td class="px-3 py-3">
+                            <input type="text" name="detail_nature[]" class="input"
+                                   value="{{ detail.nature }}" required>
+                        </td>
+                        <td class="px-3 py-3">
+                            <input type="text" name="detail_designation[]" class="input"
+                                   value="{{ detail.designation }}">
+                        </td>
+                        <td class="px-3 py-3">
+                            <input type="text" name="detail_emballage[]" class="input"
+                                   value="{{ detail.emballage ?? '' }}">
+                        </td>
+                        <td class="px-3 py-3">
+                            <select name="detail_type[]" class="input">
+                                {% for val, label in { NORMAL: 'Normal', FRAGILE: 'Fragile', VOLUMINEUX: 'Volumineux' } %}
+                                    <option value="{{ val }}" {{ detail.type == val ? 'selected' : '' }}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td class="px-3 py-3">
+                            <input type="number" name="detail_poids[]" class="input"
+                                   min="0" step="0.1" value="{{ detail.poids ?? '' }}">
+                        </td>
+                        <td class="px-3 py-3">
+                            <select name="detail_tarif[]" class="tarif-select input" required>
+                                <option value="">-- Choisir --</option>
+                                {% for tarif in tarifcourriers %}
+                                    <option value="{{ tarif.id }}"
+                                        data-valeurmin="{{ tarif.valeurmin }}"
+                                        data-valeurmax="{{ tarif.valeurmax ?? '' }}"
+                                        data-taxe="{{ tarif.montanttaxe }}"
+                                        {{ detail.tarifcourrier is not null and detail.tarifcourrier.id == tarif.id ? 'selected' : '' }}>
+                                        {{ tarif.libelle }}
+                                        ({{ tarif.valeurmin|number_format(0, ',', ' ') }}
+                                        → {{ tarif.valeurmax ? tarif.valeurmax|number_format(0, ',', ' ') ~ ' FCFA' : 'Illimité' }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td class="px-3 py-3">
+                            <input type="number" name="detail_valeur[]" class="valeur-input input"
+                                   min="1" value="{{ detail.valeur }}">
+                        </td>
+                        <td class="px-3 py-3">
+                            <span class="taxe-ligne font-semibold tabular-nums text-muted-foreground">
+                                {{ detail.montant|number_format(0, ',', ' ') }} FCFA
+                            </span>
+                        </td>
+                        <td class="px-3 py-3">
+                            <button type="button" class="btn-remove-colis btn btn-danger">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr class="colis-ligne border-b">
+                        <td class="px-3 py-3"><input type="text" name="detail_nature[]" class="input" required></td>
+                        <td class="px-3 py-3"><input type="text" name="detail_designation[]" class="input"></td>
+                        <td class="px-3 py-3"><input type="text" name="detail_emballage[]" class="input"></td>
+                        <td class="px-3 py-3">
+                            <select name="detail_type[]" class="input">
+                                <option value="NORMAL">Normal</option>
+                                <option value="FRAGILE">Fragile</option>
+                                <option value="VOLUMINEUX">Volumineux</option>
+                            </select>
+                        </td>
+                        <td class="px-3 py-3"><input type="number" name="detail_poids[]" class="input" min="0" step="0.1"></td>
+                        <td class="px-3 py-3">
+                            <select name="detail_tarif[]" class="tarif-select input" required>
+                                <option value="">-- Choisir --</option>
+                                {% for tarif in tarifcourriers %}
+                                    <option value="{{ tarif.id }}"
+                                        data-valeurmin="{{ tarif.valeurmin }}"
+                                        data-valeurmax="{{ tarif.valeurmax ?? '' }}"
+                                        data-taxe="{{ tarif.montanttaxe }}">
+                                        {{ tarif.libelle }}
+                                        ({{ tarif.valeurmin|number_format(0, ',', ' ') }}
+                                        → {{ tarif.valeurmax ? tarif.valeurmax|number_format(0, ',', ' ') ~ ' FCFA' : 'Illimité' }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td class="px-3 py-3"><input type="number" name="detail_valeur[]" class="valeur-input input" min="1" required></td>
+                        <td class="px-3 py-3"><span class="taxe-ligne font-semibold tabular-nums text-muted-foreground">— FCFA</span></td>
+                        <td class="px-3 py-3">
+                            <button type="button" class="btn-remove-colis btn btn-danger">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="border-t bg-muted/20">
+                        <td colspan="7" class="px-3 py-3 text-sm font-semibold text-right">Total taxe :</td>
+                        <td class="px-3 py-3 font-bold tabular-nums" id="total-taxe">0 FCFA</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-3">
+        <a href="{{ path('courrier.show', { id: courrier.id }) }}" class="btn btn-secondary">Annuler</a>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+
+</form>
+
+<template id="template-colis">
+    <tr class="colis-ligne border-b">
+        <td class="px-3 py-3"><input type="text" name="detail_nature[]" class="input" placeholder="Ex: Électronique" required></td>
+        <td class="px-3 py-3"><input type="text" name="detail_designation[]" class="input" placeholder="Ex: CAPTEUR"></td>
+        <td class="px-3 py-3"><input type="text" name="detail_emballage[]" class="input" placeholder="Ex: Sachet"></td>
+        <td class="px-3 py-3">
+            <select name="detail_type[]" class="input">
+                <option value="NORMAL">Normal</option>
+                <option value="FRAGILE">Fragile</option>
+                <option value="VOLUMINEUX">Volumineux</option>
+            </select>
+        </td>
+        <td class="px-3 py-3"><input type="number" name="detail_poids[]" class="input" min="0" step="0.1" placeholder="Optionnel"></td>
+        <td class="px-3 py-3">
+            <select name="detail_tarif[]" class="tarif-select input" required>
+                <option value="">-- Choisir --</option>
+                {% for tarif in tarifcourriers %}
+                    <option value="{{ tarif.id }}"
+                        data-valeurmin="{{ tarif.valeurmin }}"
+                        data-valeurmax="{{ tarif.valeurmax ?? '' }}"
+                        data-taxe="{{ tarif.montanttaxe }}">
+                        {{ tarif.libelle }}
+                        ({{ tarif.valeurmin|number_format(0, ',', ' ') }}
+                        → {{ tarif.valeurmax ? tarif.valeurmax|number_format(0, ',', ' ') ~ ' FCFA' : 'Illimité' }})
+                    </option>
+                {% endfor %}
+            </select>
+        </td>
+        <td class="px-3 py-3"><input type="number" name="detail_valeur[]" class="valeur-input input" min="1" required></td>
+        <td class="px-3 py-3"><span class="taxe-ligne font-semibold tabular-nums text-muted-foreground">— FCFA</span></td>
+        <td class="px-3 py-3">
+            <button type="button" class="btn-remove-colis btn btn-danger">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </td>
+    </tr>
+</template>
+
+<script>
+(function () {
+    const tbody   = document.getElementById('tbody-colis')
+    const template = document.getElementById('template-colis')
+    const btnAdd  = document.getElementById('btn-add-colis')
+    const totalEl = document.getElementById('total-taxe')
+
+    function formatFCFA(n) {
+        return n.toLocaleString('fr-FR') + ' FCFA'
+    }
+
+    function updateTotaux() {
+        let total = 0
+        tbody.querySelectorAll('.colis-ligne').forEach(function(row) {
+            const taxeEl = row.querySelector('.taxe-ligne')
+            const select = row.querySelector('.tarif-select')
+            if (!select || !select.value) {
+                taxeEl.textContent = '— FCFA'
+                return
+            }
+            const taxe = parseFloat(select.options[select.selectedIndex].dataset.taxe) || 0
+            taxeEl.textContent = formatFCFA(taxe)
+            total += taxe
+        })
+        totalEl.textContent = formatFCFA(total)
+    }
+
+    function validerValeur(row) {
+        const select      = row.querySelector('.tarif-select')
+        const valeurInput = row.querySelector('.valeur-input')
+        if (!select || !select.value || !valeurInput.value) return true
+
+        const opt       = select.options[select.selectedIndex]
+        const valeurMin = parseFloat(opt.dataset.valeurmin)
+        const valeurMax = opt.dataset.valeurmax !== '' ? parseFloat(opt.dataset.valeurmax) : null
+        const valeur    = parseFloat(valeurInput.value)
+
+        const invalid = valeur < valeurMin || (valeurMax !== null && valeur > valeurMax)
+        valeurInput.classList.toggle('border-red-500', invalid)
+        return !invalid
+    }
+
+    function bindRow(row) {
+        row.querySelector('.tarif-select').addEventListener('change', function() {
+            const opt         = this.options[this.selectedIndex]
+            const valeurInput = row.querySelector('.valeur-input')
+            if (opt.dataset.valeurmin) {
+                valeurInput.min = opt.dataset.valeurmin
+                valeurInput.max = opt.dataset.valeurmax || ''
+                if (!valeurInput.value) {
+                    valeurInput.value = opt.dataset.valeurmin
+                }
+            }
+            updateTotaux()
+        })
+
+        row.querySelector('.valeur-input').addEventListener('input', function() {
+            validerValeur(row)
+        })
+
+        row.querySelector('.btn-remove-colis').addEventListener('click', function() {
+            if (tbody.querySelectorAll('.colis-ligne').length > 1) {
+                row.remove()
+                updateTotaux()
+            }
+        })
+    }
+
+    tbody.querySelectorAll('.colis-ligne').forEach(bindRow)
+    updateTotaux()
+
+    btnAdd.addEventListener('click', function() {
+        const clone = template.content.cloneNode(true)
+        const row   = clone.querySelector('tr')
+        tbody.appendChild(row)
+        bindRow(row)
+    })
+
+    document.querySelector('form').addEventListener('submit', function(e) {
+        let valid = true
+        tbody.querySelectorAll('.colis-ligne').forEach(function(row) {
+            if (!validerValeur(row)) valid = false
+        })
+        if (!valid) {
+            e.preventDefault()
+            alert('Une ou plusieurs valeurs de colis ne correspondent pas à la tranche tarifaire choisie.')
+        }
+    })
+})()
+</script>
+{% endblock %}

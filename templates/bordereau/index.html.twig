@@ -1,0 +1,124 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bordereaux{% endblock %}
+
+{% block body %}
+
+<div class="flex items-start justify-between gap-4 max-sm:flex-col mb-6">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Bordereaux</h1>
+        <p class="text-muted-foreground mt-1 text-sm">Sélectionnez un trajet et une gare pour imprimer les bordereaux</p>
+    </div>
+</div>
+
+{# ── Filtres ─────────────────────────────────────────────────── #}
+<form method="get" action="{{ path('bordereau.index') }}" class="card p-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+
+        <div class="flex flex-col gap-1">
+            <label class="text-xs text-muted-foreground">Trajet</label>
+            <select name="trajet" class="input input-sm">
+                <option value="">Choisir un trajet...</option>
+                {% for t in trajets %}
+                <option value="{{ t.id }}" {{ trajetId == t.id ? 'selected' : '' }}>
+                    {{ t.provenance }} → {{ t.destination }} ({{ t.codetrajet }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="flex flex-col gap-1">
+            <label class="text-xs text-muted-foreground">Gare</label>
+            <select name="gare" class="input input-sm">
+                <option value="">Choisir une gare...</option>
+                {% for g in gares %}
+                <option value="{{ g.id }}" {{ gareId == g.id ? 'selected' : '' }}>
+                    {{ g.libelle }} — {{ g.ville }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="flex flex-col gap-1">
+            <label class="text-xs text-muted-foreground">Période</label>
+            <div class="flex items-center gap-2">
+                <input type="date" name="debut" value="{{ debut }}" class="input input-sm" />
+                <span class="text-muted-foreground text-sm shrink-0">→</span>
+                <input type="date" name="fin" value="{{ fin }}" class="input input-sm" />
+            </div>
+        </div>
+
+        <div class="flex items-end">
+            <button type="submit" class="btn btn-primary btn-sm w-full">Rechercher</button>
+        </div>
+
+    </div>
+</form>
+
+{# ── Résultats ───────────────────────────────────────────────── #}
+{% if not trajetId %}
+    <div class="card p-8 text-center text-muted-foreground text-sm">
+        Sélectionnez un trajet pour afficher les voyages disponibles.
+    </div>
+
+{% elseif voyages is empty %}
+    <div class="card p-8 text-center text-muted-foreground text-sm">
+        Aucun voyage trouvé pour ce trajet sur la période sélectionnée.
+    </div>
+
+{% else %}
+    {% if not gareId %}
+    <div class="mb-4 p-3 rounded border border-yellow-200 bg-yellow-50 text-yellow-800 text-sm">
+        Sélectionnez une gare pour pouvoir imprimer les bordereaux.
+    </div>
+    {% endif %}
+
+    <div class="card overflow-hidden">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-left text-muted-foreground border-b">
+                    <th class="px-4 py-3 font-medium">Code voyage</th>
+                    <th class="px-4 py-3 font-medium">Trajet</th>
+                    <th class="px-4 py-3 font-medium">Départ</th>
+                    <th class="px-4 py-3 font-medium text-right">Places</th>
+                    <th class="px-4 py-3 font-medium text-right">Occupées</th>
+                    <th class="px-4 py-3 font-medium text-center">Statut</th>
+                    <th class="px-4 py-3 font-medium text-right">Bordereau</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in voyages %}
+                {% set termine = null %}
+                {% if v.datefin is defined %}{% set termine = v.datefin is not null %}{% endif %}
+                <tr class="border-b last:border-0 hover:bg-muted/40 transition-colors">
+                    <td class="px-4 py-3 font-mono text-xs">{{ v.codevoyage }}</td>
+                    <td class="px-4 py-3">{{ v.provenance }} → {{ v.destination }}</td>
+                    <td class="px-4 py-3 text-muted-foreground">
+                        {{ v.datedebut | date('d/m/Y H:i') }}
+                    </td>
+                    <td class="px-4 py-3 text-right">{{ v.placestotal }}</td>
+                    <td class="px-4 py-3 text-right">{{ v.placesoccupees }}</td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="text-xs px-2 py-0.5 rounded-full
+                            {{ termine ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700' }}">
+                            {{ termine ? 'Terminé' : 'En cours' }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        {% if gareId %}
+                            <a href="{{ path('bordereau.print', {voyageId: v.id, gareId: gareId}) }}"
+                               target="_blank"
+                               class="btn btn-sm btn-outline">
+                                Imprimer
+                            </a>
+                        {% else %}
+                            <span class="text-xs text-muted-foreground">— gare requise</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+{% endblock %}

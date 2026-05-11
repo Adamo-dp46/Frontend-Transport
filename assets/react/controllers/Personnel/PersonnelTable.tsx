@@ -1,0 +1,192 @@
+import { ColumnDef } from "@tanstack/react-table"
+import { ArrowUpDown, FileText, MoreHorizontal, Sheet } from "lucide-react"
+import { DataTable } from "../../components/data-table"
+import { Button } from "../../../components/ui/button"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "../../../components/ui/dropdown-menu"
+import { DataTableColumnHeader } from "../../components/data-table-column-header"
+import { useMemo } from "react"
+import { Badge } from "../../../components/ui/badge"
+
+interface Typepersonnel {
+    id: number
+    libelle: string
+}
+
+interface Personnel {
+    id: number
+    nom: string
+    prenom: string
+    contact: string
+    code: string
+    image: string | null
+    typepersonnel: Typepersonnel
+}
+
+type Props = {
+    personnels: Personnel[],
+    canEdit: boolean,
+    canDelete: boolean,
+    csrfDelete: string
+}
+
+function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string): ColumnDef<Personnel>[] {
+    return [
+        {
+            accessorKey: "id",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Id" />
+            )
+        },
+        {
+            accessorKey: "nom",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Nom" />
+            )
+        },
+        {
+            accessorKey: "prenom",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Prenom" />
+            )
+        },
+        {
+            accessorKey: "contact",
+            header: 'Contact'
+        },
+        {
+            accessorKey: "code",
+            header: 'Code',
+            cell: ({ row }) => (
+                <span className="font-mono bg-muted px-2 py-0.5 rounded-lg">
+                    {row.original.code}
+                </span>
+            ),
+        },
+        {
+            accessorFn: (row) => row.typepersonnel?.libelle ?? "",
+            id: "typepersonnel",
+            header: "Type de personnel",
+            cell: ({ row }) =>
+                row.original.typepersonnel
+                ? <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">{row.original.typepersonnel.libelle}</Badge>
+                : <span className="text-muted-foreground">Aucun</span>
+        },
+        /*
+            {
+                id: "image",
+                header: "",
+                cell: ({ row }) => {
+                    const p = row.original
+                    const initiales = `${p.prenom.charAt(0)}${p.nom.charAt(0)}`.toUpperCase()
+                    return (
+                        <div className="flex items-center justify-center">
+                            {p.image ? (
+                                <img
+                                    src={p.image}
+                                    alt={`${p.prenom} ${p.nom}`}
+                                    className="h-8 w-8 rounded-full object-cover"
+                                />
+                            ) : (
+                                <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+                                    {initiales}
+                                </div>
+                            )}
+                        </div>
+                    )
+                },
+            }
+        */
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const car = row.original
+                return (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                                <a href={`/personnel/${car.id}`}>Voir</a>
+                            </DropdownMenuItem>
+
+                            {canEdit && <DropdownMenuSeparator />}
+
+                            {canEdit && (
+                                <DropdownMenuItem asChild>
+                                    <a href={`/personnel/${car.id}/modifier`}>Modifier</a>
+                                </DropdownMenuItem>
+                            )}
+
+                            {canEdit && canDelete && <DropdownMenuSeparator />}
+
+                            {canDelete && (
+                                <DropdownMenuItem asChild>
+                                    <form
+                                        method="POST"
+                                        action={`/personnel/${car.id}/supprimer`}
+                                        onSubmit={(e) => {
+                                            if(!confirm("Supprimer ce personnel ?")) {
+                                                e.preventDefault()
+                                            }
+                                        }}
+                                    >
+                                        <input type="hidden" name="_token" value={csrfDelete} />
+                                        <button
+                                            type="submit"
+                                            className="w-full text-left text-red-600 focus:text-red-700"
+                                        >
+                                            Supprimer
+                                        </button>
+                                    </form>
+                                </DropdownMenuItem>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )
+            },
+        },
+    ]
+}
+
+export default function PersonnelTable({personnels, canEdit, canDelete, csrfDelete}: Props) {
+    const columns = useMemo( /*
+            - Pour éviter de recréer le tableau à chaque render
+        */
+        () => buildColumns(canEdit, canDelete, csrfDelete),
+        [canEdit, canDelete, csrfDelete]
+    )
+
+    const typeOptions = [...new Map(
+        personnels
+            .filter(p => p.typepersonnel)
+            .map(p => [p.typepersonnel!.id, p.typepersonnel!])
+        ).values()].map(m => ({
+        label: m.libelle,
+        value: m.libelle
+    }))
+
+    return <>
+        <div className="space-y-2">
+            <DataTable
+                columns={columns}
+                data={personnels}
+                filterColumn="nom"
+                filterPlaceholder="Filtrer par nombre de siège..."
+                selectFilters={[
+                    { column: "typepersonnel", title: "Type de personnel", options: typeOptions }
+                ]}
+            />
+        </div>
+    </>
+}

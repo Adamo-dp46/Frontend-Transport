@@ -1,0 +1,158 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dépannage #{{ depannage.id }}{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col max-sm:gap-3 mb-5">
+    <div class="flex items-center gap-3">
+        <a href="{{ path('depannage.index') }}" class="btn-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <div>
+            <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2] mb-2">Dépannage #{{ depannage.id }}</h1>
+            <p class="text-muted-foreground text-xs">
+                Crée le: {{ depannage.createdAt|date('d/m/Y à H:i') }}
+            </p>
+        </div>
+    </div>
+    {% if depannage.statut == 'EN COURS' and is_granted('DEPANNAGE_MODIFIER') %}
+    <div class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        <a href="{{ path('depannage.affect.personnel', { id: depannage.id }) }}" class="btn btn-primary max-sm:flex-1 max-sm:justify-center">
+            Affecter un personnel
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+    {% if depannage.car is defined and depannage.car %}
+    <div class="card p-4">
+        <p class="text-lg font-light text-muted-foreground mb-2">Car</p>
+        <p class="text-sm">Immatriculation: <span class="font-semibold">{{ depannage.car.matricule }}</span></p>
+    </div>
+    {% endif %}
+    <div class="card p-4">
+        <p class="text-lg font-light text-muted-foreground mb-2">Lieu du dépannage</p>
+        <p class="font-semibold text-2xl">{{ depannage.lieudepannage }}</p>
+    </div>
+    <div class="card p-4">
+        <p class="text-lg font-light text-muted-foreground mb-2">Coût total du dépannage</p>
+        <p class="font-semibold text-2xl">{{ depannage.couttotal|default(0)|number_format(0, ',', ' ') }} FCFA</p>
+    </div>
+    <div class="card p-4">
+        <p class="text-lg font-light text-muted-foreground mb-2">Date de dépannage</p>
+        <p class="font-semibold text-lg">{{ depannage.datedepannage ? depannage.datedepannage|date('d/m/Y à H:i:s') : '..' }}</p>
+    </div>
+    {% if depannage.typepanne is defined and depannage.typepanne %}
+    <div class="card p-4">
+        <p class="text-lg font-light text-muted-foreground mb-2">Type de panne</p>
+        <p class="font-semibold text-2xl">{{ depannage.typepanne.libelle }}</p>
+    </div>
+    {% endif %}
+</div>
+
+{% if depannage.statut == 'EN COURS' %}
+    <span class="inline-flex items-center rounded-full bg-orange-100 text-orange-700 px-3 py-1 text-sm font-semibold">
+        En cours
+    </span>
+{% else %}
+    <span class="inline-flex items-center rounded-full bg-green-100 text-green-700 px-3 py-1 text-sm font-semibold">
+        ✓ Clôturé
+    </span>
+{% endif %}
+
+{% if depannage.description %}
+    <div class="rounded-xl border bg-card shadow-sm p-4 mb-4">
+        <p class="text-lg font-light text-muted-foreground mb-2">Description</p>
+        <p class="font-semibold text-sm">{{ depannage.description }}</p>
+    </div>
+{% endif %}
+
+<div class="rounded-xl border bg-card shadow-sm p-4 mb-4">
+    <div class="px-6 py-4 border-b flex items-center justify-between">
+        <p class="text-lg font-light text-muted-foreground mb-2">Personnel affecté</p>
+        <span class="text-xs text-muted-foreground">
+            {{ depannage.detailpersonnels|length }} personne(s)
+        </span>
+    </div>
+    <div class="divide-y">
+        {% for detail in depannage.detailpersonnels %}
+        <div class="px-6 py-4 flex items-center gap-4">
+            {# Avatar initiales #}
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-sm font-semibold text-zinc-600">
+                {{ detail.personnel.prenom|slice(0,1)|upper }}{{ detail.personnel.nom|slice(0,1)|upper }}
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-medium text-sm">
+                    {{ detail.personnel.prenom }} {{ detail.personnel.nom }}
+                </p>
+                <div class="flex flex-wrap items-center gap-2 mt-0.5">
+                    {% if detail.personnel.typepersonnel %}
+                    <span class="text-xs text-muted-foreground">
+                        {{ detail.personnel.typepersonnel.libelle }}
+                    </span>
+                    {% endif %}
+                    {% if detail.personnel.contact %}
+                    <span class="text-zinc-300 text-xs">·</span>
+                    <span class="text-xs text-muted-foreground">{{ detail.personnel.contact }}</span>
+                    {% endif %}
+                    <span class="text-zinc-300 text-xs">·</span>
+                    <span class="font-mono text-xs text-muted-foreground">{{ detail.personnel.code }}</span>
+                </div>
+            </div>
+            {% if detail.motif %}
+            <div class="shrink-0 text-right">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700">
+                    {{ detail.motif }}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="rounded-xl border bg-card shadow-sm overflow-auto mb-5">
+    <div class="px-6 py-4 border-b">
+        <h2 class="text-base font-semibold">Pièces utilisées</h2>
+    </div>
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b bg-muted/40">
+                <th class="text-left px-4 py-3 font-semibold">Pièce</th>
+                <th class="text-right px-4 py-3 font-semibold">Quantité</th>
+                <th class="text-right px-4 py-3 font-semibold">Prix unitaire</th>
+                <th class="text-right px-4 py-3 font-semibold">Sous-total</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y">
+            {% for detail in depannage.detaildepannages %}
+            <tr class="hover:bg-muted/20 transition-colors">
+                <td class="px-4 py-3 font-medium">{{ detail.piece.libelle }}</td>
+                <td class="px-4 py-3 text-right tabular-nums">{{ detail.quantite }}</td>
+                <td class="px-4 py-3 text-right tabular-nums">{{ detail.prixunitaire|default(0)|number_format(0, ',', ' ') }} FCFA</td>
+                <td class="px-4 py-3 text-right tabular-nums font-semibold">
+                    {{ (detail.quantite * detail.prixunitaire|default(0))|number_format(0, ',', ' ') }} FCFA
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="px-4 py-8 text-center text-muted-foreground">Aucune pièce enregistrée</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="border-">
+                <td colspan="3" class="px-6 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Total
+                </td>
+                <td class="px-6 py-3 text-right tabular-nums font-bol">
+                    {{ depannage.couttotal|number_format(0, ',', ' ') }} FCFA
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,228 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Véhicule ({{ car.matricule }}){% endblock %}
+
+{% block body %}
+<div class="flex flex-col mb-5 gap-3 sm:flex-row sm:items-start sm:justify-between sm:mb-5">
+    <div>
+        <h1 class="text-2xl font-bold tracking-[-0.55px] leading-tight mb-1">Fiche du véhicule #{{ car.id }}</h1>
+        <p class="text-sm font-light text-muted-foreground">
+            Créé le {{ car.createdAt|date("m/d/Y à H:i") }}
+        </p>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap sm:shrink-0">
+        <a href="{{ path('car.index') }}" class="btn btn-secondary flex-1 justify-center sm:flex-none">
+            <svg class="h-5 w-5" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron-left"></use></svg>
+            Retour
+        </a>
+        {% if is_granted('CAR_MODIFIER') %}
+        <a href="{{ path('car.edit', {id: car.id}) }}" class="btn btn-primary flex-1 justify-center sm:flex-none">
+            <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+            Modifier
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="rounded-xl border bg-card shadow-sm p-4">
+        <p class="text-lg font-light text-muted-foreground mb-2">Matricule</p>
+        <p class="font-semibold">{{ car.matricule }}</p>
+    </div>
+    <div class="rounded-xl border bg-card shadow-sm p-4">
+        <p class="text-lg font-light text-muted-foreground mb-2">État</p>
+        {% set etatMap = { DISPO: ['Disponible','bg-green-100 text-green-800'], EN_MISSION: ['En mission','bg-blue-100 text-blue-800'], PANNE: ['En panne','bg-red-100 text-red-800'], MAINTENANCE: ['Maintenance','bg-orange-100 text-orange-800'] } %}
+        {% set cfg = etatMap[car.etat] ?? [car.etat, 'bg-gray-100 text-gray-700'] %}
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ cfg[1] }}">{{ cfg[0] }}</span>
+    </div>
+    {% if car.marque is defined %}
+    <div class="rounded-xl border bg-card shadow-sm p-4">
+        <p class="text-lg font-light text-muted-foreground mb-2">Marque</p>
+        <p class="font-semibold">{{ car.marque.libelle }}</p>
+    </div>
+    {% endif %}
+    <div class="rounded-xl border bg-card shadow-sm p-4">
+        <p class="text-lg font-light text-muted-foreground mb-2">Nombre de sièges</p>
+        <p class="font-semibold">{{ car.nbrsiege }}</p>
+    </div>
+    <div class="rounded-xl border bg-card shadow-sm p-4">
+        <p class="text-lg font-light text-muted-foreground mb-2">Date d'arrivée</p>
+        <p class="font-semibold">{{ car.datearrivee ? car.datearrivee|date('d/m/Y') : '—' }}</p>
+    </div>
+    <div class="rounded-xl border bg-card shadow-sm p-4">
+        <p class="text-lg font-light text-muted-foreground mb-2">Voyages</p>
+        <p class="font-semibold">{{ car.voyages|length }}</p>
+    </div>
+    <div class="rounded-xl border bg-card shadow-sm p-4">
+        <p class="text-lg font-light text-muted-foreground mb-2">Dépannages</p>
+        <p class="font-semibold">{{ car.depannages|length }}</p>
+    </div>
+</div>
+{#
+    <div class="rounded-xl border bg-card shadow-sm overflow-hidden mb-3">
+        <div class="px-5 py-4 border-b">
+            <p class="font-medium text-sm">Plan & intérieur du véhicule</p>
+        </div>
+        <div class="p-5 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {% if car.imageInterieur %}
+            <div>
+                <p class="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-2">
+                    Photo intérieure
+                </p>
+                <img src="{{ glide_url(car.imageInterieur, { w: 600, h: 400, fit: 'crop' }) }}" alt="Intérieur {{ car.matricule }}" class="w-full rounded-lg object-cover max-h-72"
+                />
+            </div>
+            {% endif %}
+            {% if car.sieges is defined and car.sieges|length > 0 %}
+            <div>
+                <p class="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-2">
+                    Plan des sièges
+                </p>
+                <div {{ react_component('PlanCarReadonly', {
+                    sieges: car.sieges,
+                    siegesGauche: car.sieges_gauche,
+                    siegesDroite: car.sieges_droite
+                }) }}>
+                    <div class="flex items-center justify-center h-32">
+                        <twig:Spinner class="size-6" />
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+#}
+<div class="card p-4 mb-3">
+    <h5 class="text-xl font-light mb-3">Classification</h5>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {% if car.marque is defined and car.marque %}
+        <div>
+            <span class="text-base">Marque de véhicule</span>: <span class="text-md font-bold">{{ car.marque.libelle }}</span>
+        </div>
+        {% endif %}
+        {% if car.typevehicule is defined and car.typevehicule %}
+        <div>
+            <span class="text-base">Type de véhicule</span>: <span class="text-md font-bold">{{ car.typevehicule.libelle }}</span>
+        </div>
+        {% endif %} 
+        {% if car.modelvehicule is defined and car.modelvehicule %}
+        <div>
+            <span class="text-base">Modèle de véhicule</span>: <span class="text-md font-bold">{{ car.modelvehicule.libelle }}</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-4">
+        <div class="card">
+            <div class="flex items-center justify-between px-6 py-4 border-b">
+                <h2 class="text-sm font-semibold">Voyages effectués</h2>
+                <span class="inline-flex items-center rounded-full tag tag-sky font-bold">{{ car.voyages|length }}</span>
+            </div>
+            {% if car.voyages is empty %}
+                <div class="px-6 py-8 text-center text-sm text-muted-foreground">Aucun voyage effectué</div>
+            {% else %}
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-muted/40 border-b">
+                            <th class="text-left px-6 py-3 font-semibold">#</th>
+                            <th class="text-left px-6 py-3 font-semibold">Date de création</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        {% for voyage in car.voyages %}
+                        <tr class="hover:bg-muted/20 transition-colors">
+                            <td class="px-6 py-3 font-mono text-xs text-muted-foreground">{{ loop.index }}</td>
+                            <td class="px-6 py-3">{{ voyage.createdAt ? voyage.createdAt|date('d/m/Y H:i') : '..' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="flex items-center justify-between px-6 py-4 border-b">
+                <h2 class="text-sm font-semibold">Dépannages</h2>
+                <span class="inline-flex items-center rounded-full tag tag-red font-bold">
+                    {{ car.depannages|length }}
+                </span>
+            </div>
+            {% if car.depannages is empty %}
+                <div class="px-6 py-8 text-center text-sm text-muted-foreground">Aucun dépannage enregistré</div>
+            {% else %}
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-muted/40 border-b">
+                            <th class="text-left px-6 py-3 font-semibold">#</th>
+                            <th class="text-left px-6 py-3 font-semibold">Date du dépannage</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        {% for dep in car.depannages %}
+                        <tr class="hover:bg-muted/20 transition-colors">
+                            <td class="px-6 py-3 font-mono text-xs text-muted-foreground">{{ loop.index }}</td>
+                            <td class="px-6 py-3">{{ dep.datedepannage ? dep.datedepannage|date('d/m/Y H:i') : '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="space-y-4">
+        <div class="card p-5 space-y-3">
+            <h2 class="text-lg font-semibold uppercase tracking-wide">Fiabilité</h2>
+            {% set totalOps = car.voyages|length + car.depannages|length %}
+            {% if totalOps > 0 %}
+                {% set tauxPanne = (car.depannages|length / totalOps * 100)|round %}
+                <div class="space-y-1.5">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-muted-foreground">Taux d'intervention</span>
+                        <span class="font-semibold {{ tauxPanne > 30 ? 'text-red-600' : tauxPanne > 10 ? 'text-orange-600' : 'text-green-600' }}">
+                            {{ tauxPanne }} %
+                        </span>
+                    </div>
+                    <div class="w-full bg-muted rounded-full h-2">
+                        <div class="h-2 rounded-full {{ tauxPanne > 30 ? 'bg-red-500' : tauxPanne > 10 ? 'bg-orange-500' : 'bg-green-500' }}" style="width: {{ tauxPanne }}%"></div>
+                    </div>
+                    <p class="text-xs text-muted-foreground">
+                        {{ car.depannages|length }} dépannage(s) pour {{ car.voyages|length }} voyage(s)
+                    </p>
+                </div>
+            {% else %}
+                <p class="text-xs text-muted-foreground">Pas encore d'activité enregistrée</p>
+            {% endif %}
+        </div>
+
+        <div class="card p-5 space-y-2">
+            <h2 class="text-lg font-semibold uppercase mb-3">Actions</h2>
+            <div class="flex flex-col align-items-center justify-center">
+                {% if is_granted('CAR_MODIFIER') %}
+                    <div class="flex items-start mb-2">
+                        <a href="{{ path('car.edit', { id: car.id }) }}" class="btn btn-full btn-secondary">
+                            Modifier
+                        </a>
+                    </div>
+                {% endif %}
+                {% if is_granted('DEPANNAGE_CREER') %}
+                    <div class="flex items-start">
+                        <a href="{{ path('depannage.new') }}" class="btn btn-full btn-secondary">
+                            Nouveau dépannage
+                        </a>
+                    </div>
+                {% endif %}
+                {% if is_granted('VOYAGE_CREER') %}
+                    <div class="flex items-start">
+                        <a href="{{ path('voyage.new') }}" class="btn btn-full btn-secondary">
+                            Nouveau voyage
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

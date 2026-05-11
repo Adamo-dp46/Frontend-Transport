@@ -1,0 +1,163 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Fournisseur - {{ fournisseur.nom }}{% endblock %}
+
+{% block body %}
+<div class="flex flex-col mb-5 gap-3 sm:flex-row sm:items-start sm:justify-between sm:mb-5">
+    <div>
+        <h1 class="text-2xl font-bold tracking-[-0.55px] leading-tight mb-1">Fiche du fournisseur #{{ fournisseur.id }}</h1>
+        <p class="text-sm font-light text-muted-foreground">Créé le {{ fournisseur.createdAt|date("m/d/Y à H:i") }}</p>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap sm:shrink-0">
+        <a href="{{ path('fournisseur.index') }}" class="btn btn-secondary flex-1 justify-center sm:flex-none">
+            <svg class="h-5 w-5" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron-left"></use></svg>
+            Retour
+        </a>
+        <a href="{{ path('fournisseur.edit', {id: fournisseur.id}) }}" class="btn btn-primary flex-1 justify-center sm:flex-none">
+            <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+            Modifier
+        </a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-4">
+        <div class="card p-6">
+            <h2 class="text-2xl font-semibold uppercase mb-4">Informations générales</h2>
+            <dl class="space-y-3 text-sm">
+                <div class="flex justify-between items-center py-2 border-b border-border">
+                    <dt>Libellé</dt>
+                    <dd class="font-semibold">{{ fournisseur.libelle }}</dd>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-border">
+                    <dt>Nom</dt>
+                    <dd>{{ fournisseur.nom ?? '—' }}</dd>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-border">
+                    <dt>Téléphone</dt>
+                    <dd>
+                        {% if fournisseur.contact %}
+                            <a href="tel:{{ fournisseur.contact }}" class="text-primary hover:underline">{{ fournisseur.contact }}</a>
+                        {% else %}..{% endif %}
+                    </dd>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-border">
+                    <dt>Email</dt>
+                    <dd>
+                        {% if fournisseur.email %}
+                            <a href="mailto:{{ fournisseur.email }}" class="text-primary hover:underline">{{ fournisseur.email }}</a>
+                        {% else %}..{% endif %}
+                    </dd>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-border">
+                    <dt>Adresse</dt>
+                    <dd>{{ fournisseur.adresse ?? '..' }}</dd>
+                </div>
+                <div class="flex justify-between items-center py-2">
+                    <dt>Pays</dt>
+                    <dd>{{ fournisseur.pays ?? '..' }}</dd>
+                </div>
+            </dl>
+        </div>
+        <div {{ react_component('Stock/FournisseurApprovisionnementTable', {
+                approvisionnements: approvisionnements,
+                meta: meta,
+                queryParams: queryParams
+            }) }} class="mb-3 mt-3"
+        >
+            <div class="flex items-center justify-center gap-6">
+                <twig:Spinner class="size-8" />
+            </div>
+        </div>
+        {#
+            <div class="card overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-4 border-b">
+                    <h2 class="text-2xl font-semibold">Approvisionnements</h2>
+                    <span class="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-bold">
+                        {{ fournisseur.approvisionnements|length }}
+                    </span>
+                </div>
+
+                {% if fournisseur.approvisionnements is empty %}
+                    <div class="px-6 py-8 text-center text-sm text-muted-foreground">
+                        Aucun approvisionnement enregistré
+                    </div>
+                {% else %}
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-muted/40 border-b">
+                                <th class="text-left px-6 py-3 font-semibold">N°</th>
+                                <th class="text-left px-6 py-3 font-semibold">Date d'approvisionnement</th>
+                                <th class="text-left px-6 py-3 font-semibold">Créé le</th>
+                                <th class="w-12"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            {% for appro in fournisseur.approvisionnements %}
+                            <tr class="hover:bg-muted/20 transition-colors">
+                                <td class="px-6 py-3 font-mono font-semibold text-xs">
+                                    #{{ appro.id }}
+                                </td>
+                                <td class="px-6 py-3">
+                                    {{ appro.dateappro ? appro.dateappro|date('d/m/Y H:i') : '—' }}
+                                </td>
+                                <td class="px-6 py-3 text-muted-foreground text-xs">
+                                    {{ appro.createdAt ? appro.createdAt|date('d/m/Y') : '—' }}
+                                </td>
+                                <td class="px-6 py-3">
+                                    <a href="{{ path('approvisionnement.show', { id: appro.id }) }}"
+                                    class="text-xs text-primary hover:underline">
+                                        Voir →
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        #}
+    </div>
+
+    <div class="space-y-4">
+        <div class="card p-5 space-y-4">
+            <h2 class="text-sm font-semibold uppercase">Statistiques</h2>
+            <div class="text-center py-2">
+                <p class="text-4xl font-black tabular-nums text-primary">
+                    {{ fournisseur.approvisionnements|length }}
+                </p>
+                <p class="text-xs text-muted-foreground mt-1">approvisionnement(s) au total</p>
+            </div>
+
+            {% if fournisseur.approvisionnements|length > 0 %}
+            <div class="space-y-2 pt-2 border-t border-border text-sm">
+                <div class="flex justify-between">
+                    <span class="text-muted-foreground text-xs">Premier appro.</span>
+                    <span class="text-xs font-medium">
+                        {% set first = fournisseur.approvisionnements|last %}
+                        {{ first.dateappro ? first.dateappro|date('d/m/Y') : '—' }}
+                    </span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-muted-foreground text-xs">Dernier appro.</span>
+                    <span class="text-xs font-medium">
+                        {% set last = fournisseur.approvisionnements|first %}
+                        {{ last.dateappro ? last.dateappro|date('d/m/Y') : '—' }}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card p-5 space-y-2">
+            <h2 class="text-sm font-semibold uppercase">Actions</h2>
+            {% if is_granted('APPROVISIONNEMENT_CREER') %}
+            <a href="{{ path('approvisionnement.new') }}"
+               class="flex w-full items-center justify-center gap-1.5 btn btn-primary">
+                + Nouvel approvisionnement
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

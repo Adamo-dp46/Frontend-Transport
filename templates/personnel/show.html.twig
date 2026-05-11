@@ -1,0 +1,249 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Personnel - {{ personnel.prenom }} {{ personnel.nom }}{% endblock %}
+
+{% block body %}
+<div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-3">
+        <a href="{{ path('personnel.index') }}"
+           class="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-accent transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <div>
+            <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">
+                {{ personnel.prenom }} {{ personnel.nom }}
+            </h1>
+            <p class="text-muted-foreground text-sm mt-0.5 flex items-center gap-2">
+                <span class="font-mono">{{ personnel.code }}</span>
+                {% if personnel.typepersonnel %}
+                    <span class="inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
+                        {{ personnel.typepersonnel.libelle }}
+                    </span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+
+{# ── KPI ──────────────────────────────────────────────────────────────────── #}
+{% set nbVoyages    = personnel.detailpersonnels|filter(d => d.voyage is defined)|length %}
+{% set nbDepannages = personnel.detailpersonnels|filter(d => d.depannage is defined)|length %}
+
+<div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="rounded-xl border bg-card shadow-sm p-4 text-center">
+        <p class="text-xs text-muted-foreground uppercase tracking-wide mb-1">Affectations</p>
+        <p class="text-3xl font-black tabular-nums">{{ personnel.detailpersonnels|length }}</p>
+    </div>
+    <div class="rounded-xl border bg-card shadow-sm p-4 text-center">
+        <p class="text-xs text-muted-foreground uppercase tracking-wide mb-1">Voyages</p>
+        <p class="text-3xl font-black tabular-nums text-blue-600">{{ nbVoyages }}</p>
+    </div>
+    <div class="rounded-xl border bg-card shadow-sm p-4 text-center {{ nbDepannages > 0 ? 'border-orange-200' : '' }}">
+        <p class="text-xs text-muted-foreground uppercase tracking-wide mb-1">Dépannages</p>
+        <p class="text-3xl font-black tabular-nums {{ nbDepannages > 0 ? 'text-orange-600' : '' }}">{{ nbDepannages }}</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    {# ── Colonne principale ───────────────────────────────────────────────── #}
+    <div class="lg:col-span-2 space-y-4">
+
+        {# Infos personnelles #}
+        <div class="rounded-xl border bg-card shadow-sm p-6">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Informations</h2>
+            <dl class="text-sm divide-y">
+                <div class="flex justify-between items-center py-2.5">
+                    <dt class="text-muted-foreground">Code</dt>
+                    <dd class="font-mono font-bold">{{ personnel.code }}</dd>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <dt class="text-muted-foreground">Nom</dt>
+                    <dd class="font-semibold">{{ personnel.nom }}</dd>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <dt class="text-muted-foreground">Prénom</dt>
+                    <dd>{{ personnel.prenom }}</dd>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <dt class="text-muted-foreground">Contact</dt>
+                    <dd>
+                        {% if personnel.contact %}
+                            <a href="tel:{{ personnel.contact }}" class="text-primary hover:underline">
+                                {{ personnel.contact }}
+                            </a>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <dt class="text-muted-foreground">Type</dt>
+                    <dd>{{ personnel.typepersonnel.libelle ?? '—' }}</dd>
+                </div>
+                <div class="flex justify-between items-center py-2.5">
+                    <dt class="text-muted-foreground">Enregistré le</dt>
+                    <dd class="text-xs text-muted-foreground">
+                        {{ personnel.createdAt ? personnel.createdAt|date('d/m/Y') : '—' }}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+
+        {# Voyages effectués #}
+        <div class="rounded-xl border bg-card shadow-sm overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 border-b">
+                <h2 class="text-sm font-semibold">Voyages effectués</h2>
+                <span class="inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2.5 py-0.5 text-xs font-bold">
+                    {{ nbVoyages }}
+                </span>
+            </div>
+            {% set voyageDetails = personnel.detailpersonnels|filter(d => d.voyage is defined) %}
+            {% if voyageDetails is empty %}
+                <div class="px-6 py-8 text-center text-sm text-muted-foreground">
+                    Aucun voyage effectué
+                </div>
+            {% else %}
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-muted/40 border-b">
+                            <th class="text-left px-6 py-3 font-semibold">Code voyage</th>
+                            <th class="text-left px-6 py-3 font-semibold">Trajet</th>
+                            <th class="text-left px-6 py-3 font-semibold">Départ</th>
+                            <th class="text-left px-6 py-3 font-semibold">Statut</th>
+                            <th class="text-left px-6 py-3 font-semibold">Motif</th>
+                            <th class="w-12"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        {% for dp in voyageDetails %}
+                        {% set v = dp.voyage %}
+                        <tr class="hover:bg-muted/20 transition-colors">
+                            <td class="px-6 py-3 font-mono text-xs font-bold">{{ v.codevoyage }}</td>
+                            <td class="px-6 py-3">
+                                <span class="font-medium">{{ v.provenance ?? '?' }}</span>
+                                <span class="text-muted-foreground mx-1">→</span>
+                                <span class="font-medium">{{ v.destination ?? '?' }}</span>
+                            </td>
+                            <td class="px-6 py-3 text-xs">
+                                {{ v.datedebut ? v.datedebut|date('d/m/Y H:i') : '—' }}
+                            </td>
+                            <td class="px-6 py-3">
+                                {% if v.datefin %}
+                                    <span class="inline-flex items-center rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-xs font-medium">
+                                        Clôturé
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2 py-0.5 text-xs font-medium">
+                                        En cours
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-3 text-xs italic text-muted-foreground">{{ dp.motif ?? '—' }}</td>
+                            <td class="px-6 py-3">
+                                <a href="{{ path('voyage.show', { id: v.id }) }}"
+                                   class="text-xs text-primary hover:underline">Voir →</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+
+        {# Dépannages effectués #}
+        <div class="rounded-xl border bg-card shadow-sm overflow-hidden {{ nbDepannages > 0 ? 'border-orange-200' : '' }}">
+            <div class="flex items-center justify-between px-6 py-4 border-b">
+                <h2 class="text-sm font-semibold">Dépannages effectués</h2>
+                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold
+                    {{ nbDepannages > 0 ? 'bg-orange-100 text-orange-700' : 'bg-muted text-muted-foreground' }}">
+                    {{ nbDepannages }}
+                </span>
+            </div>
+            {% set depannageDetails = personnel.detailpersonnels|filter(d => d.depannage is defined) %}
+            {% if depannageDetails is empty %}
+                <div class="px-6 py-8 text-center text-sm text-muted-foreground">
+                    Aucun dépannage effectué
+                </div>
+            {% else %}
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-muted/40 border-b">
+                            <th class="text-left px-6 py-3 font-semibold">Date</th>
+                            <th class="text-left px-6 py-3 font-semibold">Lieu</th>
+                            <th class="text-left px-6 py-3 font-semibold">Description</th>
+                            <th class="text-left px-6 py-3 font-semibold">Motif</th>
+                            <th class="w-12"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        {% for dp in depannageDetails %}
+                        {% set d = dp.depannage %}
+                        <tr class="hover:bg-muted/20 transition-colors">
+                            <td class="px-6 py-3 text-xs">
+                                {{ d.datedepannage ? d.datedepannage|date('d/m/Y H:i') : '—' }}
+                            </td>
+                            <td class="px-6 py-3">{{ d.lieudepannage ?? '—' }}</td>
+                            <td class="px-6 py-3 text-xs text-muted-foreground max-w-xs truncate">
+                                {{ d.description ?? '—' }}
+                            </td>
+                            <td class="px-6 py-3 text-xs italic text-muted-foreground">{{ dp.motif ?? '—' }}</td>
+                            <td class="px-6 py-3">
+                                <a href="{{ path('depannage.show', { id: d.id }) }}"
+                                   class="text-xs text-primary hover:underline">Voir →</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+
+    </div>
+
+    {# ── Panneau latéral ──────────────────────────────────────────────────── #}
+    <div class="space-y-4">
+
+        {# Répartition activité #}
+        <div class="rounded-xl border bg-card shadow-sm p-5 space-y-3">
+            <h2 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Activité</h2>
+            {% if personnel.detailpersonnels|length > 0 %}
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0"></span>
+                            <span class="text-xs text-muted-foreground">Voyages</span>
+                        </div>
+                        <span class="font-bold tabular-nums text-blue-600">{{ nbVoyages }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-orange-500 shrink-0"></span>
+                            <span class="text-xs text-muted-foreground">Dépannages</span>
+                        </div>
+                        <span class="font-bold tabular-nums text-orange-600">{{ nbDepannages }}</span>
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-xs text-muted-foreground">Aucune activité enregistrée</p>
+            {% endif %}
+        </div>
+
+        {# Actions #}
+        <div class="rounded-xl border bg-card shadow-sm p-5 space-y-2">
+            <h2 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Actions</h2>
+            {% if is_granted('PERSONNEL_MODIFIER') %}
+            <a href="{{ path('personnel.edit', { id: personnel.id }) }}"
+               class="flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium hover:bg-accent transition-colors">
+                ✏️ Modifier
+            </a>
+            {% endif %}
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,317 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Aide{% endblock %}
+
+{% block body %}
+<div class="max-w-[900px] mx-auto">
+    {# ── En-tête ─────────────────────────────────────────────────────────── #}
+    <div class="flex items-start justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Documentation</h1>
+            <p class="text-sm text-muted-foreground mt-1">
+                Guide d'utilisation de votre application de gestion transport
+            </p>
+        </div>
+        <button
+            onclick="fetch('/guide/reset', { method: 'POST' }).then(() => location.reload())"
+            class="btn btn-outline btn-sm shrink-0"
+            title="Réinitialiser le guide pour qu'il se relance à la prochaine connexion"
+        >
+            Réinitialiser le guide
+        </button>
+    </div>
+
+    {# ── Navigation modules ───────────────────────────────────────────────── #}
+    <div class="flex flex-wrap gap-2 mb-8 pb-4 border-b">
+        {% set modules = [
+            { id: 'billetterie',  label: '🎫 Billetterie' },
+            { id: 'exploitation', label: '🚌 Exploitation' },
+            { id: 'flotte',       label: '🚗 Flotte' },
+            { id: 'stock',        label: '📦 Stock' },
+            { id: 'personnel',    label: '👥 Personnel' },
+            { id: 'dashboard',    label: '📊 Dashboard' },
+            { id: 'admin',        label: '⚙️ Administration' },
+        ] %}
+        {% for m in modules %}
+        <a href="#{{ m.id }}" class="btn btn-outline btn-sm">{{ m.label }}</a>
+        {% endfor %}
+    </div>
+
+    <div class="space-y-12">
+
+        {# ══════════════════════════════════════════════════════════════════ #}
+        {# BILLETTERIE                                                        #}
+        {# ══════════════════════════════════════════════════════════════════ #}
+        <section id="billetterie">
+            <h2 class="text-2xl font-light mb-4 flex items-center gap-2">
+                🎫 <span>Billetterie</span>
+            </h2>
+
+            <div class="space-y-6">
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Vendre un ticket</h3>
+                    <ol class="text-sm text-muted-foreground space-y-1.5 list-decimal list-inside">
+                        <li>Cliquez sur <strong>Nouveau ticket</strong> depuis la liste des tickets</li>
+                        <li>Sélectionnez le <strong>voyage</strong> dans le premier menu déroulant</li>
+                        <li>Sélectionnez la <strong>gare d'embarquement</strong> du passager</li>
+                        <li>Le plan du véhicule s'affiche — cliquez sur un <strong>siège vert</strong> pour le sélectionner</li>
+                        <li>Renseignez optionnellement le nom et contact du passager</li>
+                        <li>Cliquez sur <strong>Confirmer</strong> pour créer le ticket</li>
+                    </ol>
+                </div>
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">⚡ Mode vente rapide</h3>
+                    <p class="text-sm text-muted-foreground mb-2">
+                        Activez l'onglet <strong>Vente rapide</strong> pour vendre un ticket en un seul clic sur le siège.
+                        Une confirmation rapide s'affiche, puis le ticket est créé et le PDF s'ouvre automatiquement.
+                    </p>
+                    <p class="text-sm text-muted-foreground">
+                        Idéal pour les ventes à la chaîne sans informations passager.
+                    </p>
+                </div>
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Vente groupée</h3>
+                    <p class="text-sm text-muted-foreground">
+                        Sélectionnez plusieurs sièges en même temps (mode vente normale).
+                        Chaque siège peut avoir un passager différent. Confirmez en une seule fois
+                        et imprimez tous les tickets en lot.
+                    </p>
+                </div>
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Impression des tickets</h3>
+                    <p class="text-sm text-muted-foreground mb-2">
+                        Après création, le panneau récapitulatif permet d'imprimer chaque ticket individuellement
+                        ou tous en même temps via <strong>Tout imprimer</strong>.
+                    </p>
+                    <p class="text-sm text-muted-foreground">
+                        Depuis la liste, sélectionnez plusieurs tickets avec les cases à cocher
+                        et utilisez le bouton <strong>Imprimer le lot</strong>.
+                    </p>
+                </div>
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Bordereau de voyage</h3>
+                    <p class="text-sm text-muted-foreground">
+                        Depuis la fiche d'un voyage, générez un <strong>bordereau PDF</strong> par gare.
+                        Ce document liste tous les passagers embarqués dans une gare donnée,
+                        avec les places vendues, restantes et la recette totale.
+                        Il inclut des zones de signature pour le chef de gare et le chauffeur.
+                    </p>
+                </div>
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Récapitulatif de caisse</h3>
+                    <p class="text-sm text-muted-foreground">
+                        Accédez à <strong>Caisse</strong> depuis le menu Billetterie pour voir
+                        le récapitulatif des ventes par agent, par voyage et par jour sur une période choisie.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        {# ══════════════════════════════════════════════════════════════════ #}
+        {# EXPLOITATION                                                       #}
+        {# ══════════════════════════════════════════════════════════════════ #}
+        <section id="exploitation">
+            <h2 class="text-2xl font-light mb-4 flex items-center gap-2">
+                🚌 <span>Exploitation</span>
+            </h2>
+
+            <div class="space-y-6">
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Trajets et voyages</h3>
+                    <p class="text-sm text-muted-foreground mb-2">
+                        Un <strong>trajet</strong> définit une liaison fixe (ex: Abidjan → Bouaké) avec son tarif.
+                        Chaque trajet peut avoir plusieurs <strong>voyages</strong> — une instance du trajet à une date donnée.
+                    </p>
+                    <p class="text-sm text-muted-foreground">
+                        La création d'un trajet génère automatiquement le premier voyage.
+                    </p>
+                </div>
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Affecter un car à un voyage</h3>
+                    <p class="text-sm text-muted-foreground">
+                        Depuis la fiche d'un voyage, affectez un <strong>véhicule disponible</strong>.
+                        Un véhicule ne peut être affecté qu'à un seul voyage actif à la fois.
+                        La billetterie n'est accessible que si un car est affecté.
+                    </p>
+                </div>
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Clôturer un voyage</h3>
+                    <p class="text-sm text-muted-foreground">
+                        Renseignez la <strong>date de fin</strong> du voyage pour le clôturer.
+                        Un voyage clôturé ne peut plus être modifié et la vente de tickets est bloquée.
+                        Le véhicule est alors libéré pour un nouveau voyage.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        {# ══════════════════════════════════════════════════════════════════ #}
+        {# FLOTTE                                                             #}
+        {# ══════════════════════════════════════════════════════════════════ #}
+        <section id="flotte">
+            <h2 class="text-2xl font-light mb-4 flex items-center gap-2">
+                🚗 <span>Flotte &amp; Maintenance</span>
+            </h2>
+
+            <div class="space-y-6">
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Configurer un véhicule</h3>
+                    <p class="text-sm text-muted-foreground mb-2">
+                        Lors de la création d'un car, renseignez le <strong>nombre de sièges</strong>
+                        ainsi que la disposition <strong>sièges gauche / sièges droite</strong>.
+                    </p>
+                    <p class="text-sm text-muted-foreground">
+                        Ces valeurs génèrent automatiquement le plan de sièges utilisé lors de la vente de tickets.
+                        ⚠️ La modification de la disposition est impossible si des tickets actifs existent sur ce véhicule.
+                    </p>
+                </div>
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Enregistrer un dépannage</h3>
+                    <p class="text-sm text-muted-foreground">
+                        Un dépannage enregistre une intervention de maintenance sur un véhicule.
+                        Il génère automatiquement une <strong>sortie de stock</strong> pour les pièces utilisées
+                        et met à jour les quantités en inventaire.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        {# ══════════════════════════════════════════════════════════════════ #}
+        {# STOCK                                                              #}
+        {# ══════════════════════════════════════════════════════════════════ #}
+        <section id="stock">
+            <h2 class="text-2xl font-light mb-4 flex items-center gap-2">
+                📦 <span>Stock &amp; Approvisionnement</span>
+            </h2>
+
+            <div class="space-y-6">
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Mouvements de stock</h3>
+                    <div class="text-sm text-muted-foreground space-y-1">
+                        <p>• <strong>ENTRÉE</strong> — générée automatiquement lors d'un approvisionnement</p>
+                        <p>• <strong>SORTIE</strong> — générée automatiquement lors d'un dépannage</p>
+                        <p>• <strong>AJUSTEMENT</strong> — correction manuelle du stock</p>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Alertes stock faible</h3>
+                    <p class="text-sm text-muted-foreground">
+                        Chaque pièce a un <strong>seuil de stock</strong>.
+                        Quand le stock tombe en dessous de ce seuil, la pièce est marquée comme critique
+                        (affichage en rouge) et remonte dans le Dashboard.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        {# ══════════════════════════════════════════════════════════════════ #}
+        {# PERSONNEL                                                          #}
+        {# ══════════════════════════════════════════════════════════════════ #}
+        <section id="personnel">
+            <h2 class="text-2xl font-light mb-4 flex items-center gap-2">
+                👥 <span>Personnel</span>
+            </h2>
+
+            <div class="space-y-6">
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Affecter un personnel</h3>
+                    <p class="text-sm text-muted-foreground">
+                        Le personnel est affecté aux voyages et dépannages via les <strong>détails personnel</strong>.
+                        Un même employé peut être affecté à plusieurs missions sur des périodes différentes.
+                        L'historique complet des affectations est consultable sur sa fiche.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        {# ══════════════════════════════════════════════════════════════════ #}
+        {# DASHBOARD                                                          #}
+        {# ══════════════════════════════════════════════════════════════════ #}
+        <section id="dashboard">
+            <h2 class="text-2xl font-light mb-4 flex items-center gap-2">
+                📊 <span>Tableau de bord</span>
+            </h2>
+
+            <div class="space-y-6">
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Dashboard opérationnel</h3>
+                    <p class="text-sm text-muted-foreground">
+                        Accessible à tous les agents, il affiche les statistiques Exploitation, Financier, Stock et Flotte
+                        sur la période sélectionnée.
+                    </p>
+                </div>
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Dashboard propriétaire</h3>
+                    <p class="text-sm text-muted-foreground mb-2">
+                        Réservé aux administrateurs, il comprend :
+                    </p>
+                    <div class="text-sm text-muted-foreground space-y-1">
+                        <p>• <strong>Vue flotte</strong> — disponibilité en temps réel de chaque véhicule</p>
+                        <p>• <strong>Performance agents</strong> — tickets vendus et recettes par agent</p>
+                        <p>• <strong>Performance personnel terrain</strong> — voyages et dépannages par employé</p>
+                        <p>• <strong>Comparaison financière</strong> — mois courant vs mois précédent</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        {# ══════════════════════════════════════════════════════════════════ #}
+        {# ADMINISTRATION                                                     #}
+        {# ══════════════════════════════════════════════════════════════════ #}
+        <section id="admin">
+            <h2 class="text-2xl font-light mb-4 flex items-center gap-2">
+                ⚙️ <span>Administration</span>
+            </h2>
+
+            <div class="space-y-6">
+
+                <div class="rounded-xl border bg-card shadow-sm p-5">
+                    <h3 class="font-semibold mb-2">Gestion des utilisateurs et rôles</h3>
+                    <p class="text-sm text-muted-foreground">
+                        Créez des comptes utilisateurs et attribuez-leur des <strong>rôles</strong>.
+                        Les permissions RBAC contrôlent précisément ce que chaque utilisateur peut voir et faire
+                        (VOIR, CRÉER, MODIFIER, SUPPRIMER par entité).
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+    </div>
+
+    {# ── Bas de page ──────────────────────────────────────────────────────── #}
+    <div class="mt-12 pt-6 border-t text-center">
+        <p class="text-xs text-muted-foreground">
+            Besoin d'aide supplémentaire ? Contactez votre administrateur système.
+        </p>
+        <button
+            onclick="window.initGuide && window.initGuide(false)"
+            class="btn btn-outline btn-sm mt-3"
+        >
+            Relancer le guide interactif
+        </button>
+    </div>
+</div>
+{% endblock %}

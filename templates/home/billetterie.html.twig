@@ -1,0 +1,63 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Billetterie{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col mb-6">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Billetterie</h1>
+    </div>
+    <form method="get" action="{{ path('billetterie') }}" class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        <input type="date" name="debut" value="{{ debut }}" class="input input-sm" />
+        <span class="text-muted-foreground text-sm">→</span>
+        <input type="date" name="fin" value="{{ fin }}" class="input input-sm" />
+        <button type="submit" class="bg-blue-900 p-2 rounded-2xl">
+            Filtrer
+        </button>
+    </form>
+</div>
+
+<section class="mb-10">
+    <h2 class="text-lg font-medium mb-4">Billetterie</h2>
+
+    {# KPI #}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground mb-1">Total tickets</p>
+            <p class="text-2xl font-semibold">{{ billetterie.totalTickets }}</p>
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground mb-1">Recette totale</p>
+            <p class="text-2xl font-semibold">{{ billetterie.recetteTotale | number_format(0, ',', ' ') }} FCFA</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {# Recettes par jour — barres #}
+        <div class="card p-4 md:col-span-2">
+            <p class="text-sm font-medium mb-3">Recettes par jour</p>
+            <canvas id="chartBilleterieParJour" height="100"
+                data-values="{{ billetterie.recettesParJour | map(r => {label: r.label, montant: r.montant, nbtickets: r.nbtickets}) | json_encode }}">
+            </canvas>
+        </div>
+
+        {# Recettes par trajet — barres horizontales #}
+        <div class="card p-4">
+            <p class="text-sm font-medium mb-3">Recettes par trajet</p>
+            <canvas id="chartBilleterieParTrajet" height="160"
+                data-values="{{ billetterie.recettesParTrajet | map(r => {trajet: r.trajet, montant: r.montant, nbtickets: r.nbtickets}) | json_encode }}">
+            </canvas>
+        </div>
+
+        {# Recettes par car — barres horizontales #}
+        <div class="card p-4">
+            <p class="text-sm font-medium mb-3">Recettes par car</p>
+            <canvas id="chartBilleterieParCar" height="160"
+                data-values="{{ billetterie.recettesParCar | map(r => {matricule: r.matricule, montant: r.montant, nbtickets: r.nbtickets}) | json_encode }}">
+            </canvas>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

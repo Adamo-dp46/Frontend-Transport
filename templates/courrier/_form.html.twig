@@ -1,0 +1,201 @@
+<form method="POST" class="space-y-6">
+    <div class="card p-6">
+        <h2 class="text-lg font-semibold mb-4">Informations</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="field">
+                <label class="label" for="nomexpediteur">Nom expéditeur <span class="text-red-500">*</span></label>
+                <input type="text" id="nomexpediteur" name="nomexpediteur" class="input" value="{{ courrier.nomexpediteur ?? '' }}" required>
+            </div>
+            <div class="field">
+                <label class="label" for="contactexpediteur">Contact expéditeur <span class="text-red-500">*</span></label>
+                <input type="text" id="contactexpediteur" name="contactexpediteur" class="input" value="{{ courrier.contactexpediteur ?? '' }}" required>
+            </div>
+            <div class="field">
+                <label class="label" for="nomdestinataire">Nom destinataire <span class="text-red-500">*</span></label>
+                <input type="text" id="nomdestinataire" name="nomdestinataire" class="input" value="{{ courrier.nomdestinataire ?? '' }}" required>
+            </div>
+            <div class="field">
+                <label class="label" for="contactdestinataire">Contact destinataire <span class="text-red-500">*</span></label>
+                <input type="text" id="contactdestinataire" name="contactdestinataire" class="input" value="{{ courrier.contactdestinataire ?? '' }}" required>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-6">
+        <h2 class="text-lg font-semibold mb-4">Itinéraire</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="field">
+                <label class="label" for="gareDepart">Gare de départ <span class="text-red-500">*</span></label>
+                <select id="gareDepart" name="gareDepart" class="input" required>
+                    <option value="">-- Choisir --</option>
+                    {% for gare in gares %}
+                        <option value="{{ gare.id }}"
+                            {{ (courrier.garedepart.id ?? null) == gare.id ? 'selected' : '' }}>
+                            {{ gare.libelle }} ({{ gare.ville }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label class="label" for="gareArrivee">Gare d'arrivée <span class="text-red-500">*</span></label>
+                <select id="gareArrivee" name="gareArrivee" class="input" required>
+                    <option value="">-- Choisir --</option>
+                    {% for gare in gares %}
+                        <option value="{{ gare.id }}"
+                            {{ (courrier.garearrivee.id ?? null) == gare.id ? 'selected' : '' }}>
+                            {{ gare.libelle }} ({{ gare.ville }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label class="label" for="voyage">Voyage (optionnel)</label>
+                <select id="voyage" name="voyage" class="input">
+                    <option value="">-- Aucun --</option>
+                    {% for voyage in voyages %}
+                        <option value="{{ voyage.id }}"
+                            {{ (courrier.voyage.id ?? null) == voyage.id ? 'selected' : '' }}>
+                            {{ voyage.codevoyage }} — {{ voyage.provenance }} → {{ voyage.destination }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="card p-6">
+        <h2 class="text-lg font-semibold mb-4">Paiement</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="field">
+                <label class="label" for="modepaiement">Mode de paiement <span class="text-red-500">*</span></label>
+                <select id="modepaiement" name="modepaiement" class="input" required>
+                    <option value="ENVOI" {{ (courrier.modepaiement ?? 'ENVOI') == 'ENVOI' ? 'selected' : '' }}>
+                        Payé à l'envoi
+                    </option>
+                    <option value="RECEPTION" {{ (courrier.modepaiement ?? '') == 'RECEPTION' ? 'selected' : '' }}>
+                        Payé à la réception
+                    </option>
+                </select>
+            </div>
+            <div class="field">
+                <label class="label" for="fraissuivi">Frais de suivi SMS (FCFA)</label>
+                <input type="number" id="fraissuivi" name="fraissuivi" class="input" min="0"
+                    value="{{ courrier.fraissuivi ?? '' }}" placeholder="Ex: 100">
+            </div>
+        </div>
+    </div>
+    <div class="card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold">Colis</h2>
+            <button type="button" id="btn-add-detail" class="btn btn-secondary btn-sm">
+                <svg class="h-4 w-4" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#new"></use></svg>
+                Ajouter un colis
+            </button>
+        </div>
+
+        <div id="details-container" class="space-y-4">
+            {% set existingDetails = courrier.detailcourriers ?? [] %}
+            {% if existingDetails is empty %}
+                {# Ligne vide par défaut à la création #}
+                {% include 'courrier/_detail_row.html.twig' with { detail: null, index: 0 } %}
+            {% else %}
+                {% for i, detail in existingDetails %}
+                    {% include 'courrier/_detail_row.html.twig' with { detail: detail, index: i } %}
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+        <button type="submit" class="btn btn-primary">{{ button }}</button>
+        <a href="{{ path('courrier.index') }}" class="btn btn-secondary">Annuler</a>
+    </div>
+</form>
+
+<template id="detail-row-template">
+    {% include 'courrier/_detail_row.html.twig' with { detail: null, index: '__INDEX__' } %}
+</template>
+
+<script>
+(function() {
+    const container = document.getElementById('details-container');
+    const template  = document.getElementById('detail-row-template').innerHTML;
+    let index = {{ (courrier.detailcourriers ?? [])|length > 0 ? (courrier.detailcourriers ?? [])|length : 1 }};
+
+    // Ajouter une ligne
+    document.getElementById('btn-add-detail').addEventListener('click', function () {
+        const html = template.replaceAll('__INDEX__', index);
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        container.appendChild(div.firstElementChild);
+        bindTarifSelect(container.lastElementChild);
+        index++;
+    });
+
+    // Supprimer une ligne
+    container.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-remove-detail');
+        if (btn) {
+            const rows = container.querySelectorAll('.detail-row');
+            if (rows.length > 1) {
+                btn.closest('.detail-row').remove();
+            }
+        }
+    });
+
+    // Bind sur les lignes existantes
+    container.querySelectorAll('.detail-row').forEach(row => bindTarifSelect(row));
+
+    // Validation avant soumission
+    document.querySelector('form').addEventListener('submit', function (e) {
+        let valid = true;
+        container.querySelectorAll('.detail-row').forEach(row => {
+            const select = row.querySelector('.detail-tarif-select');
+            const input  = row.querySelector('.detail-valeur-input');
+            if (!select.value) return;
+
+            const option   = select.options[select.selectedIndex];
+            const valeurMin = parseInt(option.dataset.valeurmin);
+            const valeurMax = option.dataset.valeurmax !== '' ? parseInt(option.dataset.valeurmax) : null;
+            const valeur    = parseInt(input.value);
+
+            if (valeur < valeurMin || (valeurMax !== null && valeur > valeurMax)) {
+                input.classList.add('border-red-500');
+                valid = false;
+            } else {
+                input.classList.remove('border-red-500');
+            }
+        });
+
+        if (!valid) {
+            e.preventDefault();
+            alert('Une ou plusieurs valeurs de colis ne correspondent pas à la tranche tarifaire choisie.');
+        }
+    });
+})()
+
+function bindTarifSelect(row) {
+    const select = row.querySelector('.detail-tarif-select');
+    const input  = row.querySelector('.detail-valeur-input');
+    if (!select || !input) return;
+
+    select.addEventListener('change', function () {
+        const option   = this.options[this.selectedIndex];
+        const valeurMin = option.dataset.valeurmin;
+        const valeurMax = option.dataset.valeurmax;
+
+        // On pré-remplit avec la valeur min de la tranche comme point de départ
+        if (valeurMin) {
+            input.min = valeurMin;
+            input.max = valeurMax || '';
+            if (!input.value || parseInt(input.value) < parseInt(valeurMin)) {
+                input.value = valeurMin;
+            }
+        }
+    });
+
+    // Trigger au chargement si une tranche est déjà sélectionnée (cas edit)
+    if (select.value) {
+        select.dispatchEvent(new Event('change'));
+    }
+}
+</script>

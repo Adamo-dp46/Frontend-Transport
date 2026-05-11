@@ -1,0 +1,20 @@
+<div class="rounded-xl border bg-card shadow-sm p-6">
+    {{ form_start(form) }}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-3">
+            {{ form_row(form.chefgare) }}
+            {{ form_row(form.ville) }}
+            {{ form_row(form.libelle) }}
+            {{ form_row(form.contact1) }}
+            {{ form_row(form.contact2) }}
+            <div class="col-span-2">
+                {{ form_row(form.description) }}
+            </div>
+        </div>
+        <div class="flex items-center justify-end gap-3">
+            <a href="{{ path('gare.index') }}" class="btn btn-secondary">Annuler</a>
+            <button class="btn btn-primary">
+                {{ button }}
+            </button>
+        </div>
+    {{ form_end(form) }}
+</div>

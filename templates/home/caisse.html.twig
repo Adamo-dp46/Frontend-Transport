@@ -1,0 +1,175 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Caisse{% endblock %}
+
+{% block body %}
+<div class="flex items-start justify-between gap-4 max-sm:flex-col mb-6">
+    <div>
+        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Caisse</h1>
+    </div>
+    <form method="get" action="{{ path('caisse') }}" class="flex items-center gap-2 shrink-0 max-sm:w-full">
+        <input type="date" name="debut" value="{{ debut }}" class="input input-sm" />
+        <span class="text-muted-foreground text-sm">→</span>
+        <input type="date" name="fin" value="{{ fin }}" class="input input-sm" />
+        <button type="submit" class="bg-blue-900 p-2 rounded-2xl">
+            Filtrer
+        </button>
+    </form>
+</div>
+
+{# KPI globaux #}
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+    <div class="card p-4 md:col-span-1">
+        <p class="text-xs text-muted-foreground mb-1">Recette totale</p>
+        <p class="text-2xl font-semibold">{{ caisse.recetteTotale | number_format(0, ',', ' ') }} FCFA</p>
+    </div>
+    <div class="card p-4">
+        <p class="text-xs text-muted-foreground mb-1">Billetterie</p>
+        <p class="text-xl font-semibold">{{ caisse.recetteTickets | number_format(0, ',', ' ') }} FCFA</p>
+        <p class="text-xs text-muted-foreground mt-1">{{ caisse.totalTickets }} ticket{{ caisse.totalTickets > 1 ? 's' : '' }}</p>
+    </div>
+    <div class="card p-4">
+        <p class="text-xs text-muted-foreground mb-1">Courriers</p>
+        <p class="text-xl font-semibold">{{ caisse.recetteCourriers | number_format(0, ',', ' ') }} FCFA</p>
+        <p class="text-xs text-muted-foreground mt-1">{{ caisse.totalCourriers }} courrier{{ caisse.totalCourriers > 1 ? 's' : '' }}</p>
+    </div>
+    <div class="card p-4">
+        <p class="text-xs text-muted-foreground mb-1">Bagages</p>
+        <p class="text-xl font-semibold">{{ caisse.recetteBagages | number_format(0, ',', ' ') }} FCFA</p>
+        <p class="text-xs text-muted-foreground mt-1">{{ caisse.totalBagages }} bagage{{ caisse.totalBagages > 1 ? 's' : '' }}</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    {# ── Par agent ──────────────────────────────────────────── #}
+    <div>
+        <h2 class="text-lg font-medium mb-4">Par agent</h2>
+
+        {% if caisse.parAgent is empty %}
+            <p class="text-sm text-muted-foreground">Aucune vente sur la période.</p>
+        {% endif %}
+
+        {% for agent in caisse.parAgent %}
+        <div class="card p-4 mb-4">
+
+            {# En-tête agent #}
+            <div class="flex items-center justify-between mb-3">
+                <p class="font-medium">{{ agent.prenom }} {{ agent.nom }}</p>
+                <span class="font-semibold text-sm">{{ agent.recetteTotale | number_format(0, ',', ' ') }} FCFA</span>
+            </div>
+
+            {# Résumé par type #}
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <div class="rounded bg-muted/40 p-2 text-center">
+                    <p class="text-xs text-muted-foreground">Tickets</p>
+                    <p class="font-semibold text-sm">{{ agent.nbtickets }}</p>
+                    <p class="text-xs text-muted-foreground">{{ agent.recetteTickets | number_format(0, ',', ' ') }} FCFA</p>
+                </div>
+                <div class="rounded bg-muted/40 p-2 text-center">
+                    <p class="text-xs text-muted-foreground">Courriers</p>
+                    <p class="font-semibold text-sm">{{ agent.nbcourriers }}</p>
+                    <p class="text-xs text-muted-foreground">{{ agent.recetteCourriers | number_format(0, ',', ' ') }} FCFA</p>
+                </div>
+                <div class="rounded bg-muted/40 p-2 text-center">
+                    <p class="text-xs text-muted-foreground">Bagages</p>
+                    <p class="font-semibold text-sm">{{ agent.nbbagages }}</p>
+                    <p class="text-xs text-muted-foreground">{{ agent.recetteBagages | number_format(0, ',', ' ') }} FCFA</p>
+                </div>
+            </div>
+
+            {# Détail par voyage #}
+            {% if agent.detailParVoyage is not empty %}
+            <p class="text-xs text-muted-foreground mb-2">Détail billetterie par voyage</p>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-muted-foreground border-b">
+                        <th class="pb-2 font-medium">Voyage</th>
+                        <th class="pb-2 font-medium">Trajet</th>
+                        <th class="pb-2 font-medium text-right">Tickets</th>
+                        <th class="pb-2 font-medium text-right">Recette</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in agent.detailParVoyage %}
+                    <tr class="border-b last:border-0">
+                        <td class="py-1.5 text-muted-foreground text-xs font-mono">{{ v.codevoyage }}</td>
+                        <td class="py-1.5">{{ v.provenance }} → {{ v.destination }}</td>
+                        <td class="py-1.5 text-right">{{ v.nbtickets }}</td>
+                        <td class="py-1.5 text-right">{{ v.recette | number_format(0, ',', ' ') }} FCFA</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+    </div>
+
+    {# ── Par jour ───────────────────────────────────────────── #}
+    <div>
+        <h2 class="text-lg font-medium mb-4">Par jour</h2>
+
+        {% if caisse.parJour is empty %}
+            <p class="text-sm text-muted-foreground">Aucune vente sur la période.</p>
+        {% endif %}
+
+        {% for jour in caisse.parJour %}
+        <div class="card p-4 mb-4">
+
+            {# En-tête jour #}
+            <div class="flex items-center justify-between mb-3">
+                <p class="font-medium">{{ jour.jour | date('d/m/Y') }}</p>
+                <span class="font-semibold text-sm">{{ jour.recetteTotale | number_format(0, ',', ' ') }} FCFA</span>
+            </div>
+
+            {# Résumé par type #}
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <div class="rounded bg-muted/40 p-2 text-center">
+                    <p class="text-xs text-muted-foreground">Tickets</p>
+                    <p class="font-semibold text-sm">{{ jour.nbtickets }}</p>
+                    <p class="text-xs text-muted-foreground">{{ jour.recetteTickets | number_format(0, ',', ' ') }} FCFA</p>
+                </div>
+                <div class="rounded bg-muted/40 p-2 text-center">
+                    <p class="text-xs text-muted-foreground">Courriers</p>
+                    <p class="font-semibold text-sm">{{ jour.nbcourriers }}</p>
+                    <p class="text-xs text-muted-foreground">{{ jour.recetteCourriers | number_format(0, ',', ' ') }} FCFA</p>
+                </div>
+                <div class="rounded bg-muted/40 p-2 text-center">
+                    <p class="text-xs text-muted-foreground">Bagages</p>
+                    <p class="font-semibold text-sm">{{ jour.nbbagages }}</p>
+                    <p class="text-xs text-muted-foreground">{{ jour.recetteBagages | number_format(0, ',', ' ') }} FCFA</p>
+                </div>
+            </div>
+
+            {# Détail par voyage #}
+            {% if jour.detailParVoyage is not empty %}
+            <p class="text-xs text-muted-foreground mb-2">Détail billetterie par voyage</p>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-muted-foreground border-b">
+                        <th class="pb-2 font-medium">Voyage</th>
+                        <th class="pb-2 font-medium">Trajet</th>
+                        <th class="pb-2 font-medium text-right">Tickets</th>
+                        <th class="pb-2 font-medium text-right">Recette</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in jour.detailParVoyage %}
+                    <tr class="border-b last:border-0">
+                        <td class="py-1.5 text-muted-foreground text-xs font-mono">{{ v.codevoyage }}</td>
+                        <td class="py-1.5">{{ v.provenance }} → {{ v.destination }}</td>
+                        <td class="py-1.5 text-right">{{ v.nbtickets }}</td>
+                        <td class="py-1.5 text-right">{{ v.recette | number_format(0, ',', ' ') }} FCFA</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

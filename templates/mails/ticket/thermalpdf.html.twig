@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+</head>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        font-family: DejaVu Sans, sans-serif;
+        font-size: 10px;
+        color: #1a1a1a;
+        background: #ffffff;
+        width: 76mm;
+    }
+
+    /* ── En-tête ── */
+    .header {
+        display: table;
+        width: 100%;
+        border: 1.5px solid #1a1a1a;
+        margin: 6px 6px 0;
+        width: calc(100% - 12px);
+    }
+    .header-logo {
+        display: table-cell;
+        width: 28mm;
+        border-right: 1.5px solid #1a1a1a;
+        text-align: center;
+        vertical-align: middle;
+        padding: 6px;
+    }
+    .header-logo img {
+        max-width: 100%;
+        max-height: 30px;
+    }
+    .header-info {
+        display: table-cell;
+        text-align: center;
+        padding: 6px 8px;
+        vertical-align: middle;
+    }
+    .header-company {
+        font-size: 12px;
+        font-weight: bold;
+        line-height: 1.3;
+    }
+    .header-phone {
+        font-size: 9px;
+        color: #444;
+        margin-top: 2px;
+    }
+
+    /* ── Trajet ── */
+    .trajet-block {
+        border: 1.5px solid #1a1a1a;
+        margin: 4px 6px 0;
+        text-align: center;
+        padding: 4px 8px;
+    }
+    .trajet-route {
+        font-size: 13px;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+    }
+    .trajet-date {
+        font-size: 9px;
+        margin-top: 2px;
+        color: #333;
+    }
+
+    /* ── Bandeau ticket n° ── */
+    .ticket-num-block {
+        margin: 4px 6px 0;
+        background: #d4d4d4;
+        padding: 5px 8px;
+    }
+    .ticket-num-label {
+        font-size: 11px;
+    }
+    .ticket-num-code {
+        font-size: 18px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        float: right;
+    }
+
+    /* ── Grille siège / prix ── */
+    .grid-2 {
+        display: table;
+        width: calc(100% - 12px);
+        margin: 4px 6px 0;
+        border: 1.5px solid #1a1a1a;
+        border-collapse: collapse;
+    }
+    .grid-cell {
+        display: table-cell;
+        width: 50%;
+        padding: 5px 8px;
+        vertical-align: top;
+    }
+    .grid-cell + .grid-cell {
+        border-left: 1.5px solid #1a1a1a;
+    }
+    .grid-label {
+        font-size: 8px;
+        color: #555;
+        display: block;
+    }
+    .grid-val {
+        font-size: 16px;
+        font-weight: bold;
+        display: block;
+    }
+    .grid-val-prix {
+        font-size: 14px;
+        font-weight: bold;
+        display: block;
+    }
+    .grid-suffix {
+        font-size: 8px;
+        font-weight: normal;
+    }
+
+    /* ── Départ / Ligne ── */
+    .depart-ligne {
+        padding: 4px 8px;
+        font-size: 9px;
+        color: #333;
+        border-bottom: 1px dashed #ccc;
+        margin: 0 6px;
+    }
+    .depart-ligne .dl-right {
+        float: right;
+    }
+    .depart-ligne b {
+        font-size: 11px;
+        color: #1a1a1a;
+    }
+
+    /* ── Message compagnie ── */
+    .msg-compagnie {
+        text-align: center;
+        font-size: 8.5px;
+        font-style: italic;
+        color: #444;
+        padding: 4px 8px;
+        border-bottom: 1px dashed #ccc;
+        margin: 0 6px;
+    }
+
+    /* ── Bas : heure / QR / code agent ── */
+    .bottom-row {
+        padding: 5px 8px;
+        margin: 0 6px;
+    }
+    .bottom-left {
+        font-size: 8px;
+        color: #555;
+        line-height: 1.6;
+        float: left;
+    }
+    .bottom-right {
+        font-size: 9px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        float: right;
+        margin-top: 8px;
+    }
+    .bottom-qr {
+        text-align: center;
+    }
+    .bottom-qr img {
+        width: 30px;
+        height: 30px;
+    }
+    .clearfix::after {
+        content: '';
+        display: table;
+        clear: both;
+    }
+
+    /* ── Encadré bon voyage ── */
+    .bon-voyage {
+        border: 1.5px solid #1a1a1a;
+        margin: 5px 6px;
+        padding: 6px 8px;
+        text-align: center;
+    }
+    .bon-voyage p {
+        font-size: 8.5px;
+        font-weight: bold;
+        letter-spacing: 0.3px;
+        line-height: 1.5;
+        text-transform: uppercase;
+    }
+
+    /* ── Ligne de découpe ── */
+    .cut-line {
+        border-top: 2px dashed #bbb;
+        margin: 6px;
+        text-align: center;
+    }
+
+    /* ── Talon ── */
+    .talon {
+        padding: 8px 10px;
+        text-align: center;
+    }
+    .talon .t-route {
+        font-size: 11px;
+        font-weight: bold;
+        margin-bottom: 2px;
+    }
+    .talon .t-date {
+        font-size: 9px;
+        color: #444;
+        margin-bottom: 4px;
+    }
+    .talon .t-label {
+        font-size: 8px;
+        color: #888;
+        margin-bottom: 1px;
+    }
+    .talon .t-code {
+        font-size: 16px;
+        font-weight: bold;
+        letter-spacing: 2px;
+    }
+</style>
+<body>
+
+    {# ── En-tête ── #}
+    <div class="header">
+        <div class="header-logo">
+            {% if ticket.voyage.entreprise.logo is defined and ticket.voyage.entreprise.logo %}
+                <img src="{{ ticket.voyage.entreprise.logo }}">
+            {% endif %}
+        </div>
+        <div class="header-info">
+            <div class="header-company">{{ ticket.voyage.entreprise.nom ?? 'Transport' }}</div>
+            <div class="header-phone">TEL : {{ ticket.voyage.entreprise.telephone ?? '' }}</div>
+        </div>
+    </div>
+
+    {# ── Trajet ── #}
+    <div class="trajet-block">
+        <div class="trajet-route">
+            {{ ticket.voyage.provenance }} ==&gt; {{ ticket.voyage.destination }}
+        </div>
+        <div class="trajet-date">
+            Date : {{ ticket.voyage.datedebut ? ticket.voyage.datedebut|date('d/m/Y') : '—' }}
+            &nbsp;&nbsp;&nbsp;
+            Heure : {{ ticket.voyage.datedebut ? ticket.voyage.datedebut|date('H:i') : '—' }}
+        </div>
+    </div>
+
+    {# ── Ticket n° ── #}
+    <div class="ticket-num-block clearfix">
+        <span class="ticket-num-label">Ticket n°</span>
+        <span class="ticket-num-code">{{ ticket.codeticket }}</span>
+    </div>
+
+    {# ── Siège / Prix ── #}
+    <div class="grid-2">
+        <div class="grid-cell">
+            <span class="grid-label">Siège</span>
+            <span class="grid-val">{{ ticket.siege.numero }}</span>
+        </div>
+        <div class="grid-cell">
+            <span class="grid-label">Prix</span>
+            <span class="grid-val-prix">
+                {{ ticket.prix|number_format(0, ',', ' ') }}<span class="grid-suffix"> F Cfa</span>
+            </span>
+        </div>
+    </div>
+
+    {# ── Départ n° / Ligne ── #}
+    <div class="depart-ligne clearfix">
+        <span>Départ n° : <b>{{ ticket.voyage.numerodepart ?? '—' }}</b></span>
+        <span class="dl-right">Ligne <b>{{ ticket.voyage.ligne ?? '—' }}</b></span>
+    </div>
+
+    {# ── Message compagnie ── #}
+    <div class="msg-compagnie">
+        La compagnie {{ ticket.voyage.entreprise.nom ?? '' }} vous souhaite un bon voyage
+    </div>
+
+    {# ── Bas : heure émission + QR + code agent ── #}
+    <div class="bottom-row clearfix">
+        <div class="bottom-left">
+            {{ ticket.createdAt ? ticket.createdAt|date('H:i:s d') : '' }}<br>
+            {{ ticket.codeticket }}
+        </div>
+        {% if ticket.qrcode is defined and ticket.qrcode %}
+        <div class="bottom-qr" style="text-align:center;margin:0 auto;width:30px">
+            <img src="{{ ticket.qrcode }}">
+        </div>
+        {% endif %}
+        <div class="bottom-right">
+            {{ ticket.codeagent ?? '' }}
+        </div>
+    </div>
+
+    {# ── Encadré bon voyage ── #}
+    <div class="bon-voyage">
+        <p>La compagnie {{ ticket.voyage.entreprise.nom ?? '' }} vous souhaite<br>une bonne et heureuse route</p>
+    </div>
+
+    {# ── Ligne de découpe ── #}
+    <div class="cut-line"></div>
+
+    {# ── Talon ── #}
+    <div class="talon">
+        <div class="t-route">
+            {{ ticket.voyage.provenance }} ==&gt; {{ ticket.voyage.destination }}
+        </div>
+        <div class="t-date">
+            Date : {{ ticket.voyage.datedebut ? ticket.voyage.datedebut|date('d/m/Y') : '—' }}
+            &nbsp;&nbsp;&nbsp;
+            Heure : {{ ticket.voyage.datedebut ? ticket.voyage.datedebut|date('H:i') : '—' }}
+        </div>
+        <div class="t-label">Ticket n° :</div>
+        <div class="t-code">{{ ticket.codeticket }}</div>
+    </div>
+
+</body>
+</html>
