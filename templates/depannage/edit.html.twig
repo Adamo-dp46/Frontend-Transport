@@ -27,6 +27,16 @@
                         </option>
                     {% endfor %}
                 </select>
+                {#
+                    <select
+                        name="car"
+                        required
+                        data-remote-select="cars"
+                        data-value="{{ depannage.car.id }}"
+                        data-label="{{ depannage.car.matricule }} - {{ depannage.car.libelle }}"
+                        placeholder="-- Rechercher un car --"
+                    ></select>
+                #}
             </div>
             <div class="field">
                 <label for="typepanne" class="label">Type de panne</label>

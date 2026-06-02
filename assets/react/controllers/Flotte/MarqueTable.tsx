@@ -12,21 +12,17 @@ import {
 } from "../../../components/ui/dropdown-menu"
 import { DataTableColumnHeader } from "../../components/data-table-column-header"
 import { useMemo } from "react"
-import { exportToPDF, exportToExcel, printTable } from "../../../lib/export"
-
-interface Marque {
-    id: number
-    libelle: string
-}
+import { Libelle } from "../../models/libelle.model"
+// import { exportToPDF, exportToExcel, printTable } from "../../../lib/export"
 
 type Props = {
-    marques: Marque[],
+    marques: Libelle[],
     canEdit: boolean,
     canDelete: boolean,
     csrfDelete: string
 }
 
-function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string): ColumnDef<Marque>[] {
+function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string): ColumnDef<Libelle>[] {
     return [
         {
             accessorKey: "id",

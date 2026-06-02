@@ -29,7 +29,7 @@ final class MarquepieceController extends AbstractController
     public function index(): Response
     {
         try {
-            $marquepieces = $this->api->get('/api/marquepieces');
+            $marquepieces = $this->api->collection('/api/marquepieces');
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e);
             if($response) {
@@ -38,7 +38,7 @@ final class MarquepieceController extends AbstractController
         }
 
         return $this->render('marquepiece/index.html.twig', [
-            'marquepieces' => $marquepieces['member']
+            'marquepieces' => $marquepieces
         ]);
     }
 
@@ -55,7 +55,7 @@ final class MarquepieceController extends AbstractController
                 ]);
                 $this->addFlash('success', 'La marque de pièce a été créée avec succès');
                 return $this->redirectToRoute('marquepiece.index');
-            } catch (ApiException $e) {
+            } catch(ApiException $e) {
                 $response = $this->apiExceptionHandler->handle($e, $form, 'marquepiece.new');
                 if($response) {
                     return $response;

@@ -30,6 +30,7 @@ interface Props<TData, TValue> {
     meta: ServerMeta
     queryParams: Record<string, string>
     filters?: ServerTableFilter[]
+    urlPrefix?: string
     rowSelection?: RowSelectionState
     onRowSelectionChange?: OnChangeFn<RowSelectionState>
 }
@@ -40,11 +41,12 @@ export function ServerDataTable<TData, TValue>({
     meta,
     queryParams,
     filters = [],
+    urlPrefix,
     rowSelection, // Pour la sélection de ligne
     onRowSelectionChange // --
 }: Props<TData, TValue>) {
 
-    const { navigate, buildUrl } = useServerTable(queryParams)
+    const { navigate, buildUrl } = useServerTable(queryParams, urlPrefix) // 'urlPrefix' pour le préfixe
 
     const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})

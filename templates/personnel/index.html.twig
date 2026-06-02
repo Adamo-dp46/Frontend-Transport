@@ -21,6 +21,7 @@
 
 <div {{ react_component('Personnel/PersonnelTable', {
         personnels: personnels,
+        apiUrl: api_url,
         canEdit: is_granted('PERSONNEL_MODIFIER'),
         canDelete: is_granted('PERSONNEL_SUPPRIMER'),
         csrfDelete: csrf_token('delete_personnel')

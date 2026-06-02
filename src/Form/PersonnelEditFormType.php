@@ -42,8 +42,7 @@ class PersonnelEditFormType extends AbstractType
                 'constraints' => [
                     new NotBlank(),
                     new Length(max: 50)
-                ],
-                'attr' => ['placeholder' => '+225 0X XX XX XX XX'],
+                ]
             ])
             ->add('typepersonnel', ChoiceType::class, [
                 'label' => 'Type de personnel',

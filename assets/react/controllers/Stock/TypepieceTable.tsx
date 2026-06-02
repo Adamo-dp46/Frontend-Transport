@@ -13,14 +13,10 @@ import {
 import { DataTableColumnHeader } from "../../components/data-table-column-header"
 import { useMemo, useState } from "react"
 import { DeleteDialog } from "../../components/delete-dialog"
-
-interface Typepiece {
-    id: number
-    libelle: string
-}
+import { Libelle } from "../../models/libelle.model"
 
 type Props = {
-    typepieces: Typepiece[],
+    typepieces: Libelle[],
     canEdit: boolean,
     canDelete: boolean,
     csrfDelete: string
@@ -40,8 +36,8 @@ type Props = {
 function buildColumns(
     canEdit: boolean,
     canDelete: boolean,
-    onDeleteClick: (piece: Typepiece) => void
-): ColumnDef<Typepiece>[] {
+    onDeleteClick: (piece: Libelle) => void
+): ColumnDef<Libelle>[] {
     return [
         {
             accessorKey: "id",
@@ -118,7 +114,7 @@ function buildColumns(
 }
 
 export default function TypepieceTable({typepieces, canEdit, canDelete, csrfDelete}: Props) {
-    const [deleteTarget, setDeleteTarget] = useState<Typepiece | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<Libelle | null>(null)
     const handleConfirmDelete = () => {
         if(!deleteTarget) return
         const form = document.createElement("form")

@@ -147,16 +147,16 @@ final class DepannageController extends AbstractController
         }
 
         if($request->isMethod('POST')) {
-            $data      = $request->request->all();
-            $details   = [];
-            $pieceIds  = $data['detail_piece']    ?? [];
+            $data = $request->request->all();
+            $details = [];
+            $pieceIds = $data['detail_piece']    ?? [];
             $quantites = $data['detail_quantite'] ?? [];
 
             foreach($pieceIds as $i => $pieceId) {
                 if(!empty($pieceId)) {
                     $details[] = [
-                        'piece'    => $pieceId,
-                        'quantite' => $quantites[$i] ?? 1,
+                        'piece' => $pieceId,
+                        'quantite' => $quantites[$i] ?? 1
                     ];
                 }
             }
@@ -166,10 +166,10 @@ final class DepannageController extends AbstractController
             } else {
                 $payload = [
                     'lieudepannage' => $data['lieudepannage'] ?? '',
-                    'description'   => $data['description']   ?? '',
-                    'car'           => (int)($data['car']          ?? 0),
-                    'typepanne'     => (int)($data['typepanne']    ?? 0),
-                    'details'       => $details
+                    'description' => $data['description'] ?? '',
+                    'car' => (int)($data['car'] ?? 0),
+                    'typepanne' => (int)($data['typepanne'] ?? 0),
+                    'details' => $details
                 ];
                 try {
                     $this->api->patch('/api/depannages/' . $id, $payload);
@@ -177,7 +177,9 @@ final class DepannageController extends AbstractController
                     return $this->redirectToRoute('depannage.index');
                 } catch(ApiException $e) {
                     $response = $this->apiExceptionHandler->handle($e, null, 'depannage.edit', ['id' => $id]);
-                    if($response) return $response;
+                    if($response) {
+                        return $response;
+                    }
                 }
             }
         }

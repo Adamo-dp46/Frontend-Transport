@@ -49,18 +49,6 @@ final class FournisseurController extends AbstractController
     {
         try {
             $fournisseur = $this->api->item('/api/fournisseurs/' . $id);
-            $data = $tableHelper->handleIndex('/api/approvisionnements?fournisseur.id=' . $id, $request->query->all(),
-                [
-                    'date_from' => 'dateappro[after]',
-                    'date_to' => 'dateappro[before]'
-                ],
-                [
-                    'id',
-                    'dateappro',
-                    'createdAt'
-                ],
-                []
-            );
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'fournisseur.index');
             if($response) {
@@ -68,11 +56,23 @@ final class FournisseurController extends AbstractController
             }
         }
 
+        $approvisionnements = $tableHelper->handleRelated(
+            endpoint: '/api/approvisionnements',
+            queryParams: $request->query->all(),
+            fixedFilters: ['fournisseur.id' => $id],
+            allowedSorts: [
+                'id',
+                'dateappro',
+                'createdAt'
+            ],
+            defaultPerPage: 10,
+        );
+
         return $this->render('fournisseur/show.html.twig', [
             'fournisseur' => $fournisseur,
-            'approvisionnements' => $data['items'],
-            'meta' => $data['meta'],
-            'queryParams' => $data['queryParams']
+            'approvisionnements' => $approvisionnements['items'],
+            'meta' => $approvisionnements['meta'],
+            'queryParams' => $approvisionnements['queryParams']
         ]);
     }
 

@@ -66,7 +66,6 @@ final class MarqueController extends AbstractController
     {
         $form = $this->createForm(LibelleFormType::class);
         $form->handleRequest($request);
-
         if($form->isSubmitted() && $form->isValid()) {
             $payload = [
                 'libelle' => $form->get('libelle')->getData()
@@ -104,7 +103,6 @@ final class MarqueController extends AbstractController
 
         $form = $this->createForm(LibelleFormType::class, $marque);
         $form->handleRequest($request);
-
         if($form->isSubmitted() && $form->isValid()) {
             $payload = [
                 'libelle' => $form->get('libelle')->getData()

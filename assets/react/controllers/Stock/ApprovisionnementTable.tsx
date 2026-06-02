@@ -15,33 +15,8 @@ import { Badge } from "../../../components/ui/badge"
 import { ServerMeta, ServerTableFilter, useServerTable } from "../../hooks/useServerTable"
 import { ServerDataTableColumnHeader } from "../../components/server/server-data-table-column-header"
 import { ServerDataTable } from "../../components/server/server-data-table"
-
-interface Fournisseur {
-    id: number
-    libelle: string
-    nom: string
-    contact: string
-}
-
-interface Piece {
-    id: number,
-    libelle: string
-}
-
-interface Detailapprovisionnement {
-    quantite: number
-    prixunitaire: number
-    piece: Piece
-    couttotal: number
-}
-
-interface Approvisionnement {
-    id: number
-    dateappro: string
-    fournisseur: Fournisseur
-    detailapprovisionnements: Detailapprovisionnement[]
-    createdAt: string
-}
+import { Approvisionnement } from "../../models/approvisionnement.model"
+import { Fournisseur } from "../../models/fournisseur.model"
 
 type Props = {
     approvisionnements: Approvisionnement[],
@@ -198,7 +173,7 @@ export default function ApprovisionnementTable({
             type: 'select',
             name: 'fournisseur',
             label: 'Fournisseur',
-            options: fournisseurs.map((f) => ({ value: `${f.id}`, label: f.libelle })),
+            options: fournisseurs.map((f) => ({ value: `${f.id}`, label: f.nom })),
         },
         {
             type: 'date_range',

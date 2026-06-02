@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Domain\Helper\ApiExceptionHandlerHelper;
 use App\Domain\Helper\ApiHelper;
+use App\Domain\Helper\TableHelper;
 use App\Form\TrajetEditFormType;
 use App\Form\TrajetFormType;
 use App\Security\Exception\ApiException;
@@ -73,18 +74,10 @@ final class TrajetController extends AbstractController
 
     #[Route('/{id}', name: 'show', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('TRAJET_VOIR')]
-    public function show(int $id, Request $request): Response
+    public function show(int $id, Request $request, TableHelper $tableHelper): Response
     {
-        $page = max(1, $request->query->getInt('page', 1));
-        $itemsPerPage = $request->query->getInt('itemsPerPage', 30);
-        $params = http_build_query([
-            'page' => $page,
-            'itemsPerPage' => $itemsPerPage
-        ]);
-
         try {
             $trajet = $this->api->item('/api/trajets/' . $id);
-            $result = $this->api->item('/api/trajets/' . $id . '/voyages?' . $params);
         } catch (ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'trajet.index');
             if($response) {
@@ -92,16 +85,27 @@ final class TrajetController extends AbstractController
             }
         }
 
-        $total = $result['totalItems'] ?? 0;
-        $totalPages = $itemsPerPage > 0 ? (int)ceil($total / $itemsPerPage) : 1;
+        $voyages = $tableHelper->handleRelated(
+            endpoint: '/api/voyages',
+            queryParams: $request->query->all(),
+            fixedFilters: ['trajet.id' => $id],
+            allowedFilters: [],
+            allowedSorts: [
+                'id',
+                'provenance',
+                'destination',
+                'datedebut',
+                'placestotal',
+                'createdAt'
+            ],
+            defaultPerPage: 25,
+        );
 
         return $this->render('trajet/show.html.twig', [
             'trajet' => $trajet,
-            'voyages' => $result['member'] ?? [],
-            'totalItems' => $total,
-            'page' => $page,
-            'itemsPerPage'=> $itemsPerPage,
-            'totalPages'  => $totalPages
+            'voyages' => $voyages['items'],
+            'voyagesMeta' => $voyages['meta'],
+            'voyagesParams' => $voyages['queryParams']
         ]);
     }
 
@@ -160,7 +164,6 @@ final class TrajetController extends AbstractController
     #[IsGranted('TRAJET_MODIFIER')]
     public function edit(int $id, Request $request): Response
     {
-        // $gares = [];
         $tarifs = [];
         try {
             $trajet = $this->api->item('/api/trajets/' . $id);

@@ -41,7 +41,7 @@ final class RoleController extends AbstractController
     public function index(): Response
     {
         try {
-            $roles = $this->api->get('/api/roles');
+            $roles = $this->api->collection('/api/roles');
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e);
             if($response) {
@@ -50,7 +50,7 @@ final class RoleController extends AbstractController
         }
 
         return $this->render('admin/role/index.html.twig', [
-            'roles' => $roles['member']
+            'roles' => $roles
         ]);
     }
 

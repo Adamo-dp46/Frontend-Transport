@@ -1,6 +1,5 @@
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Loader2, MoreHorizontal, Printer } from "lucide-react"
-import { DataTable } from "../../components/data-table"
 import { Button } from "../../../components/ui/button"
 import {
     DropdownMenu,
@@ -10,7 +9,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu"
-import { DataTableColumnHeader } from "../../components/data-table-column-header"
 import { useMemo, useState } from "react"
 import { Badge } from "../../../components/ui/badge"
 import { formatDate } from "../../../lib/functions"
@@ -18,30 +16,8 @@ import { Checkbox } from "../../../components/ui/checkbox"
 import { ServerMeta, ServerTableFilter, useServerTable } from "../../hooks/useServerTable"
 import { ServerDataTableColumnHeader } from "../../components/server/server-data-table-column-header"
 import { ServerDataTable } from "../../components/server/server-data-table"
-
-interface Voyage {
-    id: number
-    codevoyage: string
-    provenance: string
-    destination: string
-    datedebut: string | null
-}
-
-interface Siege {
-    id: number
-    numero: number
-}
-
-interface Ticket {
-    id: number
-    siege: Siege
-    nomclient?: string
-    contactclient?: string
-    prix: number
-    codeticket: string
-    voyage: Voyage
-    createdAt: string
-}
+import { Ticket } from "../../models/ticket.model"
+import { Voyage } from "../../models/voyage.model"
 
 type Props = {
     tickets: Ticket[],
@@ -223,44 +199,40 @@ function buildColumns(
 
 export default function TicketTable({tickets, meta, queryParams, voyages, canEdit, canDelete, csrfDelete}: Props) {
 
-     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
-    
-        const columns = useMemo(
-            () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete),
-            [queryParams, canEdit, canDelete, csrfDelete]
-        )
-    
-        const filters: ServerTableFilter[] = useMemo(() => [
-            {
-                type: 'text',
-                name: 'search',
-                label: 'Code du ticket',
-                placeholder: 'TKT-…'
-            },
-            {
-                type: 'select',
-                name: 'voyage',
-                label: 'Voyage',
-                options: voyages.map(v => ({ value: String(v.id), label: `${v.codevoyage} : ${v.provenance} → ${v.destination}` }))
-            }
-        ], [voyages])
-
-    /*
+    const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(canEdit, canDelete),
-        [canEdit, canDelete]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete),
+        [queryParams, canEdit, canDelete, csrfDelete]
     )
+    const filters: ServerTableFilter[] = useMemo(() => [
+        {
+            type: 'text',
+            name: 'search',
+            label: 'Code du ticket',
+            placeholder: 'TKT-..'
+        },
+        {
+            type: 'select',
+            name: 'voyage',
+            label: 'Voyage',
+            options: voyages.map(v => ({ value: String(v.id), label: `${v.codevoyage} : ${v.provenance} → ${v.destination}` }))
+        }
+    ], [voyages])
+    /*
+        const columns = useMemo(
+            () => buildColumns(canEdit, canDelete),
+            [canEdit, canDelete]
+        )
 
-    const voyageOptions = [...new Map(
-        tickets
-            .filter(c => c.voyage)
-            .map(c => [c.voyage!.id, c.voyage!])
-        ).values()].map(m => ({
-        label: m.codevoyage,
-        value: m.codevoyage
-    }))
+        const voyageOptions = [...new Map(
+            tickets
+                .filter(c => c.voyage)
+                .map(c => [c.voyage!.id, c.voyage!])
+            ).values()].map(m => ({
+            label: m.codevoyage,
+            value: m.codevoyage
+        }))
     */
-
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
     const [printing, setPrinting] = useState(false)
     const [printError, setPrintError] = useState<string | null>(null)
@@ -293,14 +265,14 @@ export default function TicketTable({tickets, meta, queryParams, voyages, canEdi
                 throw new Error(err.detail ?? "Erreur lors de la génération du PDF")
             }
 
-            // Ouvrir le PDF dans un nouvel onglet
-            const blob = await res.blob()
+            const blob = await res.blob() /*
+                - On ouvre le pdf dans un nouvel onglet
+            */
             const url = URL.createObjectURL(blob)
             window.open(url, "_blank")
-            // Libérer l'URL après ouverture
-            setTimeout(() => URL.revokeObjectURL(url), 10_000)
-
-            // Réinitialiser la sélection après impression
+            setTimeout(() => URL.revokeObjectURL(url), 10_000) /*
+                - On libère l'url après ouverture et on réinitialise la sélection après impression
+            */
             setRowSelection({})
         } catch (err) {
             setPrintError(err instanceof Error ? err.message : "Erreur inconnue")

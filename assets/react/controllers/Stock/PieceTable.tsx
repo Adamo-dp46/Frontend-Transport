@@ -15,27 +15,8 @@ import { ServerMeta, ServerTableFilter, useServerTable } from "../../hooks/useSe
 import { ServerDataTableColumnHeader } from "../../components/server/server-data-table-column-header"
 import { formatDate } from "../../../lib/functions"
 import { ServerDataTable } from "../../components/server/server-data-table"
-
-interface Ref {
-    id: number
-    libelle: string
-}
-
-interface Image {
-    contentUrl: string
-}
-
-interface Piece {
-    id: number
-    libelle: string
-    image: Image | null
-    stockinitial: number
-    prixunitaire: number
-    typepiece: Ref | null
-    marquepiece: Ref | null
-    model: Ref | null
-    createdAt: string
-}
+import { Piece } from "../../models/piece.model"
+import { Libelle } from "../../models/libelle.model"
 
 type Props = {
     pieces: Piece[]
@@ -43,9 +24,9 @@ type Props = {
     queryParams: Record<string, string> /*
         - Le type 'Record' qui permet de créer un objet avec des clés et des valeurs typées
     */
-    typepieces: Ref[]
-    marquepieces: Ref[]
-    models: Ref[]
+    typepieces: Libelle[]
+    marquepieces: Libelle[]
+    models: Libelle[]
     apiUrl: string
     canEdit: boolean
     canDelete: boolean
@@ -139,32 +120,6 @@ function buildColumns(
                 ? <Badge className="bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">{row.original.model.libelle}</Badge>
                 : <span className="text-muted-foreground">Aucun</span>
         },
-        /*
-            {
-                id: "image",
-                header: "Image",
-                cell: ({ row }) => {
-                    const p = row.original
-                    const imageUrl = p.image?.contentUrl
-                    return imageUrl ? (
-                        <img
-                            src={`${apiUrl}${imageUrl}`}
-                            alt={p.libelle}
-                            className="w-8 h-8 rounded-md object-cover border border-border shrink-0"
-                        />
-                    ) : (
-                        <span className="w-8 h-8 rounded-md bg-muted flex items-center justify-center shrink-0">
-                            <svg className="w-4 h-4 text-muted-foreground/40" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" strokeWidth="1.5">
-                                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                                <circle cx="8.5" cy="8.5" r="1.5"/>
-                                <path d="m21 15-5-5L5 21"/>
-                            </svg>
-                        </span>
-                    )
-                }
-            },
-        */
         {
             accessorKey: "createdAt",
             header: ({ column }) => (
@@ -176,6 +131,34 @@ function buildColumns(
                     {formatDate(row.original.createdAt)}
                 </span>
             )
+        },
+        {
+            id: "image",
+            header: "",
+            cell: ({ row }) => {
+                const p = row.original
+                const imageUrl = p.image?.contentUrl
+                return (
+                    <div className="flex items-center justify-center">
+                        {p.image ? (
+                            <img
+                                src={`${apiUrl}/media${imageUrl}?w=400&h=400&fm=jpg&fit=crop`}
+                                alt={p.libelle}
+                                className="h-8 w-8 rounded-full object-cover"
+                            />
+                        ) : (
+                            <span className="w-8 h-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+                                <svg className="w-4 h-4 text-muted-foreground/40" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" strokeWidth="1.5">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <path d="m21 15-5-5L5 21"/>
+                                </svg>
+                            </span>
+                        )}
+                    </div>
+                )
+            },
         },
         {
             id: "actions",

@@ -21,7 +21,7 @@ security:
 
             logout:
                 path: app_logout
-                # success_handler: App\Security\LogoutSuccessHandler # Va nettoyer notre session api via le service
+                # success_handler: App\Security\LogoutSuccessHandler -- Va nettoyer notre session api via le service
                 # where to redirect after logout
                 # target: app_any_route
 

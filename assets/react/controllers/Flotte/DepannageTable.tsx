@@ -15,57 +15,8 @@ import { MoreHorizontal } from "lucide-react"
 import { ServerMeta, ServerTableFilter, useServerTable } from "../../hooks/useServerTable"
 import { ServerDataTableColumnHeader } from "../../components/server/server-data-table-column-header"
 import { ServerDataTable } from "../../components/server/server-data-table"
-
-interface Car {
-    id: number
-    matricule: string
-    nbrsiege: number
-    datearrivee?: string
-    etat: string
-}
-
-interface Piece {
-    libelle: string
-}
-
-interface Detaildepannage{
-    quantite: number
-    piece: Piece
-    prixunitaire: number
-}
-
-interface Personnel {
-    id: number
-    nom: string
-    prenom: string
-    contact: string
-    code: string
-    // typerpersonnel
-}
-
-interface Detailpersonnel {
-    motif: string,
-    personnel: Personnel
-}
-
-interface Typepanne {
-    id: number
-    libelle: string
-}
-
-interface Depannage {
-    id: number
-    datedepannage: string
-    lieudepannage: string
-    description: string
-    detaildepannages: Detaildepannage[]
-    detailpersonnels: Detailpersonnel[]
-    car: Car
-    typepanne: Typepanne
-    couttotal: number
-    statut: string
-    createdAt: string
-}
+import { Depannage } from "../../models/depannage.model"
+import { Car } from "../../models/car.model"
 
 type Props = {
     depannages: Depannage[]
@@ -234,7 +185,7 @@ function buildColumns(
                                         >
                                             <button
                                                 type="submit"
-                                                className="w-full text-left text-red-600 focus:text-red-700"
+                                                className="w-full text-left text-orange-600 focus:text-orange-700"
                                             >
                                                 Clôturer le dépannage
                                             </button>
@@ -258,7 +209,7 @@ function buildColumns(
                                         <input type="hidden" name="_token" value={csrfDelete} />
                                         <button
                                             type="submit"
-                                            className="w-full text-left text-orange-600 focus:text-orange-700"
+                                            className="w-full text-left text-red-600 focus:text-red-700"
                                         >
                                             Supprimer
                                         </button>

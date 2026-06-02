@@ -68,6 +68,18 @@ class TrajetFormType extends AbstractType
                     new Assert\NotNull()
                 ]
             ])
+            /*
+                ->add('destination', ChoiceType::class, [
+                    'label' => 'Destination',
+                    'choices' => [],
+                    'attr' => [
+                        'data-remote-select' => 'gares',
+                        'data-value' => $options['current_id'] ?? '',
+                        'data-label' => $options['current_label'] ?? '',
+                        'placeholder' => '-- Rechercher un car --'
+                    ],
+                ])
+            */
             ->add('tarifId', ChoiceType::class, [
                 'label' => 'Tarif',
                 'choices' => $tarifChoices,

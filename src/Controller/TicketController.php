@@ -45,7 +45,7 @@ final class TicketController extends AbstractController
                 'createdAt'
             ],
             [
-                'voyages' => $this->api->collection('/api/voyages?exists[datefin]=false') // Ou.. '$this->api->collection('/api/voyages')'
+                'voyages' => $this->api->collection('/api/voyages?exists[datefin]=false')
             ]
         );
 
@@ -74,11 +74,9 @@ final class TicketController extends AbstractController
     #[IsGranted('TICKET_CREER')]
     public function new(Request $request): Response
     {
-        if ($request->isMethod('GET')) {
+        if($request->isMethod('GET')) {
             $voyages = $this->api->collection('/api/voyages?exists[datefin]=false');
-
-            // Charger les gares pour le select
-            $gares = $this->api->collection('/api/gares'); // !!
+            $gares = $this->api->collection('/api/gares');
 
             return $this->render('ticket/new.html.twig', [
                 'voyages' => $voyages,
@@ -88,7 +86,7 @@ final class TicketController extends AbstractController
         }
 
         // POST : payload = tableau de tickets (vente groupée)
-        // POST — ajouter gare dans le payload de chaque ticket
+        // POST - ajouter gare dans le payload de chaque ticket
         try {
             $payload = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
@@ -103,13 +101,11 @@ final class TicketController extends AbstractController
 
         $created = [];
         $errors  = [];
-
-        foreach ($tickets as $index => $t) {
-            if (empty($t['voyage']) || empty($t['siege']) || empty($t['gare'])) {
+        foreach($tickets as $index => $t) {
+            if(empty($t['voyage']) || empty($t['siege']) || empty($t['gare'])) {
                 $errors[] = "Ticket #" . ($index + 1) . " : voyage, siège et gare obligatoires";
                 continue;
             }
-
             try {
                 $ticket = $this->api->post('/api/tickets', [
                     'voyage' => $t['voyage'], // IRI /api/voyages/{id}
@@ -219,32 +215,32 @@ final class TicketController extends AbstractController
             'ticket' => $ticket
         ]);
     }
-
-    #[Route('/{id}/print', name: 'print', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('TICKET_VOIR')]
-    public function print(int $id)
-    {
-        try {
-            $content = $this->api->raw('/api/tickets/' . $id . '/print'); /*
-                - L'impression venant de l'api
-            */
-            return new Response(
-                $content['body'],
-                200,
-                [
-                    'Content-Type' => $content['content_type'],
-                    'Content-Disposition' => 'inline; filename="ticket-' . $id . '.pdf"'
-                ]
-            );
-        } catch(ApiException $e) {
-            $response = $this->apiExceptionHandler->handle($e, null, 'ticket.index');
-            if($response) {
-                return $response;
+    /*
+        #[Route('/{id}/print', name: 'print', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
+        #[IsGranted('TICKET_VOIR')]
+        public function print(int $id)
+        {
+            try {
+                $content = $this->api->raw('/api/tickets/' . $id . '/print'); /*
+                    - L'impression venant de l'api
+                *
+                return new Response(
+                    $content['body'],
+                    200,
+                    [
+                        'Content-Type' => $content['content_type'],
+                        'Content-Disposition' => 'inline; filename="ticket-' . $id . '.pdf"'
+                    ]
+                );
+            } catch(ApiException $e) {
+                $response = $this->apiExceptionHandler->handle($e, null, 'ticket.index');
+                if($response) {
+                    return $response;
+                }
+                -- Ou.. return $this->redirectToRoute('ticket.pdf', ['id' => $id]);
             }
-            // Ou.. return $this->redirectToRoute('ticket.pdf', ['id' => $id]);
         }
-    }
-
+    */
     #[Route('/{id}/pdf', name: 'pdf', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('TICKET_VOIR')]
     public function pdf(int $id)
@@ -293,7 +289,7 @@ final class TicketController extends AbstractController
         }
 
         return $this->pdfService->generate(
-            'mails/ticket/thermalspdf.html.twig',
+            'mails/ticket/thermalpdf.html.twig',
             ['tickets' => $tickets],
             'tickets-lot-' . date('YmdHis') . '.pdf'
         );

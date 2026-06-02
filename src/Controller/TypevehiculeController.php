@@ -29,7 +29,7 @@ final class TypevehiculeController extends AbstractController
     public function index(): Response
     {
         try {
-            $typevehicules = $this->api->get('/api/typevehicules');
+            $typevehicules = $this->api->collection('/api/typevehicules');
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e);
             if($response) {
@@ -38,7 +38,7 @@ final class TypevehiculeController extends AbstractController
         }
 
         return $this->render('typevehicule/index.html.twig', [
-            'typevehicules' => $typevehicules['member']
+            'typevehicules' => $typevehicules
         ]);
     }
 
@@ -48,12 +48,10 @@ final class TypevehiculeController extends AbstractController
     {
         $form = $this->createForm(LibelleFormType::class);
         $form->handleRequest($request);
-
         if($form->isSubmitted() && $form->isValid()) {
             $payload = [
                 'libelle' => $form->get('libelle')->getData()
             ];
-
             try {
                 $this->api->post('/api/typevehicules', $payload);
                 $this->addFlash('success', 'Le type de véhicule a été crée avec succès');
@@ -85,12 +83,10 @@ final class TypevehiculeController extends AbstractController
         }
         $form = $this->createForm(LibelleFormType::class, $typevehicule);
         $form->handleRequest($request);
-
         if($form->isSubmitted() && $form->isValid()) {
             $payload = [
                 'libelle' => $form->get('libelle')->getData()
             ];
-
             try {
                 $this->api->patch('/api/typevehicules/' . $id, $payload);
                 $this->addFlash('success', 'Le type de véhicule a été modifié avec succès');

@@ -85,9 +85,7 @@ final class VoyageController extends AbstractController
     {
         try {
             $voyage = $this->api->item('/api/voyages/' . $id);
-            $tickets = $this->api->collection(
-                '/api/tickets?voyage=' . urlencode('/api/voyages/' . $id)
-            );
+            $tickets = $this->api->collection('/api/tickets?voyage=' . $id); // Ou.. 'urlencode('/api/voyages/' . $id)'
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'voyage.index');
             if($response) {
@@ -115,7 +113,7 @@ final class VoyageController extends AbstractController
         try {
             $gares = $this->api->collection('/api/gares');
             $trajets = $this->api->collection('/api/trajets');
-            $cars = $this->api->collection('/api/cars');
+            $cars = $this->api->get('/api/cars', ['etat' => 'DISPONIBLE']);
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'trajet.index');
             if($response) {
@@ -126,7 +124,7 @@ final class VoyageController extends AbstractController
         $refs = [
             'gares' => $gares,
             'trajets' => $trajets,
-            'cars' => $cars
+            'cars' => $cars['member']
         ];
         $form = $this->createForm(VoyageFormType::class, null, $refs);
         $form->handleRequest($request);
@@ -169,7 +167,7 @@ final class VoyageController extends AbstractController
         $gares = [];
         try {
             $voyage = $this->api->item('/api/voyages/' . $id);
-            $cars = $this->api->collection('/api/cars');
+            $cars = $this->api->get('/api/cars', ['etat' => 'DISPONIBLE']);
             $gares = $this->api->collection('/api/gares');
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'voyage.index');
@@ -189,7 +187,7 @@ final class VoyageController extends AbstractController
         ];
 
         $form = $this->createForm(VoyageEditFormType::class, $defaultData, [
-            'cars' => $cars,
+            'cars' => $cars['member'],
             'gares' => $gares
         ]);
         $form->handleRequest($request);
@@ -254,7 +252,7 @@ final class VoyageController extends AbstractController
                 $this->api->patch('/api/voyages/' . $id, $payload);
                 $this->addFlash('success', 'Le voyage a été clôturé avec succès');
                 return $this->redirectToRoute('voyage.index');
-            } catch (ApiException $e) {
+            } catch(ApiException $e) {
                 $response = $this->apiExceptionHandler->handle($e, $form, 'voyage.cloturer', ['id' => $id]);
                 if($response) {
                     return $response;
@@ -275,7 +273,7 @@ final class VoyageController extends AbstractController
         $cars = [];
         try {
             $voyage = $this->api->item('/api/voyages/' . $id);
-            $cars = $this->api->collection('/api/cars');
+            $cars = $this->api->get('/api/cars', ['etat' => 'DISPONIBLE']);
         } catch (ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'voyage.index');
             if($response) {
@@ -284,7 +282,7 @@ final class VoyageController extends AbstractController
         }
 
         $form = $this->createForm(VoyageAffectationCarFormType::class, null, [
-            'cars' => $cars
+            'cars' => $cars['member']
         ]);
         $form->handleRequest($request);
 

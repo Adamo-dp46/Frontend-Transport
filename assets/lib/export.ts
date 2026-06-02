@@ -13,14 +13,12 @@ export function exportToPDF<T extends object>(
     filename = 'export'
 ) {
     const doc = new jsPDF()
-
     autoTable(doc, {
         head: [columns.map(col => col.header)],
         body: data.map(row =>
             columns.map(col => String(row[col.accessor as keyof T] ?? ''))
         )
     })
-
     doc.save(`${filename}.pdf`)
 }
 
@@ -34,7 +32,6 @@ export function exportToExcel<T extends object>(
             columns.map(col => [col.header, row[col.accessor as keyof T] ?? ''])
         )
     )
-
     const worksheet = XLSX.utils.json_to_sheet(rows)
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1')

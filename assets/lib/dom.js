@@ -78,26 +78,16 @@ export const createChart = ({
 
 /**
  * Permet de génèrer un tableau de couleurs aléatoires en hexadécimal
- * @param {number} count - Nombre de couleurs à générer
+ * @param {number} count - Le nombre de couleurs à générer
  * @returns {string[]}
  */
 export function randomColor(count) {
     const colors = []
-    for (let i = 0; i < count; i++) {
-        const color = "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0') // Génère une couleur hexadécimale aléatoire
+    for(let i = 0; i < count; i++) {
+        const color = "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0') /*
+            - '16777215' correspond à '0xFFFFFF' toutes les couleurs possibles en hex sur 24 bits, '.toString(16)' pour convertir le nombre en hexadécimal et '.padStart(6, '0')' pour garentir que le code a toujours 6 caractères
+        */
         colors.push(color)
     }
     return colors
 }
-// 16777215 correspond à 0xFFFFFF - Toutes les couleurs possibles en hex sur 24 bits
-// .toString(16) - Convertit le nombre en hexadécimal
-// .padStart(6, '0') - Garantit que le code a toujours 6 caractères
-
-/*
-    function randomColor() {
-        const r = Math.floor(Math.random() * 256);
-        const g = Math.floor(Math.random() * 256);
-        const b = Math.floor(Math.random() * 256);
-        return rgb(`${r}`, `${g}`, `${b}`);
-    }
-*/

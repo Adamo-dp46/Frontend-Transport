@@ -26,9 +26,7 @@ final class ProfileController extends AbstractController
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(): Response
     {
-        return $this->render('profile/index.html.twig', [
-            'api_url' => $this->getParameter('api.endpoint')
-        ]);
+        return $this->render('profile/index.html.twig', []);
     }
 
     #[Route('/modifier', name: 'edit', methods: ['GET', 'POST'])]

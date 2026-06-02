@@ -49,37 +49,13 @@ final class InventaireController extends AbstractController
                 'typesmouvement'  => ['ENTREE', 'SORTIE'],
                 'typesreference'  => ['APPROVISIONNEMENT', 'DEPANNAGE', 'AJUSTEMENT']
             ]
-        );
-
+        ); /*
+            $entrees = array_filter($inventaires, fn($m) => ($m['typemouvement'] ?? '') === 'ENTREE')
+            $sorties = array_filter($inventaires, fn($m) => ($m['typemouvement'] ?? '') === 'SORTIE')
+        */
         return $this->render('inventaire/index.html.twig', $data);
     }
-    /*
-        #[Route('', name: 'index', methods: ['GET'])]
-        #[IsGranted('INVENTAIRE_VOIR')]
-        public function index(): Response
-        {
-            try {
-                $inventaires = $this->api->get('/api/inventaires');
-            } catch(ApiException $e) {
-                $response = $this->apiExceptionHandler->handle($e);
-                if($response) {
-                    return $response;
-                }
-            }
 
-            $entrees = array_filter($inventaires, fn($m) => ($m['typemouvement'] ?? '') === 'ENTREE');
-            $sorties = array_filter($inventaires, fn($m) => ($m['typemouvement'] ?? '') === 'SORTIE');
-            $totalEntrees = array_sum(array_column($entrees, 'quantite'));
-            $totalSorties = array_sum(array_column($sorties, 'quantite'));
-
-            return $this->render('inventaire/index.html.twig', [
-                'inventaires' => $inventaires,
-                'total_entrees' => $totalEntrees,
-                'total_sorties' => $totalSorties,
-                'nb_mouvements' => count($inventaires)
-            ]);
-        }
-    */
     #[Route('/{id}', name: 'show', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('INVENTAIRE_VOIR')]
     public function show(int $id): Response

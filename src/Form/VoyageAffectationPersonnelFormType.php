@@ -36,7 +36,7 @@ class VoyageAffectationPersonnelFormType extends AbstractType
                     new NotBlank()
                 ],
                 'attr' => [
-                    'placeholder' => 'Ex: Chauffeur affecté pour ce voyage...'
+                    'placeholder' => 'ex: Chauffeur affecté pour ce voyage..'
                 ]
             ])
         ;

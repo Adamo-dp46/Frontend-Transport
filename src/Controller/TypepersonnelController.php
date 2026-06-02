@@ -29,7 +29,7 @@ final class TypepersonnelController extends AbstractController
     public function index(): Response
     {
         try {
-            $typepersonnels = $this->api->get('/api/typepersonnels');
+            $typepersonnels = $this->api->collection('/api/typepersonnels');
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e);
             if($response) {
@@ -38,7 +38,7 @@ final class TypepersonnelController extends AbstractController
         }
 
         return $this->render('typepersonnel/index.html.twig', [
-            'typepersonnels' => $typepersonnels['member']
+            'typepersonnels' => $typepersonnels
         ]);
     }
 
@@ -66,7 +66,7 @@ final class TypepersonnelController extends AbstractController
     {
         $form = $this->createForm(LibelleFormType::class, null, [
             'attr' => [
-                'placeholder' => 'Ex: Chauffeur, Mécanicien, Agent de bord...'
+                'placeholder' => 'ex: Chauffeur, Mécanicien, Agent de bord..'
             ]
         ]);
         $form->handleRequest($request);

@@ -15,7 +15,7 @@ class VoyageEditFormType extends AbstractType
     {
         $choices = [];
         foreach($gares as $g) {
-            $label = $g['libelle'] . ' — ' . ($g['ville'] ?? '');
+            $label = $g['libelle'] . ' - ' . ($g['ville'] ?? '');
             $choices[$label] = $g['id'];
         }
         return $choices;

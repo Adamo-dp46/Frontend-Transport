@@ -60,8 +60,7 @@ final class EntrepriseController extends AbstractController
         }
 
         return $this->render('admin/entreprise/show.html.twig', [
-            'entreprise' => $entreprise,
-            'api_url' => $this->getParameter('api.endpoint')
+            'entreprise' => $entreprise
         ]);
     } // Combiner le 'me_entreprise' et 'show'
 
@@ -82,8 +81,7 @@ final class EntrepriseController extends AbstractController
         }
 
         return $this->render('admin/entreprise/show.html.twig', [
-            'entreprise' => $entreprise,
-            'api_url' => $this->getParameter('api.endpoint')
+            'entreprise' => $entreprise
         ]);
     } // Combiner le 'me_entreprise' et 'show'
 
@@ -156,5 +154,21 @@ final class EntrepriseController extends AbstractController
             'form' => $form,
             'entreprise' => $entreprise
         ]);
+    }
+
+    #[Route('/{id}/desactiver', name: 'desactiver', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('ROLE_SUPER_ADMIN')]
+    public function desactiver(int $id): Response
+    {
+        try {
+            $this->api->patch('/api/entreprises/' . $id . '/desactiver');
+            $this->addFlash('success', 'Le statut de l\'entreprise a été mis à jour');
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e, null, 'admin.entreprise.index');
+            if($response) {
+                return $response;
+            }
+        }
+        return $this->redirectToRoute('admin.entreprise.index');
     }
 }

@@ -13,23 +13,8 @@ import {
 import { DataTableColumnHeader } from "../../components/data-table-column-header"
 import { useMemo } from "react"
 import { formatDate } from "../../../lib/functions"
-
-interface Entreprise {
-    id: number
-    libelle: string
-    contact1: string
-    contact2?: string
-    adresse?: string
-    email?: string
-    sigle?: string
-    siteweb?: string
-    rccm?: string
-    banque?: string
-    type?: string
-    centreimpot?: string
-    tauxtva?: string
-    createdAt: string
-}
+import { Badge } from "../../../components/ui/badge"
+import { Entreprise } from "../../models/entreprise.model"
 
 type Props = {
     entreprises: Entreprise[]
@@ -92,6 +77,19 @@ function buildColumns(): ColumnDef<Entreprise>[] {
             }
         */
         {
+            accessorKey: "statut",
+            header: "Statut",
+            cell: ({ row }) => {
+                const actif = row.original.statut === 'ACTIF'
+                return (
+                    <Badge className={actif ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300" : "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300"
+                    }>
+                        {actif ? 'Active' : 'Suspendue'}
+                    </Badge>
+                )
+            }
+        },
+        {
             accessorKey: "createdAt",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Date de création" />
@@ -106,6 +104,7 @@ function buildColumns(): ColumnDef<Entreprise>[] {
             id: "actions",
             cell: ({ row }) => {
                 const entreprise = row.original
+                const action = entreprise.statut === 'ACTIF' ? 'désactiver' : 'réactiver'
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -117,6 +116,28 @@ function buildColumns(): ColumnDef<Entreprise>[] {
                         <DropdownMenuContent align="end">
                              <DropdownMenuItem asChild>
                                 <a href={`/admin/entreprises/${entreprise.id}`}>Voir</a>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                                <form
+                                    method="POST"
+                                    action={`/admin/entreprises/${entreprise.id}/desactiver`}
+                                    onSubmit={(e) => {
+                                        if(!confirm(`Voulez-vous ${action} cette entreprise ?`)) {
+                                            e.preventDefault()
+                                        }
+                                    }}
+                                >
+                                    <button
+                                        type="submit"
+                                        className={`w-full text-left ${entreprise.statut === 'ACTIF'
+                                            ? 'text-orange-600 focus:text-orange-700'
+                                            : 'text-green-600 focus:text-green-700'
+                                        }`}
+                                    >
+                                        {entreprise.statut === 'ACTIF' ? 'Désactiver' : 'Réactiver'}
+                                    </button>
+                                </form>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

@@ -13,14 +13,7 @@ import {
 import { DataTableColumnHeader } from "../../components/data-table-column-header"
 import { useMemo } from "react"
 import { Badge } from "../../../components/ui/badge"
-
-interface Tarifcourrier {
-    id: number
-    libelle: string
-    valeurmin: number
-    valeurmax: number | null
-    montanttaxe: number
-}
+import { Tarifcourrier } from "../../models/tarifcourrier.model"
 
 type Props = {
     items: Tarifcourrier[]

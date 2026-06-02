@@ -51,11 +51,11 @@
     </div>
     <div class="rounded-xl border bg-card shadow-sm p-4">
         <p class="text-lg font-light text-muted-foreground mb-2">Voyages</p>
-        <p class="font-semibold">{{ car.voyages|length }}</p>
+        <p class="font-semibold">{{ car.voyagesCount }}</p>
     </div>
     <div class="rounded-xl border bg-card shadow-sm p-4">
         <p class="text-lg font-light text-muted-foreground mb-2">Dépannages</p>
-        <p class="font-semibold">{{ car.depannages|length }}</p>
+        <p class="font-semibold">{{ car.depannagesCount }}</p>
     </div>
 </div>
 {#
@@ -118,66 +118,46 @@
         <div class="card">
             <div class="flex items-center justify-between px-6 py-4 border-b">
                 <h2 class="text-sm font-semibold">Voyages effectués</h2>
-                <span class="inline-flex items-center rounded-full tag tag-sky font-bold">{{ car.voyages|length }}</span>
+                <span class="inline-flex items-center rounded-full tag tag-sky font-bold">{{ car.voyagesCount }}</span>
             </div>
-            {% if car.voyages is empty %}
-                <div class="px-6 py-8 text-center text-sm text-muted-foreground">Aucun voyage effectué</div>
-            {% else %}
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-muted/40 border-b">
-                            <th class="text-left px-6 py-3 font-semibold">#</th>
-                            <th class="text-left px-6 py-3 font-semibold">Date de création</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y">
-                        {% for voyage in car.voyages %}
-                        <tr class="hover:bg-muted/20 transition-colors">
-                            <td class="px-6 py-3 font-mono text-xs text-muted-foreground">{{ loop.index }}</td>
-                            <td class="px-6 py-3">{{ voyage.createdAt ? voyage.createdAt|date('d/m/Y H:i') : '..' }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% endif %}
+            <div {{ react_component('Collection/VoyagesCollectionTable', {
+                voyages: voyages,
+                meta: voyagesMeta,
+                queryParams: voyagesParams,
+                urlPrefix: 'v'
+            }) }}>
+                <div class="flex items-center justify-center gap-6">
+                    <twig:Spinner class="size-8" />
+                </div>
+            </div>
         </div>
 
         <div class="card">
             <div class="flex items-center justify-between px-6 py-4 border-b">
                 <h2 class="text-sm font-semibold">Dépannages</h2>
                 <span class="inline-flex items-center rounded-full tag tag-red font-bold">
-                    {{ car.depannages|length }}
+                    {{ car.depannagesCount }}
                 </span>
             </div>
-            {% if car.depannages is empty %}
-                <div class="px-6 py-8 text-center text-sm text-muted-foreground">Aucun dépannage enregistré</div>
-            {% else %}
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-muted/40 border-b">
-                            <th class="text-left px-6 py-3 font-semibold">#</th>
-                            <th class="text-left px-6 py-3 font-semibold">Date du dépannage</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y">
-                        {% for dep in car.depannages %}
-                        <tr class="hover:bg-muted/20 transition-colors">
-                            <td class="px-6 py-3 font-mono text-xs text-muted-foreground">{{ loop.index }}</td>
-                            <td class="px-6 py-3">{{ dep.datedepannage ? dep.datedepannage|date('d/m/Y H:i') : '—' }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% endif %}
+           <div {{ react_component('Collection/DepannagesCollectionTable', {
+                depannages: depannages,
+                meta: depannagesMeta,
+                queryParams: depannagesParams,
+                urlPrefix: 'd'
+            }) }}>
+                <div class="flex items-center justify-center gap-6">
+                    <twig:Spinner class="size-8" />
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="space-y-4">
         <div class="card p-5 space-y-3">
             <h2 class="text-lg font-semibold uppercase tracking-wide">Fiabilité</h2>
-            {% set totalOps = car.voyages|length + car.depannages|length %}
+            {% set totalOps = car.voyagesCount + car.depannagesCount %}
             {% if totalOps > 0 %}
-                {% set tauxPanne = (car.depannages|length / totalOps * 100)|round %}
+                {% set tauxPanne = (car.depannagesCount / totalOps * 100)|round %}
                 <div class="space-y-1.5">
                     <div class="flex justify-between text-xs">
                         <span class="text-muted-foreground">Taux d'intervention</span>
@@ -189,7 +169,7 @@
                         <div class="h-2 rounded-full {{ tauxPanne > 30 ? 'bg-red-500' : tauxPanne > 10 ? 'bg-orange-500' : 'bg-green-500' }}" style="width: {{ tauxPanne }}%"></div>
                     </div>
                     <p class="text-xs text-muted-foreground">
-                        {{ car.depannages|length }} dépannage(s) pour {{ car.voyages|length }} voyage(s)
+                        {{ car.depannagesCount }} dépannage(s) pour {{ car.voyagesCount }} voyage(s)
                     </p>
                 </div>
             {% else %}

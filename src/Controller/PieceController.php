@@ -54,9 +54,7 @@ final class PieceController extends AbstractController
         );
 
         return $this->render('piece/index.html.twig', array_merge($data,
-            [
-                'api_url' => $this->getParameter('api.endpoint')
-            ]
+            []
         ));
     }
 
@@ -231,8 +229,7 @@ final class PieceController extends AbstractController
 
         return $this->render('piece/edit.html.twig', [
             'form' => $form,
-            'piece' => $piece,
-            'api_url' => $this->getParameter('api.endpoint')
+            'piece' => $piece
         ]);
     }
 

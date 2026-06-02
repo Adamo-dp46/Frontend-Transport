@@ -2,386 +2,353 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <title>Bordereau Gare — {{ bordereau.voyage.codevoyage }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 11px;
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 9pt;
             color: #1a1a1a;
             background: #fff;
+            width: 190mm;
+            margin: 0 auto;
+            padding: 10mm 0;
         }
 
-        /* ── En-tête ───────────────────────────────────────── */
+        /* ── HEADER ── */
         .header {
-            border-bottom: 3px solid #1a1a1a;
-            padding-bottom: 12px;
-            margin-bottom: 16px;
+            border: 2px solid #1a5c3a;
+            border-radius: 4px;
+            margin-bottom: 5mm;
+            overflow: hidden;
+            width: 100%;
         }
 
         .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 10px;
-        }
-
-        .company-name {
-            font-size: 20px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .company-sub {
-            font-size: 10px;
-            color: #555;
-            margin-top: 2px;
-        }
-
-        .doc-title {
-            text-align: right;
-        }
-
-        .doc-title h1 {
-            font-size: 18px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            border: 2px solid #1a1a1a;
-            padding: 4px 12px;
-            display: inline-block;
-        }
-
-        .doc-title p {
-            font-size: 10px;
-            color: #555;
-            margin-top: 4px;
-        }
-
-        /* ── Infos voyage + gare ───────────────────────────── */
-        .info-grid {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .info-box {
-            flex: 1;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-        }
-
-        .info-box-title {
-            background: #1a1a1a;
+            background: #1a5c3a;
             color: #fff;
-            font-size: 9px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 4px 10px;
+            padding: 4mm 5mm;
         }
 
-        .info-box-body {
-            padding: 8px 10px;
+        .header-top table { width: 100%; border-collapse: collapse; }
+        .header-top td { vertical-align: middle; padding: 0; border: none; }
+        .header-top .td-right { text-align: right; }
+
+        .doc-title { font-size: 14pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .doc-subtitle { font-size: 7.5pt; opacity: 0.8; margin-top: 1mm; }
+        .doc-code { font-size: 11pt; font-weight: bold; }
+        .doc-gare { font-size: 9pt; opacity: 0.9; margin-top: 0.5mm; }
+        .doc-date { font-size: 7.5pt; opacity: 0.8; margin-top: 1mm; }
+
+        .header-body { padding: 3mm 5mm; }
+        .header-body > table { width: 100%; border-collapse: collapse; }
+        .header-body > table > tr > td {
+            vertical-align: top;
+            border: none;
+            padding: 0 5mm;
+            border-right: 1px solid #c5ddd0;
         }
+        .header-body > table > tr > td:first-child { padding-left: 0; }
+        .header-body > table > tr > td:last-child { padding-right: 0; border-right: none; }
 
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 4px;
-            font-size: 10.5px;
+        .info-label { font-size: 7pt; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5mm; }
+        .info-value { font-size: 9.5pt; font-weight: bold; color: #1a5c3a; }
+
+        /* ── RECETTE BANNER ── */
+        .recette-banner {
+            background: #1a5c3a;
+            color: #fff;
+            border-radius: 4px;
+            padding: 4mm 6mm;
+            margin-bottom: 5mm;
         }
+        .recette-banner table { width: 100%; border-collapse: collapse; }
+        .recette-banner td { border: none; padding: 0; vertical-align: middle; }
+        .recette-banner .td-right { text-align: right; }
+        .recette-left-text { font-size: 9pt; opacity: 0.9; }
+        .recette-amount { font-size: 18pt; font-weight: bold; }
+        .recette-currency { font-size: 9pt; opacity: 0.85; margin-left: 1mm; }
 
-        .info-row:last-child { margin-bottom: 0; }
-
-        .info-label { color: #666; }
-        .info-value { font-weight: bold; }
-
-        /* ── Trajet visuel ─────────────────────────────────── */
-        .trajet-banner {
-            background: #f5f5f5;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            padding: 10px 16px;
-            margin-bottom: 16px;
+        /* ── SUMMARY ── */
+        .summary-wrap { margin-bottom: 5mm; }
+        .summary-wrap table { width: 100%; border-collapse: separate; border-spacing: 3mm 0; }
+        .summary-wrap td {
             text-align: center;
+            vertical-align: middle;
+            padding: 3mm 2mm;
+            border-radius: 4px;
+            border: 1.5px solid #1a5c3a;
         }
+        .summary-wrap td.fill { background: #1a5c3a; color: #fff; }
+        .summary-wrap td.accent { background: #e8f5ee; }
+        .summary-number { font-size: 18pt; font-weight: bold; line-height: 1; }
+        .summary-label { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1mm; opacity: 0.75; }
+        .fill .summary-label { opacity: 0.85; }
 
-        .trajet-route {
-            font-size: 16px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        .trajet-arrow {
-            margin: 0 10px;
-            color: #888;
-        }
-
-        .trajet-meta {
-            font-size: 10px;
-            color: #666;
-            margin-top: 4px;
-        }
-
-        /* ── KPIs ──────────────────────────────────────────── */
-        .kpis {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 16px;
-        }
-
-        .kpi {
-            flex: 1;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            padding: 8px 12px;
-            text-align: center;
-        }
-
-        .kpi-value {
-            font-size: 18px;
-            font-weight: bold;
-            display: block;
-        }
-
-        .kpi-label {
-            font-size: 9px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .kpi-recette .kpi-value { color: #1a6b2f; }
-        .kpi-restant .kpi-value { color: #7a3d00; }
-
-        /* ── Tableau passagers ─────────────────────────────── */
+        /* ── SECTION TITLE ── */
         .section-title {
-            font-size: 10px;
+            background: #1a5c3a;
+            color: #fff;
+            font-size: 8.5pt;
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid #1a1a1a;
-            padding-bottom: 4px;
-            margin-bottom: 8px;
+            letter-spacing: 0.8px;
+            padding: 2mm 4mm;
+            border-radius: 3px 3px 0 0;
+        }
+        .section-title .right-info {
+            float: right;
+            font-size: 7.5pt;
+            font-weight: normal;
+            opacity: 0.85;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 10px;
+        /* ── TABLE WRAPPER ── */
+        .table-wrapper {
+            border: 1px solid #b5d9c5;
+            border-top: none;
+            border-radius: 0 0 3px 3px;
+            margin-bottom: 5mm;
+            overflow: hidden;
         }
 
-        thead tr {
-            background: #1a1a1a;
-            color: #fff;
-        }
-
-        thead th {
-            padding: 6px 8px;
+        /* ── DATA TABLE ── */
+        .data-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+        .data-table thead tr { background: #e8f5ee; }
+        .data-table thead th {
+            padding: 2mm 3mm;
             text-align: left;
+            font-size: 7.5pt;
             font-weight: bold;
-            font-size: 9px;
+            color: #1a5c3a;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
+            border: none;
+            border-bottom: 1.5px solid #1a5c3a;
         }
-
-        thead th.right { text-align: right; }
-
-        tbody tr:nth-child(even) { background: #f9f9f9; }
-
-        tbody tr:last-child td { border-bottom: 2px solid #1a1a1a; }
-
-        tbody td {
-            padding: 5px 8px;
-            border-bottom: 1px solid #e5e5e5;
-        }
-
-        tbody td.right { text-align: right; }
-        tbody td.center { text-align: center; }
-
-        .siege-badge {
-            background: #1a1a1a;
-            color: #fff;
-            font-size: 9px;
+        .data-table thead th.right { text-align: right; }
+        .data-table thead th.center { text-align: center; }
+        .data-table tbody td { padding: 2mm 3mm; vertical-align: middle; border: none; border-bottom: 0.5px solid #ddeae3; }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        .data-table tbody tr.even { background: #f4fbf7; }
+        .data-table tbody td.right { text-align: right; }
+        .data-table tbody td.center { text-align: center; }
+        .data-table tfoot td {
+            padding: 2mm 3mm;
             font-weight: bold;
-            padding: 1px 6px;
-            border-radius: 10px;
-            display: inline-block;
+            font-size: 8.5pt;
+            border-top: 1.5px solid #1a5c3a;
+            border-bottom: none;
+            background: #e8f5ee;
         }
+        .data-table tfoot td.right { text-align: right; }
 
-        /* ── Pied de page ──────────────────────────────────── */
+        /* ── BADGE ── */
+        .badge { display: inline-block; padding: 0.5mm 2mm; border-radius: 3px; font-size: 7.5pt; font-weight: bold; }
+        .badge-seat { background: #1a5c3a; color: #fff; }
+
+        .mono { font-family: "Courier New", Courier, monospace; font-size: 8pt; color: #444; }
+        .num { color: #aaa; font-size: 7.5pt; }
+        .bold { font-weight: bold; }
+        .muted { color: #888; font-size: 7.5pt; }
+        .empty-msg { padding: 4mm 3mm; color: #aaa; font-style: italic; font-size: 8pt; }
+
+        /* ── SIGNATURE ── */
+        .sig-wrap { margin-top: 5mm; }
+        .sig-wrap table { width: 100%; border-collapse: separate; border-spacing: 5mm 0; }
+        .sig-wrap td {
+            border: 1px solid #b5d9c5;
+            border-radius: 3px;
+            padding: 2mm 3mm;
+            vertical-align: top;
+            width: 50%;
+        }
+        .sig-label { font-size: 7.5pt; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+        .sig-space { height: 14mm; }
+        .sig-line { border-top: 1px solid #b5d9c5; font-size: 7pt; color: #aaa; text-align: center; padding-top: 1mm; }
+
+        /* ── FOOTER ── */
         .footer {
-            margin-top: 20px;
-            border-top: 1px solid #ccc;
-            padding-top: 10px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 9px;
+            border-top: 1px solid #b5d9c5;
+            padding-top: 3mm;
+            margin-top: 5mm;
+            font-size: 7pt;
             color: #888;
         }
-
-        .signature-block {
-            margin-top: 30px;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .signature-box {
-            border: 1px solid #ccc;
-            width: 200px;
-            text-align: center;
-        }
-
-        .signature-box-title {
-            background: #f5f5f5;
-            padding: 4px;
-            font-size: 9px;
-            font-weight: bold;
-            text-transform: uppercase;
-            border-bottom: 1px solid #ccc;
-        }
-
-        .signature-box-body {
-            height: 50px;
-        }
+        .footer table { width: 100%; border-collapse: collapse; }
+        .footer td { border: none; padding: 0; vertical-align: bottom; }
+        .footer .td-right { text-align: right; }
     </style>
 </head>
 <body>
 
-    {# ── En-tête ─────────────────────────────────────────────── #}
+    {# ── EN-TÊTE ── #}
     <div class="header">
         <div class="header-top">
-            <div>
-                <p class="company-name">Compagnie de Transport</p>
-                <p class="company-sub">Gare de {{ bordereau.gare.ville }} — {{ bordereau.gare.libelle }}</p>
-            </div>
-            <div class="doc-title">
-                <h1>Bordereau</h1>
-                <p>Généré le {{ bordereau.generele }}</p>
-            </div>
-        </div>
-    </div>
-
-    {# ── Trajet ──────────────────────────────────────────────── #}
-    <div class="trajet-banner">
-        <div class="trajet-route">
-            {{ bordereau.voyage.provenance }}
-            <span class="trajet-arrow">→</span>
-            {{ bordereau.voyage.destination }}
-        </div>
-        <div class="trajet-meta">
-            {{ bordereau.voyage.codevoyage }}
-            &nbsp;·&nbsp;
-            Départ le {{ bordereau.voyage.datedebut }}
-        </div>
-    </div>
-
-    {# ── Infos voyage + gare ─────────────────────────────────── #}
-    <div class="info-grid">
-        <div class="info-box">
-            <div class="info-box-title">Voyage</div>
-            <div class="info-box-body">
-                <div class="info-row">
-                    <span class="info-label">Code</span>
-                    <span class="info-value">{{ bordereau.voyage.codevoyage }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Départ</span>
-                    <span class="info-value">{{ bordereau.voyage.datedebut }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Capacité</span>
-                    <span class="info-value">{{ bordereau.voyage.placestotal }} places</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Occupées</span>
-                    <span class="info-value">{{ bordereau.voyage.placesoccupees }} places</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="info-box">
-            <div class="info-box-title">Gare d'émission</div>
-            <div class="info-box-body">
-                <div class="info-row">
-                    <span class="info-label">Gare</span>
-                    <span class="info-value">{{ bordereau.gare.libelle }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Ville</span>
-                    <span class="info-value">{{ bordereau.gare.ville }}</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {# ── KPIs ────────────────────────────────────────────────── #}
-    <div class="kpis">
-        <div class="kpi">
-            <span class="kpi-value">{{ bordereau.nbtickets }}</span>
-            <span class="kpi-label">Tickets émis</span>
-        </div>
-        <div class="kpi kpi-recette">
-            <span class="kpi-value">{{ bordereau.recette | number_format(0, ',', ' ') }} FCFA</span>
-            <span class="kpi-label">Recette encaissée</span>
-        </div>
-        <div class="kpi kpi-restant">
-            <span class="kpi-value">{{ bordereau.placesrestantes }}</span>
-            <span class="kpi-label">Places restantes</span>
-        </div>
-    </div>
-
-    {# ── Liste passagers ─────────────────────────────────────── #}
-    <p class="section-title">Liste des passagers ({{ bordereau.passagers | length }})</p>
-
-    {% if bordereau.passagers is empty %}
-        <p style="color:#888; font-size:11px; padding: 8px 0;">Aucun ticket émis depuis cette gare pour ce voyage.</p>
-    {% else %}
-        <table>
-            <thead>
+            <table>
                 <tr>
-                    <th style="width:30px;">#</th>
-                    <th style="width:55px;" class="center">Siège</th>
-                    <th>Code ticket</th>
-                    <th>Nom client</th>
-                    <th>Contact</th>
-                    <th class="right">Prix</th>
-                    <th class="right">Émis le</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in bordereau.passagers %}
-                <tr>
-                    <td>{{ loop.index }}</td>
-                    <td class="center">
-                        <span class="siege-badge">{{ p.siegenumero }}</span>
+                    <td style="width:55%;">
+                        <div class="doc-title">Bordereau de Gare</div>
+                        <div class="doc-subtitle">Récapitulatif de voyage — Exemplaire gare</div>
                     </td>
-                    <td style="font-family: monospace; font-size:9px;">{{ p.codeticket }}</td>
-                    <td>{{ p.nomclient ?? null }}</td>
-                    <td>{{ p.contactclient ?? null }}</td>
-                    <td class="right">{{ p.prix | number_format(0, ',', ' ') }} FCFA</td>
-                    <td class="right" style="color:#666;">{{ p.createdat }}</td>
+                    <td class="td-right" style="width:45%;">
+                        <div class="doc-code">{{ bordereau.voyage.codevoyage }}</div>
+                        <div class="doc-gare">Gare : {{ bordereau.gare.libelle }} — {{ bordereau.gare.ville }}</div>
+                        <div class="doc-date">Généré le {{ bordereau.generele }}</div>
+                    </td>
                 </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
-
-    {# ── Signature ───────────────────────────────────────────── #}
-    <div class="signature-block">
-        <div class="signature-box">
-            <div class="signature-box-title">Chef de gare — Signature & cachet</div>
-            <div class="signature-box-body"></div>
+            </table>
+        </div>
+        <div class="header-body">
+            <table>
+                <tr>
+                    <td style="width:30%;">
+                        <div class="info-label">Trajet</div>
+                        <div class="info-value">{{ bordereau.voyage.provenance }}</div>
+                        <div class="muted">&#8595;</div>
+                        <div class="info-value">{{ bordereau.voyage.destination }}</div>
+                    </td>
+                    <td style="width:25%;">
+                        <div class="info-label">Date de départ</div>
+                        <div class="info-value">{{ bordereau.voyage.datedebut }}</div>
+                    </td>
+                    <td style="width:22%;">
+                        <div class="info-label">Capacité totale</div>
+                        <div class="info-value">{{ bordereau.voyage.placestotal }} places</div>
+                        <div style="margin-top:1.5mm;">
+                            <div class="info-label">Places restantes</div>
+                            <div class="info-value" style="color:#27ae60;">{{ bordereau.placesrestantes }}</div>
+                        </div>
+                    </td>
+                    <td style="width:23%;">
+                        <div class="info-label">Tickets vendus</div>
+                        <div class="info-value" style="color:#c0392b;">{{ bordereau.nbtickets }}</div>
+                        <div style="margin-top:1.5mm;">
+                            <div class="info-label">Gare émettrice</div>
+                            <div class="info-value" style="font-size:8pt;">{{ bordereau.gare.libelle }}</div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
         </div>
     </div>
 
-    {# ── Pied de page ────────────────────────────────────────── #}
-    <div class="footer">
-        <span>{{ bordereau.voyage.codevoyage }} — {{ bordereau.gare.libelle }}</span>
-        <span>Document généré automatiquement le {{ bordereau.generele }}</span>
+    {# ── BANDEAU RECETTE ── #}
+    <div class="recette-banner">
+        <table>
+            <tr>
+                <td style="width:65%;">
+                    <div class="recette-left-text">
+                        Recette totale collectée par la gare <strong>{{ bordereau.gare.libelle }}</strong>
+                        sur {{ bordereau.nbtickets }} ticket(s) vendu(s)
+                    </div>
+                </td>
+                <td class="td-right" style="width:35%;">
+                    <span class="recette-amount">{{ bordereau.recette|number_format(0, ',', ' ') }}</span>
+                    <span class="recette-currency">FCFA</span>
+                </td>
+            </tr>
+        </table>
     </div>
 
+    {# ── RÉSUMÉ ── #}
+    <div class="summary-wrap">
+        <table>
+            <tr>
+                <td class="fill">
+                    <div class="summary-number">{{ bordereau.nbtickets }}</div>
+                    <div class="summary-label">Tickets vendus</div>
+                </td>
+                <td class="accent">
+                    <div class="summary-number">{{ bordereau.voyage.placesoccupees }}</div>
+                    <div class="summary-label">Places occupées</div>
+                </td>
+                <td>
+                    <div class="summary-number">{{ bordereau.placesrestantes }}</div>
+                    <div class="summary-label">Places restantes</div>
+                </td>
+                <td class="fill">
+                    <div class="summary-number">{{ bordereau.voyage.placestotal }}</div>
+                    <div class="summary-label">Capacité totale</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    {# ── LISTE PASSAGERS ── #}
+    <div class="section-title">
+        Liste des passagers
+        <span class="right-info">{{ bordereau.nbtickets }} passager(s) — {{ bordereau.recette|number_format(0, ',', ' ') }} FCFA</span>
+    </div>
+    <div class="table-wrapper">
+        {% if bordereau.passagers is empty %}
+            <div class="empty-msg">Aucun passager enregistré depuis cette gare.</div>
+        {% else %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:5%;">#</th>
+                        <th>Code ticket</th>
+                        <th class="center" style="width:12%;">Siège</th>
+                        <th class="right" style="width:18%;">Prix (FCFA)</th>
+                        <th class="right" style="width:22%;">Émis le</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for passager in bordereau.passagers %}
+                    <tr{% if loop.index is even %} class="even"{% endif %}>
+                        <td class="num">{{ loop.index }}</td>
+                        <td class="mono">{{ passager.codeticket }}</td>
+                        <td class="center"><span class="badge badge-seat">{{ passager.siegenumero }}</span></td>
+                        <td class="right bold">{{ passager.prix|number_format(0, ',', ' ') }}</td>
+                        <td class="right muted">{{ passager.createdat }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3">Recette totale</td>
+                        <td class="right">{{ bordereau.recette|number_format(0, ',', ' ') }} FCFA</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        {% endif %}
+    </div>
+
+    {# ── SIGNATURES ── #}
+    <div class="sig-wrap">
+        <table>
+            <tr>
+                <td>
+                    <div class="sig-label">Signature du responsable de gare</div>
+                    <div class="sig-space"></div>
+                    <div class="sig-line">Nom &amp; Cachet</div>
+                </td>
+                <td>
+                    <div class="sig-label">Visa du directeur / superviseur</div>
+                    <div class="sig-space"></div>
+                    <div class="sig-line">Nom &amp; Signature</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    {# ── FOOTER ── #}
+    <div class="footer">
+        <table>
+            <tr>
+                <td>
+                    Voyage <strong>{{ bordereau.voyage.codevoyage }}</strong> —
+                    Gare <strong>{{ bordereau.gare.libelle }}</strong> ({{ bordereau.gare.ville }}) —
+                    Départ {{ bordereau.voyage.datedebut }}
+                </td>
+                <td class="td-right">
+                    Document généré le {{ bordereau.generele }}
+                </td>
+            </tr>
+        </table>
+    </div>
 </body>
 </html>

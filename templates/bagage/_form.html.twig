@@ -46,7 +46,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="field">
                 <label class="label" for="nature">Nature <span class="text-red-500">*</span></label>
-                <input type="text" id="nature" name="nature" class="input" value="{{ bagage.nature ?? '' }}" placeholder="Ex: valise, sac, carton..." required>
+                <input type="text" id="nature" name="nature" class="input" value="{{ bagage.nature ?? '' }}" placeholder="ex: valise, sac, carton.." required>
             </div>
             <div class="field">
                 <label class="label" for="type">Type <span class="text-red-500">*</span></label>
@@ -95,13 +95,13 @@
 
 <script>
 document.addEventListener('turbo:load', function () {
-    const poidsInput    = document.getElementById('poids');
-    const tarifInfo     = document.getElementById('tarif-info');
-    const forceCheck    = document.getElementById('montant_force_check');
-    const forceWrapper  = document.getElementById('montant_force_wrapper');
-    const montantInput  = document.getElementById('montant');
+    const poidsInput = document.getElementById('poids');
+    const tarifInfo = document.getElementById('tarif-info');
+    const forceCheck = document.getElementById('montant_force_check');
+    const forceWrapper = document.getElementById('montant_force_wrapper');
+    const montantInput = document.getElementById('montant');
 
-    const tarifs = {{ tarifbagages|json_encode|raw }};
+    const tarifs = {{ tarifbagages|json_encode|raw }}
 
     // Toggle montant forcé
     forceCheck.addEventListener('change', function () {

@@ -12,20 +12,16 @@ import {
 } from "../../../components/ui/dropdown-menu"
 import { DataTableColumnHeader } from "../../components/data-table-column-header"
 import { useMemo } from "react"
-
-interface Typepersonnel {
-    id: number
-    libelle: string
-}
+import { Libelle } from "../../models/libelle.model"
 
 type Props = {
-    typepersonnels: Typepersonnel[],
+    typepersonnels: Libelle[],
     canEdit: boolean,
     canDelete: boolean,
     csrfDelete: string
 }
 
-function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string): ColumnDef<Typepersonnel>[] {
+function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string): ColumnDef<Libelle>[] {
     return [
         {
             accessorKey: "id",
@@ -45,18 +41,11 @@ function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string):
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
+                                <span className="sr-only">Ouvrir menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            {/* 
-                                <DropdownMenuItem asChild>
-                                    <a href={`/typepersonnel/${typepersonnel.id}`}>Voir</a>
-                                </DropdownMenuItem>
-                                {canEdit && <DropdownMenuSeparator />}
-                            */}
-
                             {canEdit && (
                                 <DropdownMenuItem asChild>
                                     <a href={`/typepersonnel/${typepersonnel.id}/modifier`}>Modifier</a>

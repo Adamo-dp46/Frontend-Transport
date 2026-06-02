@@ -24,6 +24,10 @@ final class HomeController extends AbstractController
     #[Route('/', name: 'home', methods: ['GET'])]
     public function index(Request $request): Response
     {
+        if($this->isGranted('ROLE_SUPER_ADMIN')) {
+            return $this->redirectToRoute('admin.user.index');
+        }
+
         ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
 
         try {

@@ -15,27 +15,28 @@ class PdfService
     {
     }
 
-    public function generate(string $template, array $data, string $filename = 'ticket.pdf', string $format = 'thermal')
+    public function generate(
+        string $template,
+        array $data, string $filename = 'ticket.pdf',
+        string $format = 'thermal'
+    )
     {
         $html = $this->twig->render($template, $data);
 
         $options = new Options();
-        $options->set('defaultFont', 'DejaVu Sans');
-        $options->set('isRemoteEnabled', false);
-        $options->set('isHtml5ParserEnabled', true);
-
+        $options
+            ->set('defaultFont', 'DejaVu Sans')
+            ->set('isRemoteEnabled', false)
+            ->set('isHtml5ParserEnabled', true)
+        ;
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-
-        // Format rouleau thermique : 80mm de large, hauteur auto
-        // DOMPDF ne supporte pas 'auto' en hauteur → on estime 160mm
-        // pour un ticket standard (ajuster si le contenu déborde)
-        // $dompdf->setPaper([0, 0, 226.77, 453.54], 'portrait'); // 80mm × 160mm en points
-
         $paper = match($format) {
             'A4' => 'A4',
             'A4-land' => [0, 0, 841.89, 595.28],
-            default => [0, 0, 226.77, 453.54], // thermique 80mm x 160mm
+            default => [0, 0, 226.77, 453.54], /*
+                - Le format thermique '80mm x 160mm', '160mm' vu que 'dompdf' ne supporte pas 'auto' en hauteur
+            */
         };
         $dompdf->setPaper($paper, 'portrait');
         $dompdf->render();

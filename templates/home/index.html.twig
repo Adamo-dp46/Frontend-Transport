@@ -60,7 +60,6 @@
             <p class="text-sm font-medium mb-3">Taux de remplissage par voyage</p>
             <canvas id="chartTauxVoyages" height="120" data-values="{{ exploitation.tauxRemplissage.detailParVoyage | map(v => {label: v.codeVoyage, taux: v.taux}) | json_encode }}"></canvas>
         </div>
-
     </div>
 </section>
 
@@ -224,5 +223,4 @@
 
     </div>
 </section>
-
 {% endblock %}

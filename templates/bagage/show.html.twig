@@ -5,18 +5,18 @@
 {% block body %}
 {% set statutMap = {
     ENREGISTRE: ['Enregistré', 'bg-gray-100 text-gray-700'],
-    EMBARQUE:   ['Embarqué',   'bg-blue-100 text-blue-800'],
-    LIVRE:      ['Livré',      'bg-green-100 text-green-800'],
-    PERDU:      ['Perdu',      'bg-red-100 text-red-800']
+    EMBARQUE: ['Embarqué', 'bg-blue-100 text-blue-800'],
+    LIVRE: ['Livré', 'bg-green-100 text-green-800'],
+    PERDU: ['Perdu', 'bg-red-100 text-red-800']
 } %}
 {% set typeMap = {
-    LEGER:      ['Léger',      'bg-sky-50 text-sky-700'],
-    LOURD:      ['Lourd',      'bg-orange-50 text-orange-700'],
+    LEGER: ['Léger', 'bg-sky-50 text-sky-700'],
+    LOURD: ['Lourd', 'bg-orange-50 text-orange-700'],
     VOLUMINEUX: ['Volumineux', 'bg-purple-50 text-purple-700'],
-    FRAGILE:    ['Fragile',    'bg-yellow-50 text-yellow-700']
+    FRAGILE: ['Fragile', 'bg-yellow-50 text-yellow-700']
 } %}
 {% set statutCfg = statutMap[bagage.statut] ?? [bagage.statut, 'bg-gray-100 text-gray-700'] %}
-{% set typeCfg   = typeMap[bagage.type]     ?? [bagage.type,   'bg-gray-100 text-gray-700'] %}
+{% set typeCfg = typeMap[bagage.type] ?? [bagage.type, 'bg-gray-100 text-gray-700'] %}
 
 <div class="flex flex-col mb-5 gap-3 sm:flex-row sm:items-start sm:justify-between">
     <div>
@@ -32,7 +32,7 @@
             <svg class="h-5 w-5" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#chevron-left"></use></svg>
             Retour
         </a>
-        {% if is_granted('BAGAGE_VOIR') %}
+        {% if bagage.voyage and is_granted('BAGAGE_VOIR') %}
         <a href="{{ path('bagage.print', { id: bagage.id }) }}" target="_blank" class="btn btn-secondary">
             <svg class="h-5 w-5" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#print"></use></svg>
             Ticket de pesée

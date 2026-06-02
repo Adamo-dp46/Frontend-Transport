@@ -1,4 +1,3 @@
-
 import { ColumnDef } from "@tanstack/react-table"
 import { MoreHorizontal } from "lucide-react"
 import { DataTable } from "../../components/data-table"
@@ -15,22 +14,7 @@ import { DataTableColumnHeader } from "../../components/data-table-column-header
 import { useMemo } from "react"
 import { Badge } from "../../../components/ui/badge"
 import { formatDate } from "../../../lib/functions"
-
-interface Ref {
-    id: number
-    libelle: string
-}
-
-interface Car {
-    id: number
-    matricule: string
-    nbrsiege: number
-    datearrivee: string | null
-    etat: string
-    marque: Ref | null
-    typevehicule: Ref | null
-    modelvehicule: Ref | null
-}
+import { Car } from "../../models/car.model"
 
 type Props = {
     cars: Car[],

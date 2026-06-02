@@ -6,7 +6,6 @@ use App\Domain\Helper\ApiExceptionHandlerHelper;
 use App\Domain\Helper\ApiHelper;
 use App\Domain\Helper\TableHelper;
 use App\Domain\Service\PdfService;
-use App\Entity\ApiUser;
 use App\Security\Exception\ApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -250,28 +249,28 @@ final class CourrierController extends AbstractController
                 return $response;
             }
         }
-
-        $logoBase64 = null;
-        if(!empty($entreprise['image'])) { /*
-            - On récupère l'image 'glide' depuis le backend et encodage base64
-        */
-            try {
-                $imageUrl = $entreprise['image']['contentUrl'];
-                $response = HttpClient::create()->request('GET', $params->get('api.endpoint') . '/media' . $imageUrl . '?w=400&h=400&fm=jpg&fit=crop');
-                $content = $response->getContent();
-                $mimeType = $response->getHeaders()['content-type'][0] ?? 'image/jpeg';
-                $logoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($content);
-            } catch(\Throwable) {
-                $logoBase64 = null;
+        /*
+            $logoBase64 = null;
+            if(!empty($entreprise['image'])) { /*
+                - On récupère l'image 'glide' depuis le backend et encodage base64
+            *
+                try {
+                    $imageUrl = $entreprise['image']['contentUrl'];
+                    $response = HttpClient::create()->request('GET', $params->get('api.endpoint') . '/media' . $imageUrl . '?w=400&h=400&fm=jpg&fit=crop');
+                    $content = $response->getContent();
+                    $mimeType = $response->getHeaders()['content-type'][0] ?? 'image/jpeg';
+                    $logoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($content);
+                } catch(\Throwable) {
+                    $logoBase64 = null;
+                }
             }
-        }
-
+        */
         return $pdfService->generate(
             'mails/courrier/ticket.html.twig',
             [
                 'courrier' => $courrier,
                 'entreprise' => $entreprise,
-                'logoBase64' => $logoBase64
+                // 'logoBase64' => $logoBase64
             ],
             'courrier-' . ($courrier['codecourrier'] ?? $id) . date('YmdHis') . '.pdf'
         );

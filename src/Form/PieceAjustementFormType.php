@@ -35,7 +35,7 @@ class PieceAjustementFormType extends AbstractType
                     new NotBlank()
                 ],
                 'attr' => [
-                    'placeholder' => 'Ex: Inventaire mensuel, Correction erreur...'
+                    'placeholder' => 'ex: Inventaire mensuel, Correction erreur..'
                 ]
             ])
         ;

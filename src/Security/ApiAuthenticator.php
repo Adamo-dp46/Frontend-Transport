@@ -31,7 +31,7 @@ class ApiAuthenticator extends AbstractLoginFormAuthenticator
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
         private readonly ApiClientService $apiClient,
-        private readonly RouterInterface $router,
+        private readonly RouterInterface $router
     )
     {
     }

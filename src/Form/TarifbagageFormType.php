@@ -17,7 +17,7 @@ class TarifbagageFormType extends AbstractType
             ->add('libelle', TextType::class, [
                 'label' => 'Libellé',
                 'attr' => [
-                    'placeholder' => 'Ex: Bagage léger, Bagage lourd..'
+                    'placeholder' => 'ex: Bagage léger, Bagage lourd..'
                 ],
                 'constraints' => [
                     new Assert\NotBlank(),

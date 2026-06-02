@@ -4,6 +4,8 @@
 @source not "../../public"; /* Pour éviter qu'il cherche dans le 'public/' */
 @custom-variant dark (&:is(.dark *));
 
+@import 'tom-select/dist/css/tom-select.default.min.css';
+
 :root {
     --background: oklch(1.0000 0 0);
     --foreground: oklch(0.2686 0 0);

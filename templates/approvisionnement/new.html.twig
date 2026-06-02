@@ -24,14 +24,12 @@
                 {% endfor %}
             </select>
         #}
-        <div
-            data-remote-select
-            data-resource="fournisseurs"
-            data-name="fournisseur"
-            data-placeholder="Rechercher un fournisseur..."
-            data-required
-        >
-        </div>
+        <select
+            name="fournisseur"
+            required
+            data-remote-select="fournisseurs"
+            placeholder="-- Rechercher un fournisseur --"
+        ></select>
     </div>
 
     <div class="rounded-xl border bg-card shadow-sm p-4 mb-3">

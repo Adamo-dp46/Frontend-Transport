@@ -50,16 +50,16 @@ class TableQueryBuilder
      */
     public function buildPaginationMeta(array $apiResponse, int $page, int $perPage): array
     {
-        $total      = $apiResponse['totalItems'] ?? 0;
+        $total = $apiResponse['totalItems'] ?? 0;
         $totalPages = $perPage > 0 ? (int) ceil($total / $perPage) : 1;
 
         return [
-            'total'      => $total,
-            'page'       => $page,
-            'perPage'    => $perPage,
+            'total' => $total,
+            'page' => $page,
+            'perPage' => $perPage,
             'totalPages' => max(1, $totalPages),
-            'from'       => $total > 0 ? ($page - 1) * $perPage + 1 : 0,
-            'to'         => min($page * $perPage, $total),
+            'from' => $total > 0 ? ($page - 1) * $perPage + 1 : 0,
+            'to' => min($page * $perPage, $total),
         ];
     }
 
@@ -70,12 +70,12 @@ class TableQueryBuilder
     {
         $currentSort = $queryParams['sort'] ?? null;
         $currentDir  = $queryParams['dir']  ?? 'asc';
-        $newDir      = ($currentSort === $field && $currentDir === 'asc') ? 'desc' : 'asc';
+        $newDir = ($currentSort === $field && $currentDir === 'asc') ? 'desc' : 'asc';
 
         return [
             'params' => array_merge($queryParams, ['sort' => $field, 'dir' => $newDir, 'page' => 1]),
             'active' => $currentSort === $field,
-            'dir'    => $currentSort === $field ? $currentDir : null,
+            'dir' => $currentSort === $field ? $currentDir : null,
         ];
     }
 }

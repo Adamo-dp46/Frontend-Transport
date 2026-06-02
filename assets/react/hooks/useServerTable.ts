@@ -19,9 +19,39 @@ export interface ServerTableFilter {
     options?: { label: string; value: string }[]
 }
 
-export function useServerTable(queryParams: Record<string, string>) {
+export function useServerTable(
+    queryParams: Record<string, string>,
+    urlPrefix?: string   // ex: 'v' ou 'd'
+) {
     const buildUrl = (overrides: Record<string, string | null>) => {
         const url = new URL(window.location.href)
+        if(urlPrefix) {
+            // Partir des params existants de TOUTE l'URL
+            // puis écraser/supprimer uniquement ceux du préfixe
+            const merged = { ...queryParams, ...overrides }
+
+            // Supprimer d'abord tous les params du préfixe de l'URL courante
+            const keysToDelete: string[] = []
+            url.searchParams.forEach((_, key) => {
+                if (key.startsWith(`${urlPrefix}[`)) keysToDelete.push(key)
+            })
+            keysToDelete.forEach(k => url.searchParams.delete(k))
+
+            // Reconstruire manuellement sans encoding des crochets
+            const parts: string[] = []
+            url.searchParams.forEach((v, k) => {
+                parts.push(`${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+            })
+
+            Object.entries(merged).forEach(([k, v]) => {
+                if (v !== null && v !== '') {
+                    parts.push(`${urlPrefix}[${k}]=${encodeURIComponent(v)}`)
+                    // ↑ crochets non encodés volontairement
+                }
+            })
+
+            return `${url.origin}${url.pathname}${parts.length ? '?' + parts.join('&') : ''}`
+        }
         const merged = { ...queryParams, ...overrides }
         Object.entries(merged).forEach(([k, v]) => {
             if (v !== null && v !== '') url.searchParams.set(k, v)

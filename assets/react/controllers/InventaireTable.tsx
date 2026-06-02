@@ -15,24 +15,8 @@ import { ServerMeta, ServerTableFilter, useServerTable } from "../hooks/useServe
 import { ServerDataTableColumnHeader } from "../components/server/server-data-table-column-header"
 import { useMemo } from "react"
 import { ServerDataTable } from "../components/server/server-data-table"
-
-interface Piece {
-    id: number
-    libelle: string
-}
-
-interface Inventaire {
-    id: number
-    typemouvement: string // ENTREE | SORTIE
-    quantite: number
-    datemouvement: string
-    referencetype: string // APPROVISIONNEMENT | DEPANNAGE | AJUSTEMENT
-    // piece: Piece
-    createdAt: string
-    pieceName: string,
-    createdByNom?: string,
-    createdByPrenom?: string
-}
+import { Inventaire } from "../models/inventaire.model"
+import { Piece } from "../models/piece.model"
 
 type Props = {
     inventaires: Inventaire[]

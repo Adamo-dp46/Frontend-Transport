@@ -13,17 +13,7 @@ import {
 import { DataTableColumnHeader } from "../../components/data-table-column-header"
 import { useMemo } from "react"
 import { formatDate } from "../../../lib/functions"
-
-interface Fournisseur {
-    id: number
-    libelle: string
-    nom: string
-    contact: string
-    email?: string
-    adresse?: string
-    pays?: string
-    createdAt: string
-}
+import { Fournisseur } from "../../models/fournisseur.model"
 
 type Props = {
     fournisseurs: Fournisseur[],

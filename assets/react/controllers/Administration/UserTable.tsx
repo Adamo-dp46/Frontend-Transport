@@ -1,6 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, FileText, MoreHorizontal, Sheet } from "lucide-react"
-import { DataTable } from "../../components/data-table"
+import { MoreHorizontal } from "lucide-react"
 import { Button } from "../../../components/ui/button"
 import {
     DropdownMenu,
@@ -10,31 +9,22 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu"
-import { DataTableColumnHeader } from "../../components/data-table-column-header"
 import { useMemo } from "react"
 import { ServerMeta, ServerTableFilter, useServerTable } from "../../hooks/useServerTable"
 import { ServerDataTableColumnHeader } from "../../components/server/server-data-table-column-header"
 import { ServerDataTable } from "../../components/server/server-data-table"
 import { Badge } from "../../../components/ui/badge"
-
-interface User {
-    id: number
-    email: string
-    nom: string
-    prenom: string
-    avatar?: string
-    statut: string
-    roles: string[] // Pour détecter l'admin
-}
+import { User } from "../../models/user.model"
 
 type Props = {
     users: User[]
     meta: ServerMeta
     queryParams: Record<string, string>
     canEdit: boolean
-    canDelete: boolean
     currentUserId: number // Pour empêcher l'auto suspension
     csrfDelete: string
+    apiUrl: string
+    isSuperAdmin: boolean
 }
 
 function buildColumns(
@@ -42,9 +32,10 @@ function buildColumns(
     getSortExplicitUrl: (f: string, dir: 'asc' | 'desc') => string,
     getSortState: (f: string) => 'asc' | 'desc' | false,
     canEdit: boolean,
-    canDelete: boolean,
     currentUserId: number,
-    csrfDelete: string
+    csrfDelete: string,
+    apiUrl: string,
+    isSuperAdmin: boolean
 ): ColumnDef<User>[] {
 
     const sortUrls = (field: string) => ({
@@ -90,16 +81,16 @@ function buildColumns(
             }
         },
         {
-            id: "avatar",
+            id: "fileUrl",
             header: "",
             cell: ({ row }) => {
                 const user = row.original
                 const initiales = `${user.prenom.charAt(0)}${user.nom.charAt(0)}`.toUpperCase()
                 return (
                     <div className="flex items-center justify-center">
-                        {user.avatar ? (
+                        {user.fileUrl ? (
                             <img
-                                src={user.avatar}
+                                src={`${apiUrl}/media${user.fileUrl}?w=400&h=400&fm=jpg&fit=crop`}
                                 alt={`${user.prenom} ${user.nom}`}
                                 className="h-8 w-8 rounded-full object-cover"
                             />
@@ -110,7 +101,7 @@ function buildColumns(
                         )}
                     </div>
                 )
-            },
+            }
         },
         {
             id: "actions",
@@ -118,7 +109,10 @@ function buildColumns(
                 const user = row.original
                 const isAdmin = user.roles.includes('ROLE_ADMIN')
                 const isSelf = user.id === currentUserId
-                const suspendable = canEdit && !isAdmin && !isSelf
+                const suspendable = !isSelf && (isSuperAdmin ? true : (canEdit && !isAdmin)) /*
+                    - Plus 'const suspendable = canEdit && !isAdmin && !isSelf' pour inclure le super admin, l'admin normal peut suspendre tous sauf un admin et le super admin peut suspendre tous sauf lui même
+                */
+                const editable = canEdit && (isSuperAdmin || !isAdmin)
 
                 return (
                     <DropdownMenu>
@@ -133,8 +127,8 @@ function buildColumns(
                                 <a href={`/admin/utilisateurs/${user.id}`}>Voir</a>
                             </DropdownMenuItem>
 
-                            {canEdit && !isAdmin && <DropdownMenuSeparator />}
-                            {canEdit && !isAdmin && (
+                            {editable && !isAdmin && <DropdownMenuSeparator />}
+                            {editable && !isAdmin && (
                                 <DropdownMenuItem asChild>
                                     <a href={`/admin/utilisateurs/${user.id}/modifier`}>Modifier</a>
                                 </DropdownMenuItem>
@@ -163,30 +157,6 @@ function buildColumns(
                                     </form>
                                 </DropdownMenuItem>
                             )}
-
-                            {/*
-                                {canEdit && canDelete && <DropdownMenuSeparator />}
-                                {canDelete && (
-                                    <DropdownMenuItem asChild>
-                                        <form
-                                            method="POST"
-                                            action={`/admin/utilisateurs/${user.id}/supprimer`}
-                                            onSubmit={(e) => {
-                                                if(!confirm("Supprimer cet utilisateur ?")) {
-                                                    e.preventDefault()
-                                                }
-                                            }}
-                                        >
-                                            <button
-                                                type="submit"
-                                                className="w-full text-left text-red-600 focus:text-red-700"
-                                            >
-                                                Supprimer
-                                            </button>
-                                        </form>
-                                    </DropdownMenuItem>
-                                )}
-                            */}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 )
@@ -195,13 +165,11 @@ function buildColumns(
     ]
 }
 
-export default function UserTable({users, meta, queryParams, canEdit, canDelete, currentUserId, csrfDelete}: Props) {
-
+export default function UserTable({users, meta, queryParams, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin}: Props) {
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
-
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, currentUserId, csrfDelete),
-        [queryParams, canEdit, canDelete, currentUserId, csrfDelete]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin),
+        [queryParams, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin]
     )
 
     const filters: ServerTableFilter[] = useMemo(() => [

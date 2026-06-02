@@ -11,10 +11,8 @@
     </div>
 </div>
 
-{# ── Filtres ─────────────────────────────────────────────────── #}
 <form method="get" action="{{ path('bordereau.index') }}" class="card p-4 mb-6">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
         <div class="flex flex-col gap-1">
             <label class="text-xs text-muted-foreground">Trajet</label>
             <select name="trajet" class="input input-sm">
@@ -47,12 +45,8 @@
                 <input type="date" name="fin" value="{{ fin }}" class="input input-sm" />
             </div>
         </div>
-
-        <div class="flex items-end">
-            <button type="submit" class="btn btn-primary btn-sm w-full">Rechercher</button>
-        </div>
-
     </div>
+    <button type="submit" class="px-3 py-2 border-none bg-primary rounded-md text-sm">Rechercher</button>
 </form>
 
 {# ── Résultats ───────────────────────────────────────────────── #}

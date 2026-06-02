@@ -29,7 +29,7 @@ final class TypepanneController extends AbstractController
     public function index(): Response
     {
         try {
-            $typepannes = $this->api->get('/api/typepannes');
+            $typepannes = $this->api->collection('/api/typepannes');
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e);
             if($response) {
@@ -38,7 +38,7 @@ final class TypepanneController extends AbstractController
         }
 
         return $this->render('typepanne/index.html.twig', [
-            'typepannes' => $typepannes['member']
+            'typepannes' => $typepannes
         ]);
     }
 
@@ -48,12 +48,10 @@ final class TypepanneController extends AbstractController
     {
         $form = $this->createForm(LibelleFormType::class);
         $form->handleRequest($request);
-
         if($form->isSubmitted() && $form->isValid()) {
             $payload = [
                 'libelle' => $form->get('libelle')->getData()
             ];
-
             try {
                 $this->api->post('/api/typepannes', $payload);
                 $this->addFlash('success', 'Le type de panne a été crée avec succès');
@@ -85,12 +83,10 @@ final class TypepanneController extends AbstractController
         }
         $form = $this->createForm(LibelleFormType::class, $typepanne);
         $form->handleRequest($request);
-
         if($form->isSubmitted() && $form->isValid()) {
             $payload = [
                 'libelle' => $form->get('libelle')->getData()
             ];
-
             try {
                 $this->api->patch('/api/typepannes/' . $id, $payload);
                 $this->addFlash('success', 'Le type de panne a été modifié avec succès');

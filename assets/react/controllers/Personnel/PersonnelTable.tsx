@@ -13,30 +13,17 @@ import {
 import { DataTableColumnHeader } from "../../components/data-table-column-header"
 import { useMemo } from "react"
 import { Badge } from "../../../components/ui/badge"
-
-interface Typepersonnel {
-    id: number
-    libelle: string
-}
-
-interface Personnel {
-    id: number
-    nom: string
-    prenom: string
-    contact: string
-    code: string
-    image: string | null
-    typepersonnel: Typepersonnel
-}
+import { Personnel } from "../../models/personnel.model"
 
 type Props = {
     personnels: Personnel[],
+    apiUrl: string,
     canEdit: boolean,
     canDelete: boolean,
     csrfDelete: string
 }
 
-function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string): ColumnDef<Personnel>[] {
+function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string, apiUrl: string): ColumnDef<Personnel>[] {
     return [
         {
             accessorKey: "id",
@@ -78,31 +65,44 @@ function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string):
                 ? <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">{row.original.typepersonnel.libelle}</Badge>
                 : <span className="text-muted-foreground">Aucun</span>
         },
-        /*
-            {
-                id: "image",
-                header: "",
-                cell: ({ row }) => {
-                    const p = row.original
-                    const initiales = `${p.prenom.charAt(0)}${p.nom.charAt(0)}`.toUpperCase()
-                    return (
-                        <div className="flex items-center justify-center">
-                            {p.image ? (
-                                <img
-                                    src={p.image}
-                                    alt={`${p.prenom} ${p.nom}`}
-                                    className="h-8 w-8 rounded-full object-cover"
-                                />
-                            ) : (
-                                <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
-                                    {initiales}
-                                </div>
-                            )}
-                        </div>
-                    )
-                },
+        {
+            id: "nbvoyages",
+            header: "Nombre de voyages",
+            cell: ({ row }) => {
+                return <span className="tabular-nums font-medium">{row.original.voyagesCount}</span>
             }
-        */
+        },
+        {
+            id: "nbdepannages",
+            header: "Nombre de dépannages",
+            cell: ({ row }) => {
+                return <span className="tabular-nums font-medium">{row.original.depannagesCount}</span>
+            }
+        },
+        {
+            id: "image",
+            header: "",
+            cell: ({ row }) => {
+                const p = row.original
+                const imageUrl = p.image?.contentUrl
+                const initiales = `${p.prenom.charAt(0)}${p.nom.charAt(0)}`.toUpperCase()
+                return (
+                    <div className="flex items-center justify-center">
+                        {p.image ? (
+                            <img
+                                src={`${apiUrl}/media${imageUrl}?w=400&h=400&fm=jpg&fit=crop`}
+                                alt={`${p.prenom} ${p.nom}`}
+                                className="h-8 w-8 rounded-full object-cover"
+                            />
+                        ) : (
+                            <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+                                {initiales}
+                            </div>
+                        )}
+                    </div>
+                )
+            },
+        },
         {
             id: "actions",
             cell: ({ row }) => {
@@ -159,12 +159,12 @@ function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string):
     ]
 }
 
-export default function PersonnelTable({personnels, canEdit, canDelete, csrfDelete}: Props) {
+export default function PersonnelTable({personnels, canEdit, canDelete, csrfDelete, apiUrl}: Props) {
     const columns = useMemo( /*
             - Pour éviter de recréer le tableau à chaque render
         */
-        () => buildColumns(canEdit, canDelete, csrfDelete),
-        [canEdit, canDelete, csrfDelete]
+        () => buildColumns(canEdit, canDelete, csrfDelete, apiUrl),
+        [canEdit, canDelete, csrfDelete, apiUrl]
     )
 
     const typeOptions = [...new Map(

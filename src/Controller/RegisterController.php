@@ -10,6 +10,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class RegisterController extends AbstractController
 {
@@ -21,6 +22,7 @@ final class RegisterController extends AbstractController
     }
 
     #[Route('/inscription', name: 'app_register')]
+    #[IsGranted('ROLE_SUPER_ADMIN')]
     public function register(Request $request): Response
     {
         $form = $this->createForm(RegisterFormType::class);

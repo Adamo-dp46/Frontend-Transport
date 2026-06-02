@@ -15,49 +15,8 @@ import { ServerMeta, ServerTableFilter, useServerTable } from "../../hooks/useSe
 import { ServerDataTableColumnHeader } from "../../components/server/server-data-table-column-header"
 import { formatDate } from "../../../lib/functions"
 import { ServerDataTable } from "../../components/server/server-data-table"
-
-interface Gare {
-    id: number
-    libelle: string
-    ville: string
-    chefgare: string
-    contact1: string
-}
-
-interface Voyage {
-    id: number
-    codevoyage: string
-}
-
-interface Detailcourrier {
-    id: number
-    nature: string
-    valeur: number
-    montant: number
-    designation?: string
-    emballage?: string
-    type?: string
-    poids?: number
-}
-
-interface Courrier {
-    id: number
-    codecourrier: string
-    nomexpediteur: string
-    nomdestinataire: string
-    contactexpediteur: string
-    contactdestinataire: string
-    garedepart: Gare
-    garearrivee: Gare
-    voyage: Voyage | null
-    montant: number
-    fraissuivi: number | null
-    statut: string
-    detailcourriers: Detailcourrier[]
-    modepaiement: string
-    etatpaiement: string
-    createdAt: string
-}
+import { Courrier } from "../../models/courrier.model"
+import { Gare } from "../../models/gare.model"
 
 type Props = {
     items: Courrier[]

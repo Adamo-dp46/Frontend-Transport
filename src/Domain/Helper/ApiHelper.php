@@ -29,17 +29,14 @@ class ApiHelper
         ]);
         if($response->getStatusCode() === 200) {
             $data = $response->toArray(false);
-            return $data; /*
-                return $data['member'] ?? $data['hydra:member'] ?? (array_is_list($data) ? $data : []);
-            */
+            return $data;
         }
         $this->throwFromResponse($response, $response->getStatusCode());
     }
 
-    public function collection(string $endpoint, array $query = [], array $headers = [])
+    public function collection(string $endpoint, array $headers = [])
     {
         $response = $this->api->request('GET', $endpoint, [
-            'query' => $query,
             'headers' => $headers
         ]);
         if($response->getStatusCode() === 200) {
@@ -109,7 +106,6 @@ class ApiHelper
         if(in_array($status, [200, 202, 204], true)) {
             return;
         }
-
         $this->throwFromResponse($response, $status);
     }
 

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Domain\Helper\ApiExceptionHandlerHelper;
 use App\Domain\Helper\ApiHelper;
+use App\Domain\Helper\TableHelper;
 use App\Form\CarFormType;
 use App\Security\Exception\ApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -36,11 +37,9 @@ final class CarController extends AbstractController
                 return $response;
             }
         }
-
         $parEtat = array_count_values(array_column($cars, 'etat')); /*
             - On groupe les compteurs par état
         */
-
         return $this->render('car/index.html.twig', [
             'cars' => $cars,
             'parEtat' => $parEtat
@@ -49,7 +48,7 @@ final class CarController extends AbstractController
 
     #[Route('/{id}', name: 'show', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('CAR_VOIR')]
-    public function show(int $id): Response
+    public function show(int $id, Request $request, TableHelper $tableHelper): Response
     {
         try {
             $car = $this->api->item('/api/cars/' . $id);
@@ -60,8 +59,49 @@ final class CarController extends AbstractController
             }
         }
 
+        // Préfixer les queryParams par table pour éviter les collisions
+        $qVoyages = $request->query->all('v');   // ?v[page]=2&v[order]=datedebut
+        $qDepannages = $request->query->all('d');   // ?d[page]=1&d[order]=datedepannage
+
+        $voyages = $tableHelper->handleRelated(
+            endpoint: '/api/voyages',
+            queryParams: $qVoyages,
+            fixedFilters: ['car.id' => $id],
+            allowedFilters: [],
+            allowedSorts: [
+                'id',
+                'provenance',
+                'destination',
+                'datedebut',
+                'placestotal',
+                'createdAt'
+            ],
+            defaultPerPage: 10,
+        );
+
+        $depannages = $tableHelper->handleRelated(
+            endpoint: '/api/depannages',
+            queryParams: $qDepannages,
+            fixedFilters: ['car.id' => $id],
+            allowedFilters: [],
+            allowedSorts: [
+                'id',
+                'datedepannage',
+                'lieudepannage',
+                'couttotal',
+                'createdAt'
+            ],
+            defaultPerPage: 10,
+        );
+
         return $this->render('car/show.html.twig', [
-            'car' => $car
+            'car' => $car,
+            'voyages' => $voyages['items'],
+            'voyagesMeta' => $voyages['meta'],
+            'voyagesParams' => $qVoyages,
+            'depannages' => $depannages['items'],
+            'depannagesMeta' => $depannages['meta'],
+            'depannagesParams' => $qDepannages,
         ]);
     }
 

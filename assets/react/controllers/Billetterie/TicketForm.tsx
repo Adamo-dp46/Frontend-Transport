@@ -31,7 +31,6 @@ import {
     Eye,
 } from "lucide-react";
 import { flash } from "../../../elements/Alert"
-import { visit } from "@hotwired/turbo"
 import { Tabs, TabsList, TabsTrigger } from "../../../components/ui/tabs"
 import {
     Dialog,
@@ -43,19 +42,15 @@ import {
 } from "../../../components/ui/dialog"
 import { Zap } from "lucide-react"
 
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-
-interface CreatedTicket { // Pour le post création sans redirection
-    id: number
-    codeticket: string
-    siege: { numero: number }
-    nomclient?: string | null
-    prix: number
-}
-
-
+/*
+    interface CreatedTicket { -- Pour le post création sans redirection
+        id: number
+        codeticket: string
+        siege: { numero: number }
+        nomclient?: string | null
+        prix: number
+    }
+*/
 interface Voyage {
     "@id": string;
     id: number;
@@ -70,8 +65,7 @@ interface Voyage {
         nbrsiege: number;
         siegesGauche?: number;
         siegesDroite?: number;
-    }
-
+    };
     datefin?: string | null;
 }
 
@@ -96,8 +90,6 @@ interface ClientInfo {
     contactclient: string;
 }
 
-// ─── Props ────────────────────────────────────────────────────────────────────
-
 interface Gare {
     "@id": string
     id: number
@@ -112,14 +104,12 @@ interface TicketFormProps {
 }
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
-
 const SIEGE_W = 44;
 const SIEGE_H = 44;
 const GAP = 6;
 const AISLE = 28;
 
 // ─── Siège individuel ─────────────────────────────────────────────────────────
-
 function SiegeCell({
     siege,
     selected,
@@ -311,144 +301,138 @@ function PlanCar({
         </div>
     );
 }
+/*
+    function CreatedTicketsPanel({ -- Pour le post création sans redirection
+        tickets,
+        onNouvelleVente,
+    }: {
+        tickets: CreatedTicket[]
+        onNouvelleVente: () => void
+    }) {
+        const [printingAll, setPrintingAll] = useState(false)
 
-
-
-
-
-
-function CreatedTicketsPanel({ // Pour le post création sans redirection
-    tickets,
-    onNouvelleVente,
-}: {
-    tickets: CreatedTicket[]
-    onNouvelleVente: () => void
-}) {
-    const [printingAll, setPrintingAll] = useState(false)
-
-    const handlePrintAll = async () => {
-        setPrintingAll(true)
-        try {
-            const res = await fetch("/ticket/batch/print", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ids: tickets.map(t => t.id) }),
-            })
-            if (res.ok) {
-                const blob = await res.blob()
-                const url = URL.createObjectURL(blob)
-                window.open(url, "_blank")
-                setTimeout(() => URL.revokeObjectURL(url), 10_000)
+        const handlePrintAll = async () => {
+            setPrintingAll(true)
+            try {
+                const res = await fetch("/ticket/batch/print", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ ids: tickets.map(t => t.id) }),
+                })
+                if (res.ok) {
+                    const blob = await res.blob()
+                    const url = URL.createObjectURL(blob)
+                    window.open(url, "_blank")
+                    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+                }
+            } finally {
+                setPrintingAll(false)
             }
-        } finally {
-            setPrintingAll(false)
         }
-    }
 
-    return (
-        <Card className="border-emerald-200 bg-emerald-50/50">
-            <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-base text-emerald-700">
-                        <CheckCircle2 className="h-5 w-5" />
-                        {tickets.length > 1
-                            ? `${tickets.length} tickets créés avec succès`
-                            : "Ticket créé avec succès"}
-                    </CardTitle>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={onNouvelleVente}
-                        className="gap-1.5 text-xs"
-                    >
-                        <Plus className="h-3.5 w-3.5" />
-                        Nouvelle vente
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-2">
-                {/* Liste des tickets créés */}
-                {tickets.map((ticket) => (
-                    <div
-                        key={ticket.id}
-                        className="flex items-center justify-between rounded-lg border border-emerald-200 bg-white px-4 py-3"
-                    >
-                        <div className="flex items-center gap-3">
-                            {/* Badge siège */}
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-600">
-                                {ticket.siege.numero}
-                            </div>
-                            <div>
-                                <p className="text-sm font-mono font-medium text-gray-700">
-                                    {ticket.codeticket}
-                                </p>
-                                <p className="text-xs text-gray-400">
-                                    {ticket.nomclient ?? "Passager non renseigné"}
-                                    {" · "}
-                                    <span className="font-medium text-emerald-600">
-                                        {ticket.prix.toLocaleString("fr-FR")} FCFA
-                                    </span>
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Actions par ticket */}
-                        <div className="flex items-center gap-1.5">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 gap-1.5 text-xs"
-                                onClick={() =>
-                                    window.open(`/ticket/${ticket.id}/pdf`, "_blank")
-                                }
-                            >
-                                <Printer className="h-3.5 w-3.5" />
-                                Imprimer
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 gap-1.5 text-xs"
-                                asChild
-                            >
-                                <a href={`/ticket/${ticket.id}`}>
-                                    <Eye className="h-3.5 w-3.5" />
-                                    Voir
-                                </a>
-                            </Button>
-                        </div>
-                    </div>
-                ))}
-
-                {/* Actions globales si plusieurs tickets */}
-                {tickets.length > 1 && (
-                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-emerald-200">
+        return (
+            <Card className="border-emerald-200 bg-emerald-50/50">
+                <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2 text-base text-emerald-700">
+                            <CheckCircle2 className="h-5 w-5" />
+                            {tickets.length > 1
+                                ? `${tickets.length} tickets créés avec succès`
+                                : "Ticket créé avec succès"}
+                        </CardTitle>
                         <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={handlePrintAll}
-                            disabled={printingAll}
+                            onClick={onNouvelleVente}
                             className="gap-1.5 text-xs"
                         >
-                            {printingAll ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                                <Printer className="h-3.5 w-3.5" />
-                            )}
-                            Tout imprimer ({tickets.length})
+                            <Plus className="h-3.5 w-3.5" />
+                            Nouvelle vente
                         </Button>
                     </div>
-                )}
-            </CardContent>
-        </Card>
-    )
-}
+                </CardHeader>
+                <CardContent className="space-y-2">
+                    {/* Liste des tickets créés /}
+                    {tickets.map((ticket) => (
+                        <div
+                            key={ticket.id}
+                            className="flex items-center justify-between rounded-lg border border-emerald-200 bg-white px-4 py-3"
+                        >
+                            <div className="flex items-center gap-3">
+                                {/* Badge siège /}
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-600">
+                                    {ticket.siege.numero}
+                                </div>
+                                <div>
+                                    <p className="text-sm font-mono font-medium text-gray-700">
+                                        {ticket.codeticket}
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                        {ticket.nomclient ?? "Passager non renseigné"}
+                                        {" · "}
+                                        <span className="font-medium text-emerald-600">
+                                            {ticket.prix.toLocaleString("fr-FR")} FCFA
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
 
+                            {/* Actions par ticket /}
+                            <div className="flex items-center gap-1.5">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 gap-1.5 text-xs"
+                                    onClick={() =>
+                                        window.open(`/ticket/${ticket.id}/pdf`, "_blank")
+                                    }
+                                >
+                                    <Printer className="h-3.5 w-3.5" />
+                                    Imprimer
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 gap-1.5 text-xs"
+                                    asChild
+                                >
+                                    <a href={`/ticket/${ticket.id}`}>
+                                        <Eye className="h-3.5 w-3.5" />
+                                        Voir
+                                    </a>
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
 
+                    {/* Actions globales si plusieurs tickets /}
+                    {tickets.length > 1 && (
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-emerald-200">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={handlePrintAll}
+                                disabled={printingAll}
+                                className="gap-1.5 text-xs"
+                            >
+                                {printingAll ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                    <Printer className="h-3.5 w-3.5" />
+                                )}
+                                Tout imprimer ({tickets.length})
+                            </Button>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        )
+    }
+*/
 function QuickConfirmDialog({ // Pour vente rapide
     siege,
     voyage,
@@ -560,22 +544,21 @@ export default function TicketForm({
 
 
     const [gareId, setGareId] = useState<string>("")
-
-
-    const [createdTickets, setCreatedTickets] = useState<CreatedTicket[]>([]) // Pour le post création sans redirection, pour l'utiliser on supprime toute la logique de redirection/window.open dans 'handleSubmit'
-    const handleNouvelleVente = () => {
-        setCreatedTickets([])
-        setSelectedSieges([])
-        setClientInfos({})
-        // Garder le voyage sélectionné pour enchaîner les ventes rapidement
-        // Garder gareId et voyageId pour enchaîner rapidement
-    }
-
+    /*
+        const [createdTickets, setCreatedTickets] = useState<CreatedTicket[]>([]) -- Pour le post création sans redirection, pour l'utiliser on supprime toute la logique de redirection/window.open dans 'handleSubmit'
+        const handleNouvelleVente = () => {
+            setCreatedTickets([])
+            setSelectedSieges([])
+            setClientInfos({})
+            // Garder le voyage sélectionné pour enchaîner les ventes rapidement
+            // Garder gareId et voyageId pour enchaîner rapidement
+        }
+    */
     const [mode, setMode] = useState<"normal" | "rapide">("normal") // Pour la vente rapide
     const [quickSiege, setQuickSiege] = useState<Siege | null>(null)
     const [quickSubmitting, setQuickSubmitting] = useState(false)
     const handleQuickSell = async () => {
-    if (!quickSiege || !voyageId || !gareId) return
+        if (!quickSiege || !voyageId || !gareId) return
         setQuickSubmitting(true)
 
         try {
@@ -604,9 +587,10 @@ export default function TicketForm({
             if (data.created?.length > 0) {
                 const id = data.created[0]
 
-                // Charger les détails du ticket créé pour le panneau
-                const detail = await fetch(`/ticket/${id}/json`).then(r => r.json())
-                setCreatedTickets(prev => [...prev, detail])
+                /* -- Pour le post création charger les détails du ticket créé pour le panneau
+                    const detail = await fetch(`/ticket/${id}/json`).then(r => r.json())
+                    setCreatedTickets(prev => [...prev, detail])
+                */
 
                 // Impression PDF automatique
                 window.open(`/ticket/${id}/pdf`, "_blank")
@@ -738,50 +722,69 @@ export default function TicketForm({
                 setFlashError(data.errors.join(" | "));
             }
 
-            /*
-            if (data.created?.length > 0) {
-                if (data.created.length === 1) {
+            if(data.created?.length > 0) {
+                if(data.created.length === 1) {
                     // Rediriger vers le ticket créé
                     // window.location.href = `/ticket/${data.created[0]}`; // window.location.href = `/ticket/${data.created[0]}/pdf`;
-                    visit(`/ticket/${data.created[0]}`) // Pour que turbo redirige 
+                    window.open(`/ticket/${data.created[0]}/pdf`, `_blank`)
+                    await loadSieges(voyageId);
                 } else {
-                     // Vente groupée → ouvrir chaque PDF dans un nouvel onglet
+
+                    const res = await fetch("/ticket/batch/print", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ ids: data.created }),
+                    })
+
+                    if(res.ok) {
+                        const blob = await res.blob()
+                        const url  = URL.createObjectURL(blob)
+                        window.open(url, "_blank")
+                        setTimeout(() => URL.revokeObjectURL(url), 10_000)
+                    } else {
+                        setFlashError("Erreur lors de la génération du PDF groupé.")
+                    }
+
+                    /*
+                    // Vente groupée → ouvrir chaque PDF dans un nouvel onglet
                     // Petit délai entre chaque ouverture pour éviter le blocage popup des navigateurs
                     data.created.forEach((id: number, index: number) => {
                         setTimeout(() => {
                             window.open(`/ticket/${id}/pdf`, `_blank`);
                         }, index * 300);
                     });
-
+                    */
                     /* Recharger le plan après l'ouverture des onglets
-                    setFlashSuccess(
-                        `${data.created.length} ticket(s) créé(s). Si les onglets n'ont pas ouvert, ` +
-                        `imprimez-les depuis la liste des tickets.`
-                    ); *
+                        setFlashSuccess(
+                            `${data.created.length} ticket(s) créé(s). Si les onglets n'ont pas ouvert, ` +
+                            `imprimez-les depuis la liste des tickets.`
+                        );
+                     */
 
                     flash(`${data.created.length} ticket(s) créé(s). Si les onglets n'ont pas ouvert, ` + `imprimez-les depuis la liste des tickets.`, 'success'); // Vu que certains navigateurs bloquent 'window.open' si ce n'est pas déclenché directement par un clic utilisateur
 
                     await loadSieges(voyageId);
                 }
             }
-            */
-            if (data.created?.length > 0) { // Post création sans redirection
-                // Charger les détails de chaque ticket créé
-                const details = await Promise.all(
-                    data.created.map((id: number) =>
-                        fetch(`/ticket/${id}/json`).then(r => r.json())
-                    )
-                )
-                // setCreatedTickets(details) // ❌ Écrase les tickets précédents
-                // ✅ Accumule
-                setCreatedTickets(prev => [...prev, ...details])
-                // Recharger le plan pour refléter les nouveaux sièges occupés
-                await loadSieges(voyageId)
-                // Réinitialiser la sélection
-                setSelectedSieges([])
-                setClientInfos({})
-            }
 
+            /*
+                if (data.created?.length > 0) { -- Post création sans redirection
+                    // Charger les détails de chaque ticket créé
+                    const details = await Promise.all(
+                        data.created.map((id: number) =>
+                            fetch(`/ticket/${id}/json`).then(r => r.json())
+                        )
+                    )
+                    // setCreatedTickets(details) // ❌ Écrase les tickets précédents
+                    // ✅ Accumule
+                    setCreatedTickets(prev => [...prev, ...details])
+                    // Recharger le plan pour refléter les nouveaux sièges occupés
+                    await loadSieges(voyageId)
+                    // Réinitialiser la sélection
+                    setSelectedSieges([])
+                    setClientInfos({})
+                }
+            */
         } catch {
             setFlashError("Erreur réseau. Veuillez réessayer.");
         } finally {
@@ -812,16 +815,14 @@ export default function TicketForm({
             )}
 
 
-
-
-
-            {/* Panneau post-création */}
-            {createdTickets.length > 0 && (
-                <CreatedTicketsPanel
-                    tickets={createdTickets}
-                    onNouvelleVente={handleNouvelleVente}
-                />
-            )}
+            {/* Panneau post-création
+                {createdTickets.length > 0 && (
+                    <CreatedTicketsPanel
+                        tickets={createdTickets}
+                        onNouvelleVente={handleNouvelleVente}
+                    />
+                )}
+            */}
 
 
              {/* Onglets - Pour la vente rapide */}

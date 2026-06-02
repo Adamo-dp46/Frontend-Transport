@@ -19,12 +19,11 @@
     </div>
 </div>
 
-{# ── Compteurs par état ───────────────────────────────────────────────── #}
 {% set etats = {
-    'Disponible':    { label: 'Disponibles',    color: 'emerald', icon: '✓' },
-    'Mission':       { label: 'En mission',     color: 'blue',    icon: '→' },
-    'Maintenance':{ label: 'En maintenance', color: 'amber',   icon: '⚙' },
-    'Panne':      { label: 'En panne',       color: 'red',     icon: '!' },
+    'Disponible': { label: 'Disponibles', color: 'emerald', icon: '✓' },
+    'Mission': { label: 'En mission', color: 'blue', icon: '→' },
+    'Maintenance':{ label: 'En maintenance', color: 'amber', icon: '⚙' },
+    'Panne': { label: 'En panne', color: 'red', icon: '!' }
 } %}
 
 <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-6">

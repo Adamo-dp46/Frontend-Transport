@@ -59,7 +59,7 @@
                 </div>
             </dl>
         </div>
-        <div {{ react_component('Stock/FournisseurApprovisionnementTable', {
+        <div {{ react_component('Collection/FournisseurApprovisionnementTable', {
                 approvisionnements: approvisionnements,
                 meta: meta,
                 queryParams: queryParams
@@ -69,54 +69,6 @@
                 <twig:Spinner class="size-8" />
             </div>
         </div>
-        {#
-            <div class="card overflow-hidden">
-                <div class="flex items-center justify-between px-6 py-4 border-b">
-                    <h2 class="text-2xl font-semibold">Approvisionnements</h2>
-                    <span class="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-bold">
-                        {{ fournisseur.approvisionnements|length }}
-                    </span>
-                </div>
-
-                {% if fournisseur.approvisionnements is empty %}
-                    <div class="px-6 py-8 text-center text-sm text-muted-foreground">
-                        Aucun approvisionnement enregistré
-                    </div>
-                {% else %}
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="bg-muted/40 border-b">
-                                <th class="text-left px-6 py-3 font-semibold">N°</th>
-                                <th class="text-left px-6 py-3 font-semibold">Date d'approvisionnement</th>
-                                <th class="text-left px-6 py-3 font-semibold">Créé le</th>
-                                <th class="w-12"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y">
-                            {% for appro in fournisseur.approvisionnements %}
-                            <tr class="hover:bg-muted/20 transition-colors">
-                                <td class="px-6 py-3 font-mono font-semibold text-xs">
-                                    #{{ appro.id }}
-                                </td>
-                                <td class="px-6 py-3">
-                                    {{ appro.dateappro ? appro.dateappro|date('d/m/Y H:i') : '—' }}
-                                </td>
-                                <td class="px-6 py-3 text-muted-foreground text-xs">
-                                    {{ appro.createdAt ? appro.createdAt|date('d/m/Y') : '—' }}
-                                </td>
-                                <td class="px-6 py-3">
-                                    <a href="{{ path('approvisionnement.show', { id: appro.id }) }}"
-                                    class="text-xs text-primary hover:underline">
-                                        Voir →
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% endif %}
-            </div>
-        #}
     </div>
 
     <div class="space-y-4">
@@ -124,24 +76,24 @@
             <h2 class="text-sm font-semibold uppercase">Statistiques</h2>
             <div class="text-center py-2">
                 <p class="text-4xl font-black tabular-nums text-primary">
-                    {{ fournisseur.approvisionnements|length }}
+                    {{ fournisseur.approvisionnementsCount }}
                 </p>
                 <p class="text-xs text-muted-foreground mt-1">approvisionnement(s) au total</p>
             </div>
 
-            {% if fournisseur.approvisionnements|length > 0 %}
+            {% if fournisseur.approvisionnementsCount > 0 %}
             <div class="space-y-2 pt-2 border-t border-border text-sm">
                 <div class="flex justify-between">
                     <span class="text-muted-foreground text-xs">Premier appro.</span>
                     <span class="text-xs font-medium">
-                        {% set first = fournisseur.approvisionnements|last %}
+                        {% set first = fournisseur.firstApprovisionnement %} {# Ou.. '.approvisionnements|last' #}
                         {{ first.dateappro ? first.dateappro|date('d/m/Y') : '—' }}
                     </span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-muted-foreground text-xs">Dernier appro.</span>
                     <span class="text-xs font-medium">
-                        {% set last = fournisseur.approvisionnements|first %}
+                        {% set last = fournisseur.lastApprovisionnement %}
                         {{ last.dateappro ? last.dateappro|date('d/m/Y') : '—' }}
                     </span>
                 </div>

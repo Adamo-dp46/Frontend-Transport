@@ -7,7 +7,8 @@ import { initTheme } from './modules/theme.js'
 import { initDropdowns } from './modules/dropdown.js'
 import { initSidebar } from './modules/sidebar.js'
 import { initTooltips } from './modules/tooltip.js'
-import { initRemoteSelects } from './modules/remote-select.js'
+import { initRemoteSelects } from './modules/tom-select-remote.js'
+// ----- //
 
 registerReactControllerComponents(require.context('./react/controllers', true, /\.(j|t)sx?$/))
 

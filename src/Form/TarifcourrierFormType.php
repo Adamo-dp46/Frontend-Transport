@@ -17,7 +17,7 @@ class TarifcourrierFormType extends AbstractType
             ->add('libelle', TextType::class, [
                 'label' => 'Libellé',
                 'attr' => [
-                    'placeholder' => 'Ex: Petits colis, Colis moyens...'
+                    'placeholder' => 'ex: Petits colis, Colis moyens..'
                 ],
                 'constraints' => [
                     new Assert\NotBlank(),

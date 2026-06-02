@@ -80,7 +80,7 @@
                     {% for v in voyages %}
                         <option value="{{ v.id }}"
                             {{ courrier.voyage is not null and courrier.voyage.id == v.id ? 'selected' : '' }}>
-                            {{ v.codevoyage }} — {{ v.provenance }} → {{ v.destination }}
+                            {{ v.codevoyage }} - {{ v.provenance }} → {{ v.destination }}
                         </option>
                     {% endfor %}
                 </select>

@@ -90,7 +90,7 @@
                     </dd>
                 </div>
                 <div class="flex justify-between items-center py-2.5">
-                    <dt class="text-muted-foreground">Rôle Symfony</dt>
+                    <dt class="text-muted-foreground">Rôle</dt>
                     <dd class="flex gap-1.5 flex-wrap">
                         {% for role in user.roles %}
                             {% set cfg = roleMap[role] ?? [role, 'bg-gray-100 text-gray-600'] %}
@@ -196,7 +196,17 @@
 
     {# ── Panneau latéral ──────────────────────────────────────────────────── #}
     <div class="space-y-4">
-
+        {% if user.fileUrl is defined and user.fileUrl %}
+        <div class="rounded-xl border bg-card shadow-sm p-4">
+            <img
+                src="{{ api_url ~ '/media' ~ user.fileUrl ~ '?w=400&h=400&fm=jpg&fit=crop' }}"
+                alt="{{ user.prenom }} {{ user.nom }}"
+                width="100%"
+                height="auto"
+                class="object-cover rounded-lg"
+            />
+        </div>
+        {% endif %}
         {# Répartition #}
         {% if nbPermissionsTotal > 0 %}
         {% set actionsOrdre = ['VOIR', 'CREER', 'MODIFIER', 'SUPPRIMER'] %}
@@ -255,9 +265,6 @@
             </form>
             {% endif %}
         </div>
-
     </div>
-
 </div>
-
 {% endblock %}

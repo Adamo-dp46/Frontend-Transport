@@ -53,10 +53,12 @@
                     <div class="sidebar-section">
                         <div class="sb-section-title">Principal</div>
 
+                        {% if not is_granted('ROLE_SUPER_ADMIN') %}
                         <a href="{{ path('home') }}" class="nav-link {{ app.current_route starts with 'home' ? 'active' : '' }}" data-nav data-tooltip="Dashboard">
                             <svg class="nav-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#dashbord"></use></svg>
                             <span class="sb-text">Tableau de bord</span>
                         </a>
+                        {% endif %}
 
                         <button class="nav-link" data-submenu="sub-stock" title="Stock & Approvisionnement"> {# On peut mettre un lien 'a' #}
                             <svg class="nav-icon" aria-hidden="true">
@@ -221,10 +223,11 @@
                                     <span class="sub-dot"></span>Tickets
                                 </a>
                                 {% endif %}
-
+                                {% if is_granted('VOYAGE_VOIR') %}
                                 <a href="{{ path('bordereau.index') }}" class="sub-link {{ app.current_route starts with 'bordereau.' ? 'active' : '' }}" data-subnav>
                                     <span class="sub-dot"></span>Bordereau
                                 </a>
+                                {% endif %}
                             </div>
                         </div>
 
@@ -309,7 +312,11 @@
                     <div class="dropdown-anchor">
                         <button class="sb-footer-user" id="sidebarUserBtn">
                         <div class="user-avatar">
-                            {{ app.user.nom|slice(0,1)|upper }}{{ app.user.prenom|slice(0,1)|upper }}
+                            {% if app.user.fileUrl is defined and app.user.fileUrl %}
+                                <img src="{{ api_url ~ '/media' ~ app.user.fileUrl ~ '?w=80&h=80&fm=jpg&fit=crop' }}" alt="{{ app.user.prenom }} {{ app.user.nom }}" class="w-full h-full object-cover rounded-full" />
+                            {% else %}
+                                {{ app.user.nom|slice(0,1)|upper }}{{ app.user.prenom|slice(0,1)|upper }}
+                            {% endif %}
                         </div>
                         <div class="user-info">
                             <span class="user-name">{{ app.user.nom }}</span>
@@ -332,12 +339,14 @@
                             </div>
                             <div class="sep"></div>
                             <div class="dropdown-section">
-                                <a href="{{ path('app_logout') }}" class="dropdown-item destructive" data-close-dropdown>
-                                    <svg width="14" height="14" aria-hidden="true">
-                                        <use href="{{ asset('sprite.svg') }}#logout"></use>
-                                    </svg>
-                                    Se déconnecté
-                                </a>
+                                <form action="{{ path('app_logout') }}" method="post">
+                                    <button class="dropdown-item destructive" data-close-dropdown>
+                                        <svg width="14" height="14" aria-hidden="true">
+                                            <use href="{{ asset('sprite.svg') }}#logout"></use>
+                                        </svg>
+                                        Se déconnecté
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -420,13 +429,21 @@
 
                         <div class="dropdown-anchor">
                             <button class="topbar-avatar" id="profileBtn">
-                                {{ app.user.nom|slice(0,1)|upper }}{{ app.user.prenom|slice(0,1)|upper }}
+                                {% if app.user.fileUrl is defined and app.user.fileUrl %}
+                                    <img src="{{ api_url ~ '/media' ~ app.user.fileUrl ~ '?w=80&h=80&fm=jpg&fit=crop' }}" alt="{{ app.user.prenom }} {{ app.user.nom }}" class="w-full h-full object-cover rounded-full" />
+                                {% else %}
+                                    {{ app.user.nom|slice(0,1)|upper }}{{ app.user.prenom|slice(0,1)|upper }}
+                                {% endif %}
                             </button>
                             <div class="dropdown" id="profileDrop" style="min-width:220px;right:0;top:calc(100% + .375rem);">
                                 <div class="dropdown-header">
                                     <div style="display:flex;align-items:center;gap:.625rem;">
                                         <div style="width:2.25rem;height:2.25rem;border-radius:9999px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--primary-fg);flex-shrink:0;">
-                                            {{ app.user.nom|slice(0,1)|upper }}{{ app.user.prenom|slice(0,1)|upper }}
+                                            {% if app.user.fileUrl is defined and app.user.fileUrl %}
+                                                <img src="{{ api_url ~ '/media' ~ app.user.fileUrl ~ '?w=80&h=80&fm=jpg&fit=crop' }}" alt="{{ app.user.prenom }} {{ app.user.nom }}" class="w-full h-full object-cover rounded-full" />
+                                            {% else %}
+                                                {{ app.user.nom|slice(0,1)|upper }}{{ app.user.prenom|slice(0,1)|upper }}
+                                            {% endif %}
                                         </div>
                                         <div>
                                             <div class="dropdown-title">{{ app.user.nom }} {{ app.user.prenom }}</div>
@@ -445,12 +462,14 @@
                                 </div>
                                 <div class="sep"></div>
                                 <div class="dropdown-section">
-                                    <a href="{{ path('app_logout') }}" class="dropdown-item destructive" data-close-dropdown>
-                                        <svg width="14" height="14" aria-hidden="true">
-                                            <use href="{{ asset('sprite.svg') }}#logout"></use>
-                                        </svg>
-                                        Se déconnecté
-                                    </a>
+                                    <form action="{{ path('app_logout') }}" method="post">
+                                        <button class="dropdown-item destructive" data-close-dropdown>
+                                            <svg width="14" height="14" aria-hidden="true">
+                                                <use href="{{ asset('sprite.svg') }}#logout"></use>
+                                            </svg>
+                                            Se déconnecté
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         </div>

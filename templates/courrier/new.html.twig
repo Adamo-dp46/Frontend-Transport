@@ -69,7 +69,7 @@
                     <option value="">-- Aucun --</option>
                     {% for voyage in voyages %}
                         <option value="{{ voyage.id }}">
-                            {{ voyage.codevoyage }} — {{ voyage.provenance }} → {{ voyage.destination }}
+                            {{ voyage.codevoyage }} - {{ voyage.provenance }} → {{ voyage.destination }}
                         </option>
                     {% endfor %}
                 </select>

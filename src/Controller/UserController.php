@@ -144,8 +144,9 @@ final class UserController extends AbstractController
         $userRoleIds = array_map(
             fn($r) => $r['role']['id'],
             $user['userRoles'] ?? []
-        ); // On pré-coche les rôles déjà attribués en extractant l'id depuis l'iri '/api/roles/{id}'
-
+        ); /*
+            - On précoche les rôles déjà attribués en extractant l'id depuis l'iri '/api/roles/{id}'
+        */
         $form = $this->createForm(UserEditFormType::class, array_merge(
             $user ?? [],
             ['roles' => $userRoleIds]
@@ -190,38 +191,23 @@ final class UserController extends AbstractController
     }
 
     #[Route('/{id}/suspendre', name: 'suspendre', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('USER_MODIFIER')]
     public function suspendre(int $id, Request $request): Response
     {
+        if(!$this->isGranted('USER_MODIFIER') && !$this->isGranted('ROLE_SUPER_ADMIN')) {
+            throw $this->createAccessDeniedException();
+        }
+
         if($this->isCsrfTokenValid('delete_user', $request->request->get('_token'))) {
             try {
                 $this->api->patch('/api/users/' . $id . '/suspendre');
                 $this->addFlash('success', 'Le statut de l\'utilisateur a été modifié avec succès');
             } catch(ApiException $e) {
-                $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.show', ['id' => $id]);
+                $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.index');
                 if($response) {
                     return $response;
                 }
             }
         }
-        return $this->redirectToRoute('admin.user.show', ['id' => $id]);
-    }
-
-    #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('USER_SUPPRIMER')]
-    public function delete(int $id)
-    {
-        try {
-            $this->api->patch('/api/users/' . $id . '/remove');
-            $this->addFlash('success', 'L\'utilisateur a été supprimé avec succès');
-        } catch(ApiException $e) {
-            $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.index');
-            if($response) {
-                return $response;
-            }
-        }
-
         return $this->redirectToRoute('admin.user.index');
     }
-
 }

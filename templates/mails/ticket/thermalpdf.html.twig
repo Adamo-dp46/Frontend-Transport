@@ -14,6 +14,13 @@
         width: 76mm;
     }
 
+    .ticket-wrapper {
+        width: 80mm;
+        box-sizing: border-box;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
     /* ── En-tête ── */
     .header {
         display: table;
@@ -230,99 +237,109 @@
 </style>
 <body>
 
-    {# ── En-tête ── #}
-    <div class="header">
-        <div class="header-logo">
-            {% if ticket.voyage.entreprise.logo is defined and ticket.voyage.entreprise.logo %}
-                <img src="{{ ticket.voyage.entreprise.logo }}">
+    {% set items = tickets is defined ? tickets : [ticket] %}
+    {% set total = items|length %}
+
+    {% for ticket in items %}
+    <div class="ticket-wrapper">
+        {# ── En-tête ── #}
+        <div class="header">
+            <div class="header-logo">
+                {% if ticket.voyage.entreprise.logo is defined and ticket.voyage.entreprise.logo %}
+                    <img src="{{ ticket.voyage.entreprise.logo }}">
+                {% endif %}
+            </div>
+            <div class="header-info">
+                <div class="header-company">{{ ticket.voyage.entreprise.nom ?? 'Transport' }}</div>
+                <div class="header-phone">TEL : {{ ticket.voyage.entreprise.telephone ?? '' }}</div>
+            </div>
+        </div>
+
+        {# ── Trajet ── #}
+        <div class="trajet-block">
+            <div class="trajet-route">
+                {{ ticket.voyage.provenance }} ==&gt; {{ ticket.voyage.destination }}
+            </div>
+            <div class="trajet-date">
+                Date : {{ ticket.voyage.datedebut ? ticket.voyage.datedebut|date('d/m/Y') : '—' }}
+                &nbsp;&nbsp;&nbsp;
+                Heure : {{ ticket.voyage.datedebut ? ticket.voyage.datedebut|date('H:i') : '—' }}
+            </div>
+        </div>
+
+        {# ── Ticket n° ── #}
+        <div class="ticket-num-block clearfix">
+            <span class="ticket-num-label">Ticket n°</span>
+            <span class="ticket-num-code">{{ ticket.codeticket }}</span>
+        </div>
+
+        {# ── Siège / Prix ── #}
+        <div class="grid-2">
+            <div class="grid-cell">
+                <span class="grid-label">Siège</span>
+                <span class="grid-val">{{ ticket.siege.numero }}</span>
+            </div>
+            <div class="grid-cell">
+                <span class="grid-label">Prix</span>
+                <span class="grid-val-prix">
+                    {{ ticket.prix|number_format(0, ',', ' ') }}<span class="grid-suffix"> F Cfa</span>
+                </span>
+            </div>
+        </div>
+
+        {# ── Départ n° / Ligne ── #}
+        <div class="depart-ligne clearfix">
+            <span>Départ n° : <b>{{ ticket.voyage.numerodepart ?? '—' }}</b></span>
+            <span class="dl-right">Ligne <b>{{ ticket.voyage.ligne ?? '—' }}</b></span>
+        </div>
+
+        {# ── Message compagnie ── #}
+        <div class="msg-compagnie">
+            La compagnie {{ ticket.voyage.entreprise.nom ?? '' }} vous souhaite un bon voyage
+        </div>
+
+        {# ── Bas ── #}
+        <div class="bottom-row clearfix">
+            <div class="bottom-left">
+                {{ ticket.createdAt ? ticket.createdAt|date('H:i:s d') : '' }}<br>
+                {{ ticket.codeticket }}
+            </div>
+            {% if ticket.qrcode is defined and ticket.qrcode %}
+            <div class="bottom-qr" style="text-align:center;margin:0 auto;width:30px">
+                <img src="{{ ticket.qrcode }}">
+            </div>
             {% endif %}
+            <div class="bottom-right">
+                {{ ticket.codeagent ?? '' }}
+                {% if total > 1 %}
+                <br><span style="font-size:7px;font-weight:normal;opacity:0.6;">{{ loop.index }} / {{ total }}</span>
+                {% endif %}
+            </div>
         </div>
-        <div class="header-info">
-            <div class="header-company">{{ ticket.voyage.entreprise.nom ?? 'Transport' }}</div>
-            <div class="header-phone">TEL : {{ ticket.voyage.entreprise.telephone ?? '' }}</div>
+
+        {# ── Encadré bon voyage ── #}
+        <div class="bon-voyage">
+            <p>La compagnie {{ ticket.voyage.entreprise.nom ?? '' }} vous souhaite<br>une bonne et heureuse route</p>
         </div>
+
+        {# ── Ligne de découpe ── #}
+        <div class="cut-line"></div>
+
+        {# ── Talon ── #}
+        <div class="talon">
+            <div class="t-route">
+                {{ ticket.voyage.provenance }} ==&gt; {{ ticket.voyage.destination }}
+            </div>
+            <div class="t-date">
+                Date : {{ ticket.voyage.datedebut ? ticket.voyage.datedebut|date('d/m/Y') : '—' }}
+                &nbsp;&nbsp;&nbsp;
+                Heure : {{ ticket.voyage.datedebut ? ticket.voyage.datedebut|date('H:i') : '—' }}
+            </div>
+            <div class="t-label">Ticket n° :</div>
+            <div class="t-code">{{ ticket.codeticket }}</div>
+        </div>
+
     </div>
-
-    {# ── Trajet ── #}
-    <div class="trajet-block">
-        <div class="trajet-route">
-            {{ ticket.voyage.provenance }} ==&gt; {{ ticket.voyage.destination }}
-        </div>
-        <div class="trajet-date">
-            Date : {{ ticket.voyage.datedebut ? ticket.voyage.datedebut|date('d/m/Y') : '—' }}
-            &nbsp;&nbsp;&nbsp;
-            Heure : {{ ticket.voyage.datedebut ? ticket.voyage.datedebut|date('H:i') : '—' }}
-        </div>
-    </div>
-
-    {# ── Ticket n° ── #}
-    <div class="ticket-num-block clearfix">
-        <span class="ticket-num-label">Ticket n°</span>
-        <span class="ticket-num-code">{{ ticket.codeticket }}</span>
-    </div>
-
-    {# ── Siège / Prix ── #}
-    <div class="grid-2">
-        <div class="grid-cell">
-            <span class="grid-label">Siège</span>
-            <span class="grid-val">{{ ticket.siege.numero }}</span>
-        </div>
-        <div class="grid-cell">
-            <span class="grid-label">Prix</span>
-            <span class="grid-val-prix">
-                {{ ticket.prix|number_format(0, ',', ' ') }}<span class="grid-suffix"> F Cfa</span>
-            </span>
-        </div>
-    </div>
-
-    {# ── Départ n° / Ligne ── #}
-    <div class="depart-ligne clearfix">
-        <span>Départ n° : <b>{{ ticket.voyage.numerodepart ?? '—' }}</b></span>
-        <span class="dl-right">Ligne <b>{{ ticket.voyage.ligne ?? '—' }}</b></span>
-    </div>
-
-    {# ── Message compagnie ── #}
-    <div class="msg-compagnie">
-        La compagnie {{ ticket.voyage.entreprise.nom ?? '' }} vous souhaite un bon voyage
-    </div>
-
-    {# ── Bas : heure émission + QR + code agent ── #}
-    <div class="bottom-row clearfix">
-        <div class="bottom-left">
-            {{ ticket.createdAt ? ticket.createdAt|date('H:i:s d') : '' }}<br>
-            {{ ticket.codeticket }}
-        </div>
-        {% if ticket.qrcode is defined and ticket.qrcode %}
-        <div class="bottom-qr" style="text-align:center;margin:0 auto;width:30px">
-            <img src="{{ ticket.qrcode }}">
-        </div>
-        {% endif %}
-        <div class="bottom-right">
-            {{ ticket.codeagent ?? '' }}
-        </div>
-    </div>
-
-    {# ── Encadré bon voyage ── #}
-    <div class="bon-voyage">
-        <p>La compagnie {{ ticket.voyage.entreprise.nom ?? '' }} vous souhaite<br>une bonne et heureuse route</p>
-    </div>
-
-    {# ── Ligne de découpe ── #}
-    <div class="cut-line"></div>
-
-    {# ── Talon ── #}
-    <div class="talon">
-        <div class="t-route">
-            {{ ticket.voyage.provenance }} ==&gt; {{ ticket.voyage.destination }}
-        </div>
-        <div class="t-date">
-            Date : {{ ticket.voyage.datedebut ? ticket.voyage.datedebut|date('d/m/Y') : '—' }}
-            &nbsp;&nbsp;&nbsp;
-            Heure : {{ ticket.voyage.datedebut ? ticket.voyage.datedebut|date('H:i') : '—' }}
-        </div>
-        <div class="t-label">Ticket n° :</div>
-        <div class="t-code">{{ ticket.codeticket }}</div>
-    </div>
-
+    {% endfor %}
 </body>
 </html>

@@ -12,20 +12,7 @@ import {
 } from "../../../components/ui/dropdown-menu"
 import { DataTableColumnHeader } from "../../components/data-table-column-header"
 import { useMemo } from "react"
-
-interface Permission {
-    id: number
-    entity: string
-    action: string
-}
-
-interface Role {
-    id: number
-    name: string
-    description?: string
-    typerole: string
-    permissions: Permission[]
-}
+import { Role } from "../../models/role.model"
 
 type Props = {
     roles: Role[],

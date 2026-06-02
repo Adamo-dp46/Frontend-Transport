@@ -12,20 +12,16 @@ import {
 } from "../../../components/ui/dropdown-menu"
 import { DataTableColumnHeader } from "../../components/data-table-column-header"
 import { useMemo } from "react"
-
-interface Typepanne {
-    id: number
-    libelle: string
-}
+import { Libelle } from "../../models/libelle.model"
 
 type Props = {
-    typepannes: Typepanne[],
+    typepannes: Libelle[],
     canEdit: boolean,
     canDelete: boolean,
     csrfDelete: string
 }
 
-function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string): ColumnDef<Typepanne>[] {
+function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string): ColumnDef<Libelle>[] {
     return [
         {
             accessorKey: "id",

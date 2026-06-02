@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Domain\Helper\ApiExceptionHandlerHelper;
 use App\Domain\Helper\ApiHelper;
+use App\Domain\Helper\TableHelper;
 use App\Form\PersonnelEditFormType;
 use App\Form\PersonnelFormType;
 use App\Security\Exception\ApiException;
@@ -46,7 +47,7 @@ final class PersonnelController extends AbstractController
 
     #[Route('/{id}', name: 'show', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('PERSONNEL_VOIR')]
-    public function show(int $id): Response
+    public function show(int $id, Request $request, TableHelper $tableHelper): Response
     {
         try {
             $personnel = $this->api->item('/api/personnels/' . $id);
@@ -57,8 +58,46 @@ final class PersonnelController extends AbstractController
             }
         }
 
+        $qVoyages = $request->query->all('v'); // ?v[page]=2&v[sort]=datedebut
+        $qDepannages = $request->query->all('d'); // ?d[page]=1&d[sort]=datedepannage
+
+        $voyages = $tableHelper->handleRelated(
+            endpoint: '/api/voyages',
+            queryParams: $qVoyages,
+            fixedFilters: ['personnel.id' => $id], // ← ton filtre custom DQL
+            allowedSorts: [
+                'id',
+                'provenance',
+                'destination',
+                'datedebut',
+                'placestotal',
+                'createdAt'
+            ],
+            defaultPerPage: 10,
+        );
+
+        $depannages = $tableHelper->handleRelated(
+            endpoint: '/api/depannages',
+            queryParams: $qDepannages,
+            fixedFilters: ['personnel.id' => $id],
+            allowedSorts: [
+                'id',
+                'datedepannage',
+                'lieudepannage',
+                'couttotal',
+                'createdAt'
+            ],
+            defaultPerPage: 10,
+        );
+
         return $this->render('personnel/show.html.twig', [
-            'personnel' => $personnel
+            'personnel' => $personnel,
+            'voyages' => $voyages['items'],
+            'voyagesMeta' => $voyages['meta'],
+            'voyagesParams' => $qVoyages,
+            'depannages' => $depannages['items'],
+            'depannagesMeta' => $depannages['meta'],
+            'depannagesParams' => $qDepannages
         ]);
     }
 
@@ -193,8 +232,7 @@ final class PersonnelController extends AbstractController
 
         return $this->render('personnel/edit.html.twig', [
             'form' => $form,
-            'personnel' => $personnel,
-            'api_url' => $this->getParameter('api.endpoint')
+            'personnel' => $personnel
         ]);
     }
 
