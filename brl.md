@@ -14,38 +14,55 @@
     > php bin/console translation:extract --force fr --format=yaml
 - 
 
-- Peut t'on utiliser le autocomplete de symfony ux et faire la recherche via une api dans mon architecture séparér pour optimiser les sélect de la partie frontend si on a plusieurs enregistrements
-- toogle password ux
-
-/api/voyages/1/bordereau?gare=2
-
+- 
+- Peut t'on utiliser le autocomplete de symfony ux et faire la recherche via une api dans mon architecture séparér pour optimiser les sélect de la partie frontend si on a plusieurs enregistrements (Générique)
 - Exporter les données du dashbord
 
+On vas faire la gestion des statuts :
+- Dans le cas de `Personnel` ajouter `statut` (ACTIF, SUSPENDU) pour ajouter une système de suspension, ensuite lors de l'affectation de personnel on n'affiche que les personnels disponibles dans le select
+- Aussi on vas ajouter la possibilité de désacffecté un personnel d'un Voyage, Depannage, etc...
 
 
-Je veux ajouter la possibilité de donner un rôle à l'utilisateur, les rôles symfony comme le 'ROLE_ADMIN' etc... de sorte à avoir 2 administrateur pour une entreprise
+- Dans le système quand on crée un voyage puis on lui affecte un car, ensuite le car tombe en panne en route on peut modifier le voyage pour changer le car dans le VoyageProcessor qui met à jour aussi le 'placesTotal' du voyage, mais le problème est que quand on crée de nouveau tickets sur le même voyage les sièges occupés ne se mette pas à jour
 
-Je peux t'envoyer l'entité User si tu veux
+- Après clôturation d'un voyage pouvoir déclarer un bagage ou courrier comme perdu
+- Poids bagage -> nullable, Tarifbagage selon la valeur du bagage plutôt que le poids, Champ 'codeticket' pour savoir le bagage est lié à quelle ticket et trouver un moyen optimisé pour la sélection du ticket lors de la création du bagage
+- Colis poids -> nullable
 
-- Empêcher la modification du statut du car
-
-
-
-
-
-
-
-
-
-
+- Vu qu'on a les entités Courrier et Detailcourrier(colis) que doit pouvoir déclarer comme perdu ou c'est les 2
+- Gérer le bordereau gare : /api/voyages/1/bordereau?gare=2
+- Ajouter `date_embauche` sur personnel
 
 
 
 
 
-- La présentation..
-    > Bonjour .., Bienvenue à la présentation de l'application de compagnie de transport, pour commencer on vas se connecter avec un compte administrateur de l'entreprise
-        > Après connexion on accède au tableau de bord de la compagnie de transport mais on n'y reviendra dessus
+
+
+Dans l'application on a déjà la notion de multi-entreprise, maintenant on vas ajouter la notion de multi-gare
+- On sais que l'administrateur de l'entreprise n'est pas lié à une gare mais à une entreprise
+- Lorsque l'administrateur voudra crée un utilisateur il va le lié à une gare
+- Aussi pour chaque gare on aura un administrateur(crée par l'administrateur de l'entreprise) qui lui aussi pourra crée ses propres utilisateurs et leur donner des permissions ou les suspendre et autre..
+- Et quand l'administrateur ou les utilisateurs d'une gare vont se connecter ils n'ont accès qu'aux données de leur gare
+- Aussi un autre soucis est que il y'a entités qui sont liées à toute les gares du genre les trajets, voyages, tickets, etc...
+
+
+- > Totalité des tables idgare int
+User gare nullable -> Puis on le colle à la gare d'embarquement
+
+
+
+
+
+
+
+
+
+
+
+
+- Bonjour .. Permettez moi de vous présenter notre application de compagnie de transport, pour commencer on vas se connecter avec un compte administrateur d'une l'entreprise 
+    > Après connexion on accède au tableau de bord de la compagnie de transport mais on n'y reviendra dessus
     > D'abord l'application est divisé en plusieurs grandes parties qui sont
         > La partie Stock et approvisionnement : Qui vous permet de gérer tous ce qui conçerne le stock et l'approisonnement
         > !! Flotte et maintenance : ...
@@ -55,9 +72,8 @@ Je peux t'envoyer l'entité User si tu veux
         > Personnel : ...
         > Administration : ...
     > En ce qui conçerne les menu `Historique des mouvements de stock` et `Tableau de bord propriétaire` ils ne conçernent que l'admistrateur de l'entreprise
-
-- L'administrarteur crée les rôles et utilisateurs puis...
-    > Vous avez ici tous vos comptes utilisateurs de votre entreprise, Chaque personne a un rôle : caissier, responsable flotte, gestionnaire RH, administrateur... et chaque rôle a des permissions précises, par exemple un caissier peut émettre des tickets mais il ne peut pas modifier les tarifs ni accéder aux données RH. Tout ça se configure dans le panneau d'administration, pour créer un rôle vous.. puis vous lui donner des permissions
+    > Mais aujourd'hui nous allons vous présentez 4 modules de l'application
+        > Vente de tickets, courriers, bagages, gestion des matériels(approvisionnement et dépannage)
 
 - Je vous explique le scénario d'une journée dans la vie de votre compagnie de transport
     > Acte 1 : Préparation du voyage
@@ -106,44 +122,13 @@ Je peux t'envoyer l'entité User si tu veux
 
 
 
+- L'administrarteur crée les rôles et des permissions liées, ensuite crée les utilisateurs de l'application
+    > Vous avez ici tous vos comptes utilisateurs de votre entreprise, Chaque personne a un rôle : caissier, responsable flotte, gestionnaire RH, administrateur... et chaque rôle a des permissions précises, par exemple un caissier peut émettre des tickets mais il ne peut pas modifier les tarifs ni accéder aux données RH. Tout ça se configure dans le panneau d'administration, pour créer un rôle vous.. puis vous lui donner des permissions
 
 
 
 
 
-
-
-## Structure de la démo en résumé
-
-| Acte | Modules touchés | Durée |
-|---|---|---|
-| 1. Préparation voyage | Administration, Exploitation | 5 min |
-| 2. Ventes gare | Billetterie, Bagage, Courrier | 5 min |
-| 3. Arrivée & livraison | Courrier, Exploitation | 3 min |
-| 4. Panne & stock | Flotte, Stock, Approvisionnement | 4 min |
-| 5. Tableau de bord | Dashboard, Rapports | 3 min |
-| **Total** | | **~20 min** |
-
-
-## Ce qu'il faut préparer avant la démo
-
-- Des **données réalistes** : vrais noms de trajets, gares, montants en FCFA
-- Un voyage **déjà partiellement rempli** pour ne pas créer tout from scratch en live
-- Un véhicule avec un **stock de pièces bas** pour que l'alerte soit visible
-- Le tableau de bord avec **des données du mois** pour que les graphiques soient parlants
-
-## Le script complet est prêt
-
-Tu as maintenant les 5 actes. Pour finir de préparer la démo, il te reste à :
-
-| À faire | Détail |
-|---|---|
-| 🗂️ Préparer les données | Vrais noms de trajets, gares, montants FCFA réalistes |
-| 🚗 Préparer un car avec stock bas | Pour que l'alerte soit visible en live |
-| 📊 Alimenter le dashboard | Quelques semaines de données pour que les graphiques parlent |
-| 🔁 Répéter le scénario 2 fois | Pour que les clics soient fluides et naturels |
-
-Bonne présentation !
 
 
 
@@ -367,6 +352,29 @@ suffit.
 
 **Intro.js** `introjs.com` - Permet d'indiquer l'utilisation d'une application à un utilisateur
 - npm install intro.js --save
+
+## Comparaison Driver.js vs Intro.js
+
+**Driver.js**
+- Plus moderne, léger (~5kb gzip)
+- Highlight visuel élégant — met en surbrillance l'élément ciblé avec un overlay
+- API simple et flexible
+- Pas de dépendances
+- Meilleur pour des guides contextuels par page/module
+- Gratuit et open source
+
+**Intro.js**
+- Plus ancien, plus lourd
+- Style "tooltip numéroté" classique
+- Nécessite une licence pour usage commercial
+- Plus de configuration nécessaire
+
+**Recommandation : Driver.js** — plus adapté à ton cas car tu as des guides par module (contextuels par page), il est plus léger, gratuit et son rendu est plus moderne.
+
+---
+
+
+
 
 Parfait. Laisse-moi d'abord aller voir les classes exactes des composants Shadcn disponibles dans UX Toolkit.J'ai maintenant toutes les classes des composants Shadcn. Je vais générer le form_theme migré.J'ai toutes les infos nécessaires. Je génère maintenant le form_theme complet.Voilà le form_theme complet. Voici ce qui a changé par rapport à ton original :
 
@@ -1726,3 +1734,209 @@ document.addEventListener('turbo:before-stream-render', function () {
 | Complexité | Moyenne | Faible | Très faible |
 
 Turbo est clairement le moins de code à maintenir — il fait exactement ce pour quoi il a été conçu.
+
+
+
+
+
+
+
+
+
+Dans ton cas avec React UX, tu n'utilises pas `ux-autocomplete` (qui est Twig/Stimulus). À la place tu utilises un composant React directement.
+
+---
+
+**La stack recommandée**
+
+`shadcn/ui` a un composant **Combobox** qui est exactement l'équivalent de l'autocomplete, basé sur `cmdk`.
+
+---
+
+**1. Le composant Combobox réutilisable**
+
+```tsx
+// assets/components/ui/ApiCombobox.tsx
+import { useState, useEffect } from "react";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+interface Option {
+  value: string;
+  label: string;
+}
+
+interface ApiComboboxProps {
+  endpoint: string;       // ex: '/autocomplete/trajets'
+  placeholder?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  minChars?: number;
+}
+
+export function ApiCombobox({
+  endpoint,
+  placeholder = "Rechercher...",
+  value,
+  onChange,
+  minChars = 2,
+}: ApiComboboxProps) {
+  const [open, setOpen]       = useState(false);
+  const [query, setQuery]     = useState("");
+  const [options, setOptions] = useState<Option[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (query.length < minChars) {
+      setOptions([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    setLoading(true);
+
+    fetch(`${endpoint}?query=${encodeURIComponent(query)}`, {
+      signal: controller.signal,
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        // data = [{ value: '1', text: 'TRJ-DAKAR-THIES-0001' }, ...]
+        setOptions(data.map((i: any) => ({ value: i.value, label: i.text })));
+      })
+      .finally(() => setLoading(false));
+
+    // Debounce — annule la requête précédente si l'user tape vite
+    return () => controller.abort();
+  }, [query, endpoint, minChars]);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" className="w-full justify-between">
+          {selected ? selected.label : placeholder}
+          <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0">
+        <Command shouldFilter={false}>  {/* désactive le filtre local, on filtre via API */}
+          <CommandInput
+            placeholder={placeholder}
+            value={query}
+            onValueChange={setQuery}
+          />
+          {loading && <p className="p-2 text-sm text-muted-foreground">Chargement...</p>}
+          <CommandEmpty>
+            {query.length < minChars
+              ? `Tapez au moins ${minChars} caractères`
+              : "Aucun résultat"}
+          </CommandEmpty>
+          <CommandGroup>
+            {options.map((option) => (
+              <CommandItem
+                key={option.value}
+                value={option.value}
+                onSelect={() => {
+                  onChange?.(option.value);
+                  setOpen(false);
+                  setQuery("");
+                }}
+              >
+                <Check className={cn(
+                  "mr-2 h-4 w-4",
+                  value === option.value ? "opacity-100" : "opacity-0"
+                )} />
+                {option.label}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+```
+
+---
+
+**2. Utilisation dans ton DataTable ou formulaire**
+
+```tsx
+// assets/components/voyage/VoyageForm.tsx
+import { useState } from "react";
+import { ApiCombobox } from "@/components/ui/ApiCombobox";
+
+export function VoyageForm() {
+  const [trajetId, setTrajetId] = useState<string>("");
+  const [carId, setCarId]       = useState<string>("");
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="text-sm font-medium">Trajet</label>
+        <ApiCombobox
+          endpoint="/autocomplete/trajets"
+          placeholder="Rechercher un trajet..."
+          value={trajetId}
+          onChange={setTrajetId}
+          minChars={2}
+        />
+      </div>
+
+      <div>
+        <label className="text-sm font-medium">Véhicule</label>
+        <ApiCombobox
+          endpoint="/autocomplete/cars"
+          placeholder="Rechercher un véhicule..."
+          value={carId}
+          onChange={setCarId}
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+**3. Le Controller Frontend reste le même**
+
+```php
+#[Route('/autocomplete/trajets', name: 'autocomplete_trajets')]
+public function trajets(Request $request): JsonResponse
+{
+    $query = $request->query->get('query', '');
+
+    $response = $this->client->request('GET', $_ENV['API_BASE_URL'] . '/api/trajets', [
+        'headers' => ['Authorization' => 'Bearer ' . $this->getToken()],
+        'query'   => ['search' => $query, 'itemsPerPage' => 10]
+    ]);
+
+    return $this->json(array_map(fn($t) => [
+        'value' => (string) $t['id'],
+        'text'  => $t['codeTrajet'] . ' — ' . $t['provenance'] . ' → ' . $t['destination']
+    ], $response->toArray()['hydra:member']));
+}
+```
+
+---
+
+**Points clés**
+
+- **`shouldFilter={false}`** sur `Command` est indispensable — sinon `cmdk` filtre en local et écrase les résultats de ton API
+- **`AbortController`** annule la requête en cours si l'utilisateur tape vite, évitant les résultats désordonnés
+- Le fetch appelle ton **Controller Frontend** (pas l'API directement), ce qui préserve ton architecture et la gestion du token JWT

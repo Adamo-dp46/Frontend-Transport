@@ -65,10 +65,10 @@ class CarFormType extends AbstractType
             ->add('etat', ChoiceType::class, [
                 'label' => 'État',
                 'choices' => [
-                    'Disponible' => 'Disponible',
-                    'En mission' => 'Mission',
-                    'En panne' => 'Panne',
-                    'En maintenance'=> 'Maintenance'
+                    'Disponible' => 'DISPONIBLE',
+                    'En mission' => 'EN_VOYAGE',
+                    'En panne' => 'EN_PANNE',
+                    'En maintenance'=> 'EN_MAINTENANCE'
                 ],
                 'placeholder' => '-- Sélectionner un état --',
                 'constraints' => [

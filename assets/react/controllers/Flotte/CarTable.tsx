@@ -24,10 +24,10 @@ type Props = {
 }
 
 const etatConfig: Record<string, { label: string; cls: string }> = {
-    Disponible: { label: "Disponible", cls: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300" },
-    Mission: { label: "En mission", cls: "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300" },
-    Panne: { label: "En panne", cls: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300" },
-    Maintenance: { label: "En maintenance", cls: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300" }
+    DISPONIBLE: { label: "Disponible", cls: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300" },
+    EN_VOYAGE: { label: "En mission", cls: "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300" },
+    EN_PANNE: { label: "En panne", cls: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300" },
+    EN_MAINTENANCE: { label: "En maintenance", cls: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300" }
 }
 
 function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string): ColumnDef<Car>[] {

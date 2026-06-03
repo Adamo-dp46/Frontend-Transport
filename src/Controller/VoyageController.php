@@ -177,6 +177,16 @@ final class VoyageController extends AbstractController
         } /*
             - On a vérifié si le voyage est terminé au niveau du backend
         */
+        if(!empty($voyage['car'])) { /*
+            - On ajoute le car actuel du voyage s'il existe et n'est pas déjà dans la liste
+        */
+            $currentCarId = $voyage['car']['id'];
+            $alreadyInList = array_filter($cars['member'], fn($c) => $c['id'] === $currentCarId);
+            if(empty($alreadyInList)) {
+                $currentCar = $this->api->item('/api/cars/' . $currentCarId);
+                array_unshift($cars['member'], $currentCar); // On le met en 1er
+            }
+        }
         $defaultData = [ /*
             - Pour pré-remplir avec les valeurs actuelles
         */
@@ -274,7 +284,7 @@ final class VoyageController extends AbstractController
         try {
             $voyage = $this->api->item('/api/voyages/' . $id);
             $cars = $this->api->get('/api/cars', ['etat' => 'DISPONIBLE']);
-        } catch (ApiException $e) {
+        } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'voyage.index');
             if($response) {
                 return $response;
@@ -292,7 +302,7 @@ final class VoyageController extends AbstractController
                 $this->api->patch('/api/voyages/' . $id . '/car', $payload);
                 $this->addFlash('success', 'Le véhicule a été affecté avec succès');
                 return $this->redirectToRoute('voyage.show', ['id' => $id]);
-            } catch (ApiException $e) {
+            } catch(ApiException $e) {
                 $response = $this->apiExceptionHandler->handle($e, $form, 'voyage.index');
                 if($response) {
                     return $response;
