@@ -65,9 +65,9 @@
                         <td class="py-2 font-medium">{{ v.matricule }}</td>
                         <td class="py-2">
                             <span class="text-xs px-2 py-0.5 rounded-full
-                                {% if v.etat == 'Disponible' %}bg-green-100 text-green-700
-                                {% elseif v.etat == 'Mission' %}bg-blue-100 text-blue-700
-                                {% elseif v.etat == 'Panne' %}bg-red-100 text-red-700
+                                {% if v.etat == 'DISPONIBLE' %}bg-green-100 text-green-700
+                                {% elseif v.etat == 'EN_VOYAGE' %}bg-blue-100 text-blue-700
+                                {% elseif v.etat == 'EN_PANNE' %}bg-red-100 text-red-700
                                 {% else %}bg-gray-100 text-gray-500{% endif %}">
                                 {{ v.etat }}
                             </span>

@@ -84,6 +84,11 @@ final class FournisseurController extends AbstractController
         $form->handleRequest($request);
 
         if($form->isSubmitted() && $form->isValid()) {
+            /*
+                if($form->get('save')->isClicked()) {
+                    return $this->redirectToRoute('fournisseur.new');
+                }
+            */
             $payload = [
                 'libelle' => $form->get('libelle')->getData(),
                 'nom' => $form->get('nom')->getData(),

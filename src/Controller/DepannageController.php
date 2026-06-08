@@ -199,7 +199,7 @@ final class DepannageController extends AbstractController
         $personnels = [];
         try {
             $depannage = $this->api->item('/api/depannages/' . $id);
-            $personnels = $this->api->collection('/api/personnels');
+            $personnels = $this->api->collection('/api/personnels', ['statut' => 'ACTIF']);
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'depannage.index');
             if($response) {

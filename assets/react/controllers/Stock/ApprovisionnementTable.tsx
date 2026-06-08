@@ -87,6 +87,13 @@ function buildColumns(
             },
         },
         {
+            accessorKey: 'verrouille',
+            header: '',
+            cell: ({ row }) => row.original.verrouille
+                ? <Badge className="bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300">🔒 Verrouillé</Badge>
+                : null
+        },
+        {
             accessorKey: "createdAt",
             header: ({ column }) => (
                 <ServerDataTableColumnHeader column={column} title="Date de création" sortUrls={sortUrls('createdAt')} sortState={getSortState('createdAt')} />
@@ -101,6 +108,10 @@ function buildColumns(
             id: "actions",
             cell: ({ row }) => {
                 const approvisionnement = row.original
+                const verrouillable = canEdit
+                const editable = canEdit && !approvisionnement.verrouille
+                const deletable = canDelete && !approvisionnement.verrouille
+
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -114,17 +125,41 @@ function buildColumns(
                                 <a href={`/approvisionnement/${approvisionnement.id}`}>Voir</a>
                             </DropdownMenuItem>
 
-                            {canEdit && <DropdownMenuSeparator />}
-
-                             {canEdit && (
+                            {editable && <DropdownMenuSeparator />}
+                            {editable && (
                                 <DropdownMenuItem asChild>
                                     <a href={`/approvisionnement/${approvisionnement.id}/modifier`}>Modifier</a>
                                 </DropdownMenuItem>
                             )}
 
-                            {canDelete && <DropdownMenuSeparator />}
+                            {verrouillable && <DropdownMenuSeparator />}
+                            {verrouillable && (
+                                <DropdownMenuItem asChild>
+                                    <form
+                                        method="POST"
+                                        action={`/approvisionnement/${approvisionnement.id}/verrouiller`}
+                                        onSubmit={(e) => {
+                                            const action = approvisionnement.verrouille ? 'déverrouiller' : 'verrouiller'
+                                            if (!confirm(`Voulez-vous ${action} cet approvisionnement ?`)) {
+                                                e.preventDefault()
+                                            }
+                                        }}
+                                    >
+                                        <button
+                                            type="submit"
+                                            className={`w-full text-left ${approvisionnement.verrouille
+                                                ? 'text-green-600 focus:text-green-700'
+                                                : 'text-orange-600 focus:text-orange-700'
+                                            }`}
+                                        >
+                                            {approvisionnement.verrouille ? 'Déverrouiller' : 'Verrouiller'}
+                                        </button>
+                                    </form>
+                                </DropdownMenuItem>
+                            )}
 
-                            {canDelete && (
+                            {deletable && <DropdownMenuSeparator />}
+                            {deletable && (
                                 <DropdownMenuItem asChild>
                                     <form
                                         method="POST"

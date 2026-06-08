@@ -13,5 +13,6 @@ export interface Approvisionnement {
     dateappro: string
     fournisseur: Fournisseur
     detailapprovisionnements: Detailapprovisionnement[]
+    verrouille?: boolean
     createdAt: string
 }

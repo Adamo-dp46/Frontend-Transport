@@ -264,6 +264,19 @@
                 </button>
             </form>
             {% endif %}
+
+            {% if app.user.founder and not user.founder and app.user.id != user.id %}
+            <form method="post" action="{{ path('admin.user.promouvoir', { id: user.id }) }}" class="inline" onsubmit="return confirm('{{ 'ROLE_ADMIN' in user.roles ? 'Rétrograder' : 'Promouvoir' }} cet utilisateur ?')">
+                <button type="submit" class="btn {{ 'ROLE_ADMIN' in user.roles ? 'btn-secondary' : 'btn-primary' }}">
+                    {{ 'ROLE_ADMIN' in user.roles ? 'Rétrograder en utilisateur' : 'Promouvoir en administrateur' }}
+                </button>
+            </form>
+            {% endif %}
+            {% if user.founder %}
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800">
+                👑 Fondateur
+            </span>
+            {% endif %}
         </div>
     </div>
 </div>

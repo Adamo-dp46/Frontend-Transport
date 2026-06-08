@@ -25,6 +25,8 @@ type Props = {
     csrfDelete: string
     apiUrl: string
     isSuperAdmin: boolean
+    // currentUserRoles: string[]
+    currentUserIsFounder?: boolean
 }
 
 function buildColumns(
@@ -35,7 +37,9 @@ function buildColumns(
     currentUserId: number,
     csrfDelete: string,
     apiUrl: string,
-    isSuperAdmin: boolean
+    isSuperAdmin: boolean,
+    // currentUserRoles: string[],
+    currentUserIsFounder?: boolean
 ): ColumnDef<User>[] {
 
     const sortUrls = (field: string) => ({
@@ -81,6 +85,22 @@ function buildColumns(
             }
         },
         {
+            id: 'role',
+            header: 'Rôle',
+            cell: ({ row }) => {
+                const isAdmin = row.original.roles.includes('ROLE_ADMIN')
+                const isFounder = row.original.isFounder
+                if(isFounder) {
+                    return <Badge className="bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300">
+                        👑 Fondateur
+                    </Badge>
+                }
+                return isAdmin
+                    ? <Badge className="bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">Admin</Badge>
+                    : <Badge className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">Utilisateur</Badge>
+            }
+        },
+        {
             id: "fileUrl",
             header: "",
             cell: ({ row }) => {
@@ -113,6 +133,7 @@ function buildColumns(
                     - Plus 'const suspendable = canEdit && !isAdmin && !isSelf' pour inclure le super admin, l'admin normal peut suspendre tous sauf un admin et le super admin peut suspendre tous sauf lui même
                 */
                 const editable = canEdit && (isSuperAdmin || !isAdmin)
+                const promouvable = currentUserIsFounder && !isSelf && !user.isFounder
 
                 return (
                     <DropdownMenu>
@@ -157,19 +178,50 @@ function buildColumns(
                                     </form>
                                 </DropdownMenuItem>
                             )}
+
+                            {promouvable && <DropdownMenuSeparator />}
+                            {promouvable && (
+                                <DropdownMenuItem asChild>
+                                    <form
+                                        method="POST"
+                                        action={`/admin/utilisateurs/${user.id}/promouvoir`}
+                                        onSubmit={(e) => {
+                                            const isAdmin = user.roles.includes('ROLE_ADMIN')
+                                            const action = isAdmin ? 'rétrograder en utilisateur standard' : 'promouvoir en administrateur'
+                                            if(!confirm(`Voulez-vous ${action} cet utilisateur ?`)) {
+                                                e.preventDefault()
+                                            }
+                                        }}
+                                    >
+                                        <button
+                                            type="submit"
+                                            className={`w-full text-left ${user.roles.includes('ROLE_ADMIN')
+                                                ? 'text-muted-foreground focus:text-foreground'
+                                                : 'text-blue-600 focus:text-blue-700'
+                                            }`}
+                                        >
+                                            {user.roles.includes('ROLE_ADMIN')
+                                                ? 'Rétrograder en utilisateur'
+                                                : 'Promouvoir en administrateur'
+                                            }
+                                        </button>
+                                    </form>
+                                </DropdownMenuItem>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 )
-            },
-        },
+            }
+        }
     ]
 }
 
-export default function UserTable({users, meta, queryParams, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin}: Props) {
+export default function UserTable({users, meta, queryParams, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin, currentUserIsFounder}: Props)
+{
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin),
-        [queryParams, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin, currentUserIsFounder),
+        [queryParams, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin, currentUserIsFounder]
     )
 
     const filters: ServerTableFilter[] = useMemo(() => [

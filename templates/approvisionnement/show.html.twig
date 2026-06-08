@@ -107,4 +107,28 @@
         {% endif %}
     </table>
 </div>
+{#
+    {% if is_granted('APPROVISIONNEMENT_MODIFIER') %}
+    <form method="POST"
+        action="{{ path('approvisionnement.verrouiller', { id: approvisionnement.id }) }}"
+        class="inline"
+        onsubmit="return confirm('{{ approvisionnement.verrouille ? 'Déverrouiller' : 'Verrouiller' }} cet approvisionnement ?')">
+        <button type="submit" class="btn {{ approvisionnement.verrouille ? 'btn-secondary' : 'btn-warning' }}">
+            {% if approvisionnement.verrouille %}
+                <svg class="h-4 w-4" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#unlock"></use></svg>
+                Déverrouiller
+            {% else %}
+                <svg class="h-4 w-4" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#lock"></use></svg>
+                Verrouiller
+            {% endif %}
+        </button>
+    </form>
+    {% endif %}
+
+    {% if is_granted('APPROVISIONNEMENT_MODIFIER') and not approvisionnement.verrouille %}
+    <a href="{{ path('approvisionnement.edit', { id: approvisionnement.id }) }}" class="btn btn-primary">
+        Modifier
+    </a>
+    {% endif %}
+#}
 {% endblock %}

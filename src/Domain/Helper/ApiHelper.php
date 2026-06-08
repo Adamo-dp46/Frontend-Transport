@@ -34,9 +34,10 @@ class ApiHelper
         $this->throwFromResponse($response, $response->getStatusCode());
     }
 
-    public function collection(string $endpoint, array $headers = [])
+    public function collection(string $endpoint, array $query = [], array $headers = [])
     {
         $response = $this->api->request('GET', $endpoint, [
+            'query' => $query,
             'headers' => $headers
         ]);
         if($response->getStatusCode() === 200) {

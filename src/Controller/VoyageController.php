@@ -323,7 +323,7 @@ final class VoyageController extends AbstractController
         $personnels = [];
         try {
             $voyage = $this->api->item('/api/voyages/' . $id);
-            $personnels = $this->api->collection('/api/personnels');
+            $personnels = $this->api->collection('/api/personnels', ['statut' => 'ACTIF']);
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'voyage.index');
             if($response) {

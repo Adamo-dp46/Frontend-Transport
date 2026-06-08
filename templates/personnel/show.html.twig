@@ -181,4 +181,21 @@
         </div>
     </div>
 </div>
+{#
+    {% set isSuspendu = personnel.statut == 'SUSPENDU' %}
+    <div class="rounded-xl border bg-card shadow-sm p-4">
+        <p class="text-sm font-light text-muted-foreground mb-2">Statut</p>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+            {{ isSuspendu ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">
+            {{ isSuspendu ? 'Suspendu' : 'Actif' }}
+        </span>
+    </div>
+    {% if is_granted('PERSONNEL_MODIFIER') %}
+    <form method="post" action="{{ path('personnel.suspendre', { id: personnel.id }) }}" class="inline" onsubmit="return confirm('{{ isSuspendu ? 'Réactiver' : 'Suspendre' }} ce personnel ?')">
+        <button type="submit" class="btn {{ isSuspendu ? 'btn-success' : 'btn-warning' }}">
+            {{ isSuspendu ? 'Réactiver' : 'Suspendre' }}
+        </button>
+    </form>
+    {% endif %}
+#}
 {% endblock %}

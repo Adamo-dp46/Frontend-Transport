@@ -28,10 +28,11 @@
         currentUserId: app.user.id,
         csrfDelete: csrf_token('delete_user'),
         apiUrl: api_url,
-        isSuperAdmin: is_granted('ROLE_SUPER_ADMIN')
+        isSuperAdmin: is_granted('ROLE_SUPER_ADMIN'),
+        currentUserIsFounder: app.user.founder
     }) }}
     class="mb-3"
-> {# entreprises: entreprises #}
+> {# currentUserRoles: app.user.roles #}
     <div class="flex items-center justify-center gap-6">
         <twig:Spinner class="size-8" />
     </div>

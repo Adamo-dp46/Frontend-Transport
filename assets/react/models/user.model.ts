@@ -5,5 +5,6 @@ export interface User {
     prenom: string
     fileUrl?: string
     statut: string
-    roles: string[] // Pour détecter l'admin
+    roles: string[]
+    isFounder?: boolean
 }

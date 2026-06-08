@@ -16,7 +16,7 @@ class TrajetFormType extends AbstractType
         // Valeur soumise : id de la gare (le controller résout en libellé avant POST)
         $choices = [];
         foreach ($gares as $g) {
-            $label = $g['libelle'] . ' — ' . ($g['ville'] ?? '');
+            $label = $g['libelle'] . ' - ' . ($g['ville'] ?? '');
             $choices[$label] = $g['id'];
         }
         return $choices;

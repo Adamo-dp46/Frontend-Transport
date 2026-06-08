@@ -15,9 +15,9 @@ class TableQueryBuilder
         array $allowedFilters,
         array $allowedSorts,
         int $defaultPerPage = 25
-    ): array {
+    ): array
+    {
         $params = [];
-
         // ── Pagination ──────────────────────────────────────────
         $page = max(1, (int) ($queryParams['page'] ?? 1));
         $rawPerPage = (int) ($queryParams['perPage'] ?? $defaultPerPage);

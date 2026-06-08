@@ -13,12 +13,10 @@
         <script>
             document.documentElement.classList.toggle(
                 'dark',
-                localStorage.theme === 'dark' ||
-                (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+                localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
             ) /*
                 - Pour éviter le flash au chargement 'FOUC' ce qui applique le thème instantanément et ne doit pas être dans 'turbo:load' car il doit s'exécuter avant le rendu
             */
-
             if(localStorage.getItem('sidebar-collapsed') === 'true') {
                 document.documentElement.classList.add('sidebar-pre-collapsed');
             }
@@ -145,28 +143,6 @@
                             </div>
                         </div>
 
-                        <button class="nav-link" data-submenu="sub-courrier" title="Courrier">
-                            <svg class="nav-icon" aria-hidden="true">
-                                <use href="{{ asset('sprite.svg') }}#courrier"></use>
-                            </svg>
-                            <span class="sb-text">Courrier</span>
-                            <svg class="submenu-arrow" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron"></use></svg>
-                        </button>
-                        <div class="submenu" id="sub-courrier">
-                            <div class="submenu-inner">
-                                {% if is_granted('TARIFCOURRIER_VOIR') %}
-                                <a href="{{ path('tarifcourrier.index') }}" class="sub-link {{ app.current_route starts with 'tarifcourrier.' ? 'active' : '' }}" data-subnav>
-                                    <span class="sub-dot"></span>Tarif courrier
-                                </a>
-                                {% endif %}
-                                {% if is_granted('COURRIER_VOIR') %}
-                                <a href="{{ path('courrier.index') }}" class="sub-link {{ app.current_route starts with 'courrier.' ? 'active' : '' }}" data-subnav>
-                                    <span class="sub-dot"></span>Courrier
-                                </a>
-                                {% endif %}
-                            </div>
-                        </div>
-
                         <button class="nav-link" data-submenu="sub-exploitation" title="Exploitation">
                             <svg class="nav-icon" aria-hidden="true">
                                 <use href="{{ asset('sprite.svg') }}#exploitation"></use>
@@ -226,6 +202,28 @@
                                 {% if is_granted('VOYAGE_VOIR') %}
                                 <a href="{{ path('bordereau.index') }}" class="sub-link {{ app.current_route starts with 'bordereau.' ? 'active' : '' }}" data-subnav>
                                     <span class="sub-dot"></span>Bordereau
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <button class="nav-link" data-submenu="sub-courrier" title="Courrier">
+                            <svg class="nav-icon" aria-hidden="true">
+                                <use href="{{ asset('sprite.svg') }}#courrier"></use>
+                            </svg>
+                            <span class="sb-text">Courrier</span>
+                            <svg class="submenu-arrow" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron"></use></svg>
+                        </button>
+                        <div class="submenu" id="sub-courrier">
+                            <div class="submenu-inner">
+                                {% if is_granted('TARIFCOURRIER_VOIR') %}
+                                <a href="{{ path('tarifcourrier.index') }}" class="sub-link {{ app.current_route starts with 'tarifcourrier.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Tarif courrier
+                                </a>
+                                {% endif %}
+                                {% if is_granted('COURRIER_VOIR') %}
+                                <a href="{{ path('courrier.index') }}" class="sub-link {{ app.current_route starts with 'courrier.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Courrier
                                 </a>
                                 {% endif %}
                             </div>

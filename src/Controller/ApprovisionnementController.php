@@ -185,6 +185,22 @@ final class ApprovisionnementController extends AbstractController
         ]);
     }
 
+    #[Route('/{id}/verrouiller', name: 'verrouiller', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('APPROVISIONNEMENT_MODIFIER')]
+    public function verrouiller(int $id): Response
+    {
+        try {
+            $this->api->patch('/api/approvisionnements/' . $id . '/verrouiller');
+            $this->addFlash('success', 'Le statut de verrouillage a été mis à jour');
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e, null, 'approvisionnement.show', ['id' => $id]);
+            if($response) {
+                return $response;
+            }
+        }
+        return $this->redirectToRoute('approvisionnement.show', ['id' => $id]);
+    }
+
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('APPROVISIONNEMENT_SUPPRIMER')]
     public function delete(int $id, Request $request): Response

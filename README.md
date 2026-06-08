@@ -1,6 +1,6 @@
 ### FT-Transport
 
-- - Le frontend de l'application de compagnie de transport mutli-entreprise en architecture séparé
+- Le frontend de l'application de compagnie de transport mutli-entreprise en architecture séparé
     > Frontend - Symfony, Twig, React UX, Shadcn, tailwind v4
         > Dans l'application symfony consomme l'api et envoi les résultats à twig et react pour affichés les données
         > On a un `EntityBase` qui contient createdAt, updatedAt et deletedAt et qui se fait étendre par les autres entités sauf les `Detail..` et `User`, plusieurs entités de l'application sont liées à l'entreprise avec `identreprise` qui est un int sauf le `User` qui est un `ManyToOne` ensuite pour récupérer un enregistrement on vérifie si son `identreprise` corrspond à l'entreprise de l'utilisateur

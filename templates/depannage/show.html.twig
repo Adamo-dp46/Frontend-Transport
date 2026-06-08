@@ -109,6 +109,17 @@
                 </span>
             </div>
             {% endif %}
+            <div>
+                {% if is_granted('PERSONNEL_MODIFIER') and depannage.statut != 'CLOTURE' %}
+                    <form method="post" action="{{ path('personnel.desaffecter', { id: detail.id }) }}" class="inline" onsubmit="return confirm('Désaffecter {{ detail.personnel.nom }} de ce dépannage ?')"
+                    >
+                        <input type="hidden" name="redirect_url" value="{{ path('depannage.show', { id: depannage.id }) }}">
+                        <button type="submit">
+                            Désaffecter
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
         </div>
         {% endfor %}
     </div>

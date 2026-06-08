@@ -66,6 +66,21 @@ function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string, 
                 : <span className="text-muted-foreground">Aucun</span>
         },
         {
+            accessorKey: 'statut',
+            header: 'Statut',
+            cell: ({ row }) => {
+                const actif = row.original.statut === 'ACTIF'
+                return (
+                    <Badge className={actif
+                        ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300'
+                        : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300'
+                    }>
+                        {actif ? 'Actif' : 'Suspendu'}
+                    </Badge>
+                )
+            }
+        },
+        {
             id: "nbvoyages",
             header: "Nombre de voyages",
             cell: ({ row }) => {
@@ -106,7 +121,7 @@ function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string, 
         {
             id: "actions",
             cell: ({ row }) => {
-                const car = row.original
+                const personnel = row.original
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -117,24 +132,45 @@ function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string, 
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
-                                <a href={`/personnel/${car.id}`}>Voir</a>
+                                <a href={`/personnel/${personnel.id}`}>Voir</a>
                             </DropdownMenuItem>
 
                             {canEdit && <DropdownMenuSeparator />}
-
                             {canEdit && (
                                 <DropdownMenuItem asChild>
-                                    <a href={`/personnel/${car.id}/modifier`}>Modifier</a>
+                                    <a href={`/personnel/${personnel.id}/modifier`}>Modifier</a>
                                 </DropdownMenuItem>
                             )}
 
-                            {canEdit && canDelete && <DropdownMenuSeparator />}
+                            {canEdit && <DropdownMenuSeparator />}
+                            {canEdit && (
+                                <DropdownMenuItem asChild>
+                                    <form method="post" action={`/personnel/${personnel.id}/suspendre`} onSubmit={(e) => {
+                                            const action = personnel.statut === 'ACTIF' ? 'suspendre' : 'réactiver'
+                                            if(!confirm(`Voulez-vous ${action} ce personnel ?`)) {
+                                                e.preventDefault()
+                                            }
+                                        }}
+                                    >
+                                        <button
+                                            type="submit"
+                                            className={`w-full text-left ${personnel.statut === 'ACTIF'
+                                                ? 'text-orange-600 focus:text-orange-700'
+                                                : 'text-green-600 focus:text-green-700'
+                                            }`}
+                                        >
+                                            {personnel.statut === 'ACTIF' ? 'Suspendre' : 'Réactiver'}
+                                        </button>
+                                    </form>
+                                </DropdownMenuItem>
+                            )}
 
+                            {canDelete && <DropdownMenuSeparator />}
                             {canDelete && (
                                 <DropdownMenuItem asChild>
                                     <form
                                         method="POST"
-                                        action={`/personnel/${car.id}/supprimer`}
+                                        action={`/personnel/${personnel.id}/supprimer`}
                                         onSubmit={(e) => {
                                             if(!confirm("Supprimer ce personnel ?")) {
                                                 e.preventDefault()

@@ -54,6 +54,11 @@ class ApiUser implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->data['roles'];
     }
 
+    public function isFounder(): ?bool
+    {
+        return $this->data['founder'] ?? null;
+    }
+
     /**
      * Va retourner les rôles 'RBAC' de l'utilisateur
      */

@@ -208,8 +208,11 @@
         {# Véhicules les plus en panne — barres horizontales #}
         <div class="card p-4">
             <p class="text-sm font-medium mb-3">Véhicules les plus en panne</p>
-            <canvas id="chartVehiculesDepannage" height="160"
-                data-values="{{ flotte.vehiculesParDepannage | map(v => {matricule: v.matricule, nbrdepannages: v.nbrdepannages}) | json_encode }}">
+            <canvas
+                id="chartVehiculesDepannage"
+                height="160"
+                data-values="{{ flotte.vehiculesParDepannage | map(v => {matricule: v.matricule, nbrdepannages: v.nbrdepannages}) | json_encode }}"
+            >
             </canvas>
         </div>
 
@@ -220,7 +223,6 @@
                 data-values="{{ flotte.coutMaintenanceParVehicule | map(v => {matricule: v.matricule, couttotal: v.couttotal}) | json_encode }}">
             </canvas>
         </div>
-
     </div>
 </section>
 {% endblock %}

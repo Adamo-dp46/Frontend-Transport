@@ -14,9 +14,5 @@ export interface Personnel {
     typepersonnel: Libelle
     voyagesCount: number
     depannagesCount: number
-}
-
-export interface Detailpersonnel {
-    motif: string,
-    personnel: Personnel
+    statut?: string
 }

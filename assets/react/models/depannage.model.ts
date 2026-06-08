@@ -1,6 +1,6 @@
 import { Car } from "./car.model"
+import { Detailpersonnel } from "./detailpersonnel.model"
 import { Libelle } from "./libelle.model"
-import { Detailpersonnel } from "./personnel.model"
 import { Piece } from "./piece.model"
 
 interface Detaildepannage{

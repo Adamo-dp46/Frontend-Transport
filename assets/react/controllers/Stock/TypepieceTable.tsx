@@ -29,6 +29,11 @@ type Props = {
         }
         ..
     ]
+
+    type Ref = {
+        id: number
+        [key: string]: any
+    }
 */
 /**
  * Pour avoir accès au props
@@ -40,7 +45,10 @@ function buildColumns(
 ): ColumnDef<Libelle>[] {
     return [
         {
-            accessorKey: "id",
+            accessorKey: "id", /*
+                - 'accessorKey' indique à 'react-table' quelle propriété de l'objet utiliser pour cette colonne, permet à 'TanStack' de gérer le tri, filtre..
+                - 'id' sert uniquement à identifier la colonne ex: 'nbr de pièces'
+            */
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Id" />
             ) /*

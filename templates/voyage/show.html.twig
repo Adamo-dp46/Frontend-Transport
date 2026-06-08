@@ -148,6 +148,7 @@
                             <th class="text-left px-6 py-3 font-semibold">Type</th>
                             <th class="text-left px-6 py-3 font-semibold">Contact</th>
                             <th class="text-left px-6 py-3 font-semibold">Motif</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y">
@@ -164,6 +165,17 @@
                             </td>
                             <td class="px-6 py-3 text-muted-foreground text-xs">{{ dp.personnel.contact ?? '—' }}</td>
                             <td class="px-6 py-3 text-xs italic text-muted-foreground">{{ dp.motif ?? '—' }}</td>
+                            <td>
+                                {% if is_granted('PERSONNEL_MODIFIER') and voyage.datefin is null %}
+                                    <form method="post" action="{{ path('personnel.desaffecter', { id: dp.id }) }}" class="inline" onsubmit="return confirm('Désaffecter {{ dp.personnel.nom }} de ce voyage ?')"
+                                    >
+                                        <input type="hidden" name="redirect_url" value="{{ path('voyage.show', { id: voyage.id }) }}">
+                                        <button type="submit">
+                                            Désaffecter
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

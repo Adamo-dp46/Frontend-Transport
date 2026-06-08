@@ -48,6 +48,11 @@ class FournisseurFormType extends AbstractType
                 'placeholder' => 'Sélectionnez un pays',
                 'required' => false
             ])
+            /*
+                ->add('save', SubmitType::class, [ -- Puis dans le controller
+                    'label' => 'Enregistrer ++'
+                ])
+            */
         ;
     }
 

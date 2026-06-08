@@ -58,13 +58,16 @@ final class PersonnelController extends AbstractController
             }
         }
 
-        $qVoyages = $request->query->all('v'); // ?v[page]=2&v[sort]=datedebut
-        $qDepannages = $request->query->all('d'); // ?d[page]=1&d[sort]=datedepannage
+        $qVoyages = $request->query->all('v'); // On.. '?v[page]=2&v[sort]=datedebut'
+        $qDepannages = $request->query->all('d'); // On.. '?d[page]=1&d[sort]=datedepannage'
 
         $voyages = $tableHelper->handleRelated(
             endpoint: '/api/voyages',
             queryParams: $qVoyages,
-            fixedFilters: ['personnel.id' => $id], // ← ton filtre custom DQL
+            fixedFilters: [
+                'personnel.id' => $id
+                // 'exists[voyage]' => 'true' -- Si on.. la route du 'Detailpersonnel'
+            ],
             allowedSorts: [
                 'id',
                 'provenance',
@@ -73,13 +76,16 @@ final class PersonnelController extends AbstractController
                 'placestotal',
                 'createdAt'
             ],
-            defaultPerPage: 10,
+            defaultPerPage: 10
         );
 
         $depannages = $tableHelper->handleRelated(
             endpoint: '/api/depannages',
             queryParams: $qDepannages,
-            fixedFilters: ['personnel.id' => $id],
+            fixedFilters: [
+                'personnel.id' => $id
+                // 'exists[depannage]' => 'true' -- !!
+            ],
             allowedSorts: [
                 'id',
                 'datedepannage',
@@ -87,7 +93,7 @@ final class PersonnelController extends AbstractController
                 'couttotal',
                 'createdAt'
             ],
-            defaultPerPage: 10,
+            defaultPerPage: 10
         );
 
         return $this->render('personnel/show.html.twig', [
@@ -234,6 +240,44 @@ final class PersonnelController extends AbstractController
             'form' => $form,
             'personnel' => $personnel
         ]);
+    }
+
+    #[Route('/{id}/suspendre', name: 'suspendre', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('PERSONNEL_MODIFIER')]
+    public function suspendre(int $id): Response
+    {
+        try {
+            $this->api->patch('/api/personnels/' . $id . '/suspendre');
+            $this->addFlash('success', 'Le statut du personnel a été mis à jour');
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e, null, 'personnel.show', ['id' => $id]);
+            if($response) {
+                return $response;
+            }
+        }
+
+        return $this->redirectToRoute('personnel.show', ['id' => $id]);
+    }
+
+    #[Route('/{id}/desaffecter', name: 'desaffecter', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('PERSONNEL_MODIFIER')]
+    public function desaffecter(int $id, Request $request): Response
+    {
+        $redirectUrl = $request->request->get('redirect_url');
+        try {
+            $this->api->delete('/api/detailpersonnels/' . $id);
+            $this->addFlash('success', 'Le personnel a été désaffecté avec succès');
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e);
+            if($response) {
+                return $response;
+            }
+        }
+
+        if($redirectUrl) {
+            return $this->redirect($redirectUrl);
+        }
+        return $this->redirectToRoute('personnel.index');
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]

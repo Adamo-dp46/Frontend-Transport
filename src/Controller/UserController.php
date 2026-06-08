@@ -210,4 +210,20 @@ final class UserController extends AbstractController
         }
         return $this->redirectToRoute('admin.user.index');
     }
+
+    #[Route('/{id}/promouvoir', name: 'promouvoir', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function promouvoir(int $id): Response
+    {
+        try {
+            $this->api->patch('/api/users/' . $id . '/promouvoir');
+            $this->addFlash('success', 'Le rôle de l\'utilisateur a été mis à jour');
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.show', ['id' => $id]);
+            if($response) {
+                return $response;
+            }
+        }
+        return $this->redirectToRoute('admin.user.show', ['id' => $id]);
+    }
 }
