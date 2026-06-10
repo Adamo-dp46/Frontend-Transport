@@ -1,3 +1,5 @@
+import { Gare } from "./gare.model"
+
 export interface User {
     id: number
     email: string
@@ -7,4 +9,5 @@ export interface User {
     statut: string
     roles: string[]
     isFounder?: boolean
+    gare: Gare | null
 }

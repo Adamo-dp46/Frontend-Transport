@@ -82,14 +82,14 @@ function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string, 
         },
         {
             id: "nbvoyages",
-            header: "Nombre de voyages",
+            header: "Nbr de voyages",
             cell: ({ row }) => {
                 return <span className="tabular-nums font-medium">{row.original.voyagesCount}</span>
             }
         },
         {
             id: "nbdepannages",
-            header: "Nombre de dépannages",
+            header: "Nbr de dépannages",
             cell: ({ row }) => {
                 return <span className="tabular-nums font-medium">{row.original.depannagesCount}</span>
             }
@@ -107,7 +107,7 @@ function buildColumns(canEdit: boolean, canDelete: boolean, csrfDelete: string, 
                             <img
                                 src={`${apiUrl}/media${imageUrl}?w=400&h=400&fm=jpg&fit=crop`}
                                 alt={`${p.prenom} ${p.nom}`}
-                                className="h-8 w-8 rounded-full object-cover"
+                                className="h-8 w-8 rounded-full object-cover shrink-0"
                             />
                         ) : (
                             <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">

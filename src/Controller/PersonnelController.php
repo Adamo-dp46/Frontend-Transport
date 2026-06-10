@@ -149,6 +149,7 @@ final class PersonnelController extends AbstractController
                 'nom' => $form->get('nom')->getData(),
                 'prenom' => $form->get('prenom')->getData(),
                 'contact' => (string)$form->get('contact')->getData(),
+                'code' => strtoupper(trim($form->get('code')->getData())),
                 'typepersonnel' => '/api/typepersonnels/' . $typeId,
                 'image' => $mediaObject['@id'] ?? null
             ];
@@ -220,6 +221,7 @@ final class PersonnelController extends AbstractController
                 'nom' => $form->get('nom')->getData(),
                 'prenom' => $form->get('prenom')->getData(),
                 'contact' => $form->get('contact')->getData(),
+                'code' => strtoupper(trim($form->get('code')->getData())),
                 'typepersonnel' => '/api/typepersonnels/' . $typeId,
                 'image' => $mediaObjectIri // nouvelle IRI ou ancienne conservée
             ];

@@ -19,7 +19,6 @@ class UserEditFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $availableRoles = $options['available_roles'] ?? []; // La liste des rôles disponibles passés en option depuis le controller
-
         $roleChoices = [];
         foreach($availableRoles as $role) {
             $label = isset($role['typerole']) 
@@ -32,6 +31,13 @@ class UserEditFormType extends AbstractType
             */
             $roleChoices[$label] = $role['id'];
         }
+
+        $availableGares = $options['available_gares'] ?? [];
+        $gareChoices = [];
+        foreach($availableGares as $gare) {
+            $gareChoices[$gare['libelle'] . ' - ' . $gare['ville']] = $gare['id'];
+        }
+        $gareChoices = ['-- Choisir une gare --' => null] + $gareChoices;
 
         $builder
             ->add('nom', TextType::class, [
@@ -83,6 +89,12 @@ class UserEditFormType extends AbstractType
                 'expanded' => true,
                 'choices' => $roleChoices
             ])
+            ->add('gare', ChoiceType::class, [
+                'label' => 'Gare',
+                'required' => false,
+                'placeholder' => '-- Choisir la gare --',
+                'choices' => $gareChoices
+            ])
         ;
     }
 
@@ -92,7 +104,8 @@ class UserEditFormType extends AbstractType
             'csrf_protection' => true,
             'csrf_field_name' => '_token',
             'csrf_token_id' => 'useredit',
-            'available_roles' => []
+            'available_roles' => [],
+            'available_gares' => []
         ]);
     }
 }

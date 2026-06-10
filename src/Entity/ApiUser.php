@@ -46,6 +46,11 @@ class ApiUser implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->data['entreprise']['id'] ?? null;
     }
 
+    public function getGare(): ?array
+    {
+        return $this->data['gare'] ?? null;
+    }
+
     /**
      * Va retourner les rôles métier de symfony
      */

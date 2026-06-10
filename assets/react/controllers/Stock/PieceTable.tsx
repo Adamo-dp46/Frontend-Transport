@@ -144,7 +144,7 @@ function buildColumns(
                             <img
                                 src={`${apiUrl}/media${imageUrl}?w=400&h=400&fm=jpg&fit=crop`}
                                 alt={p.libelle}
-                                className="h-8 w-8 rounded-full object-cover"
+                                className="h-8 w-8 rounded-full object-cover shrink-0"
                             />
                         ) : (
                             <span className="w-8 h-8 rounded-md bg-muted flex items-center justify-center shrink-0">

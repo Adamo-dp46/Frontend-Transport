@@ -23,7 +23,9 @@
         gares: gares,
         canEdit: is_granted('GARE_MODIFIER'),
         canDelete: is_granted('GARE_SUPPRIMER'),
-        csrfDelete: csrf_token('delete_gare')
+        csrfDelete: csrf_token('delete_gare'),
+        canSuspendre: is_granted('ROLE_ADMIN'),
+        csrfSuspendre: csrf_token('suspendre_gare')
     }) }} class="mb-3"
 >
     <div class="flex items-center justify-center gap-6">

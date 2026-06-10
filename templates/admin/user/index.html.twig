@@ -29,7 +29,9 @@
         csrfDelete: csrf_token('delete_user'),
         apiUrl: api_url,
         isSuperAdmin: is_granted('ROLE_SUPER_ADMIN'),
-        currentUserIsFounder: app.user.founder
+        currentUserIsFounder: app.user.founder,
+        canPromouvoirAdminGare: is_granted('ROLE_ADMIN'),
+        csrfPromouvoirAdminGare: csrf_token('promouvoir_admin_gare')
     }) }}
     class="mb-3"
 > {# currentUserRoles: app.user.roles #}

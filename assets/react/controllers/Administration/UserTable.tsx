@@ -26,6 +26,8 @@ type Props = {
     apiUrl: string
     isSuperAdmin: boolean
     // currentUserRoles: string[]
+    canPromouvoirAdminGare: boolean // true si ROLE_ADMIN
+    csrfPromouvoirAdminGare: string
     currentUserIsFounder?: boolean
 }
 
@@ -39,6 +41,8 @@ function buildColumns(
     apiUrl: string,
     isSuperAdmin: boolean,
     // currentUserRoles: string[],
+    canPromouvoirAdminGare: boolean,
+    csrfPromouvoirAdminGare: string,
     currentUserIsFounder?: boolean
 ): ColumnDef<User>[] {
 
@@ -90,14 +94,29 @@ function buildColumns(
             cell: ({ row }) => {
                 const isAdmin = row.original.roles.includes('ROLE_ADMIN')
                 const isFounder = row.original.isFounder
+                const isAdminGare = row.original.roles.includes('ROLE_ADMIN_GARE')
                 if(isFounder) {
                     return <Badge className="bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300">
                         👑 Fondateur
                     </Badge>
                 }
+                if(isAdminGare) {
+                    return <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">Admin de gare</Badge>
+                }
                 return isAdmin
                     ? <Badge className="bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">Admin</Badge>
                     : <Badge className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">Utilisateur</Badge>
+            }
+        },
+        {
+            id: 'gare',
+            header: 'Gare',
+            cell: ({ row }) => {
+                const gare = row.original.gare
+                if(!gare) {
+                    return <span className="text-muted-foreground text-xs">Aucune</span>
+                }
+                return <span className="text-sm">{gare.libelle}{gare.ville ? ` - ${gare.ville}` : ''}</span>
             }
         },
         {
@@ -112,7 +131,7 @@ function buildColumns(
                             <img
                                 src={`${apiUrl}/media${user.fileUrl}?w=400&h=400&fm=jpg&fit=crop`}
                                 alt={`${user.prenom} ${user.nom}`}
-                                className="h-8 w-8 rounded-full object-cover"
+                                className="h-8 w-8 rounded-full object-cover shrink-0"
                             />
                         ) : (
                             <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
@@ -134,6 +153,8 @@ function buildColumns(
                 */
                 const editable = canEdit && (isSuperAdmin || !isAdmin)
                 const promouvable = currentUserIsFounder && !isSelf && !user.isFounder
+                const isAdminGare  = user.roles.includes('ROLE_ADMIN_GARE')
+                const peutAdminGare = canPromouvoirAdminGare && !isSelf && !user.isFounder && !isAdmin
 
                 return (
                     <DropdownMenu>
@@ -179,6 +200,24 @@ function buildColumns(
                                 </DropdownMenuItem>
                             )}
 
+                            {peutAdminGare && <DropdownMenuSeparator />}
+                            {peutAdminGare && (
+                                <DropdownMenuItem asChild>
+                                    <form method="POST" action={`/admin/utilisateurs/${user.id}/promouvoir/gare`}
+                                        onSubmit={(e) => {
+                                            const action = isAdminGare ? 'révoquer comme administrateur de gare' : 'nommer administrateur de gare'
+                                            if(!confirm(`Voulez-vous ${action} cet utilisateur ?`)) {
+                                                e.preventDefault()
+                                            }
+                                        }}>
+                                        <input type="hidden" name="_token" value={csrfPromouvoirAdminGare} />
+                                        <button type="submit" className={`w-full text-left ${isAdminGare ? 'text-orange-600' : 'text-green-600'}`}>
+                                            {isAdminGare ? 'Révoquer admin de gare' : 'Nommer admin de gare'}
+                                        </button>
+                                    </form>
+                                </DropdownMenuItem>
+                            )}
+
                             {promouvable && <DropdownMenuSeparator />}
                             {promouvable && (
                                 <DropdownMenuItem asChild>
@@ -216,12 +255,24 @@ function buildColumns(
     ]
 }
 
-export default function UserTable({users, meta, queryParams, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin, currentUserIsFounder}: Props)
+export default function UserTable({
+    users,
+    meta,
+    queryParams,
+    canEdit,
+    currentUserId,
+    csrfDelete,
+    apiUrl,
+    isSuperAdmin,
+    currentUserIsFounder,
+    canPromouvoirAdminGare,
+    csrfPromouvoirAdminGare
+}: Props)
 {
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin, currentUserIsFounder),
-        [queryParams, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin, currentUserIsFounder]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin, canPromouvoirAdminGare, csrfPromouvoirAdminGare, currentUserIsFounder),
+        [queryParams, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin, canPromouvoirAdminGare, csrfPromouvoirAdminGare, currentUserIsFounder]
     )
 
     const filters: ServerTableFilter[] = useMemo(() => [

@@ -31,6 +31,7 @@
     'ROLE_SUPER_ADMIN': ['Super Admin', 'bg-purple-100 text-purple-700'],
     'ROLE_ADMIN': ['Admin', 'bg-red-100 text-red-700'],
     'ROLE_USER': ['Utilisateur', 'bg-gray-100 text-gray-600'],
+    'ROLE_ADMIN_GARE': ['Admin de gare', 'bg-blue-100 text-blue-700']
 } %}
 
 {#
@@ -100,6 +101,16 @@
                         {% endfor %}
                     </dd>
                 </div>
+                {% if user.gare is defined and user.gare is not null %}
+                <div class="flex justify-between items-center py-2.5">
+                    <dt class="text-muted-foreground">Gare</dt>
+                    <dd class="font-semibold">
+                        <a href="{{ path('gare.show', { id: user.gare.id }) }}" class="text-primary hover:underline">
+                            {{ user.gare.libelle }}{% if user.gare.ville is defined %} - {{ user.gare.ville }}{% endif %}
+                        </a>
+                    </dd>
+                </div>
+                {% endif %}
             </dl>
         </div>
 
@@ -276,6 +287,30 @@
             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800">
                 👑 Fondateur
             </span>
+            {% endif %}
+
+            {#
+                Nommer / révoquer admin de gare
+                - Visible pour ROLE_ADMIN uniquement
+                - Impossible si l'user est déjà ROLE_ADMIN ou fondateur
+                - Désactivé si l'user n'a pas de gare liée
+            #}
+            {% set isAdminGare = 'ROLE_ADMIN_GARE' in user.roles %}
+            {% set isAdmin = 'ROLE_ADMIN' in user.roles %}
+
+            {% if is_granted('ROLE_ADMIN') and not user.founder and not isAdmin and app.user.id != user.id %}
+            <form method="post" action="{{ path('admin.user.promouvoir.gare', { id: user.id }) }}" class="w-full" onsubmit="return confirm('{{ isAdminGare ? 'Révoquer' : 'Nommer' }} cet utilisateur comme administrateur de gare ?')">
+                {% if not isAdminGare and (user.gare is not defined or user.gare is null) %}
+                    <button type="button" disabled title="L'utilisateur doit être lié à une gare" class="flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium opacity-50 cursor-not-allowed">
+                        🏪 Nommer admin de gare
+                    </button>
+                {% else %}
+                    <button type="submit"
+                            class="flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium hover:bg-accent transition-colors {{ isAdminGare ? 'text-orange-600 border-orange-300' : 'text-blue-600 border-blue-300' }}">
+                        {{ isAdminGare ? '🏪 Révoquer admin de gare' : '🏪 Nommer admin de gare' }}
+                    </button>
+                {% endif %}
+            </form>
             {% endif %}
         </div>
     </div>

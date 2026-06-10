@@ -44,6 +44,18 @@ class PersonnelFormType extends AbstractType
                     new Length(max: 50)
                 ]
             ])
+            ->add('code', TextType::class, [
+                'label' => 'Matricule',
+                'constraints' => [
+                    new NotBlank(),
+                    new Length(max: 50)
+                ],
+                'attr' => [
+                    'placeholder' => 'Ex: PER-001, DRV-2024-01..',
+                    'class' => 'uppercase'
+                ],
+                'help' => 'Identifiant unique du personnel dans votre organisation'
+            ])
             ->add('typepersonnel', ChoiceType::class, [
                 'label' => 'Type de personnel',
                 'choices' => $typeChoices,

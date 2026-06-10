@@ -80,6 +80,7 @@ final class UserController extends AbstractController
         $availableRoles = [];
         try {
             $availableRoles = $this->api->collection('/api/roles');
+            $availableGares = $this->api->collection('/api/gares');
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.index');
             if($response) {
@@ -88,7 +89,8 @@ final class UserController extends AbstractController
         }
 
         $form = $this->createForm(UserFormType::class, null, [
-            'available_roles' => $availableRoles
+            'available_roles' => $availableRoles,
+            'available_gares' => $availableGares
         ]);
         $form->handleRequest($request);
 
@@ -108,6 +110,11 @@ final class UserController extends AbstractController
                 'plainPassword' => $form->get('password')->getData(),
                 'userRoles' => $userRolesPayload
             ];
+
+            $gareId = $form->get('gare')->getData();
+            if($gareId) {
+                $payload['gare'] = '/api/gares/' . $gareId;
+            }
 
             try {
                 $this->api->post('/api/users', $payload);
@@ -131,9 +138,11 @@ final class UserController extends AbstractController
     public function edit(int $id, Request $request): RedirectResponse|Response
     {
         $availableRoles = [];
+        $availableGares = [];
         try {
             $user = $this->api->item('/api/users/' . $id);
             $availableRoles = $this->api->collection('/api/roles');
+            $availableGares = $this->api->collection('/api/gares');
         } catch (ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.index');
             if($response) {
@@ -149,8 +158,14 @@ final class UserController extends AbstractController
         */
         $form = $this->createForm(UserEditFormType::class, array_merge(
             $user ?? [],
-            ['roles' => $userRoleIds]
-        ), ['available_roles' => $availableRoles]);
+            [
+                'roles' => $userRoleIds,
+                'gare' => $user['gare']['id'] ?? null
+            ]
+        ), [
+            'available_roles' => $availableRoles,
+            'available_gares' => $availableGares
+        ]);
         $form->handleRequest($request);
 
         if($form->isSubmitted() && $form->isValid()) {
@@ -166,6 +181,9 @@ final class UserController extends AbstractController
                 'email' => $form->get('email')->getData(),
                 'userRoles' => $userRolesPayload
             ];
+
+            $gareId = $form->get('gare')->getData();
+            $payload['gare'] = $gareId ? '/api/gares/' . $gareId : null;
 
             $newPassword = $form->get('password')->getData();
             if($newPassword) {
@@ -222,6 +240,24 @@ final class UserController extends AbstractController
             $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.show', ['id' => $id]);
             if($response) {
                 return $response;
+            }
+        }
+        return $this->redirectToRoute('admin.user.show', ['id' => $id]);
+    }
+
+    #[Route('/{id}/promouvoir/gare', name: 'promouvoir.gare', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function promouvoiradmingare(int $id, Request $request): Response
+    {
+        if($this->isCsrfTokenValid('promouvoir_admin_gare', $request->request->get('_token'))) {
+            try {
+                $this->api->patch('/api/users/' . $id . '/promouvoir/gare');
+                $this->addFlash('success', 'Le rôle d\'administrateur de gare a été mis à jour');
+            } catch(ApiException $e) {
+                $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.show', ['id' => $id]);
+                if($response) {
+                    return $response;
+                }
             }
         }
         return $this->redirectToRoute('admin.user.show', ['id' => $id]);

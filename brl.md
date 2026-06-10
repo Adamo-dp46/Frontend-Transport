@@ -15,91 +15,114 @@
 - 
 
 - 
-- Les moyens de paiement ou règlement pour les tickets, courrier ou bagages pour savoir par quoi les clients paient le plus souvent
-    > Sur la page de création de ticket :: Mobile money -> Ouvre panneau -> Mtn, Wave.. -> puis on saisi l'indentifiant du paiement dans la base de données
-- Reservation de ticket, une personne peut rester chez lui à la maison et réservé un ticket ..puis le tire en ligne(perso)
-- Lien vers les ressources de select sur la page de ceux qui en besoin
-- Select | Create User et List User
-    > Présélection + sur les champs select parente, crée et le présélectionne dans le champ
-- Matricule chauffeur(personnel) saisi de façon manuel, Matricule user ayant vendu le ticket, Matricule user ayant enregistré bagage et courrier
-- Poids bagage -> nullable, Tarifbagage selon la valeur du bagage plutôt que le poids, Champ 'codeticket' pour savoir le bagage est lié à quelle ticket et trouver un moyen optimisé pour la sélection du ticket lors de la création du bagage
-- Vu qu'on a les entités Courrier et Detailcourrier(colis) que doit pouvoir déclarer comme perdu ou c'est les 2
-- Gérer le bordereau gare : /api/voyages/1/bordereau?gare=2
-- Colis poids -> nullable, Ajouter `date_embauche` sur personnel
-
-- Ticket
-    - Code QR sur les tickets
-    - Un champ remise ex:1000 sur ticket et on doit le prixvendu et béfinicière :: réduction dans ticket
-        - contactbeneficiaire
-    - Beneficiaire -> soit on le crée ou on le choisi avec le select..
-        - Peut être un client qui vient toujours ou un corsaire(celui qui envoi le client) reçois identreprise et visible dans toutes les gares
-    - Carte de fidélité pour les meilleurs clients basé sur le numéro du client
-
-- Pour gérer les dépenses : 2 types (Dépense générale et gare)
-    Objetdepense -> libelle          Objetdepensegare..
-    Depense                          Depensegare..
-        objetdepense -> vers Objetdepense
-        date
-        montant
-        detail
-
-- Place: de la droite vers la gauche et 6 places derrière
-    3 4 5 2 1
-     6 places
-    - Vert: libre au départ, vendu: rouge, libérer à nouveau gris, ainsi de suite
-
-- Courrier: séparer leur chiffre d'affaire avec celle de la société
-- Application mobile pour les clients Réservation de tickets voir les départs, scanner un code qr (comportant toutes les informations du ticket)
-
-- : libérer  (annuler), dans le pdf indiquer si c'est annuler
-
-Gare
-    users OneToMany
-    datecreation
-    statut : ACTIF, SUSPENDRE
-    contactchefgare..
-
-
-Dans l'application on a déjà la notion de multi-entreprise, maintenant on vas ajouter la notion de multi-gare
-- On sais que l'administrateur de l'entreprise n'est pas lié à une gare mais à une entreprise
-- Lorsque l'administrateur voudra crée un utilisateur il va le lié à une gare
-- L'administrateur peut suspendre une gare ce qui va bloquer la connexion à tous les utilisateurs de cette gare
-- Aussi pour chaque gare on aura un administrateur via un 'ROLE_ADMIN_GARE' (crée par l'administrateur de l'entreprise) qui lui aussi pourra crée ses propres utilisateurs et leur donner des permissions ou les suspendre et autre..
-
-
-Dans notre logique je crois que j'ai mal gérer le module Exploitation et Billetterie
-
-
-Eclairssi moi la notion de départ et voyage est ce la même chose ?
-
-- Les sièges grisé et dégrisé
-    - Si une gare intermédiaire fais receptionné sur le voyage ça dégrise les sièges qui doivent décendre à cette gare
-    - Les sièges grisés en cas de vente ne conçernent que la gare de départ, les autres gares du même trajet peuvent vendre dessus au cas ou il n'y a pas assez de place il programmé un nouveau départ
-    - Si la gare 1 vend 30/64, la gare 2 peut vendre les 64 places du départ sans tenir compte des places vendu à la gare précédente, le car arrive à la gare 2 des clients vont décendre et les autres montes au cas ou c'est rempli la gare 2 programme un autre départ pour les restants et vend les tickets et devient la gare de départ du nouveau départ donc les sièges vendu deviennent grisé
-
-
-
-- 
-    - Une gare ne peut pas vendre un ticket qui n'est sur son trajet, ni voir les données des gares qui ne sont pas sur son trajet
-    - Une gare ne peut pas vendre les tickets de la provenance du trajet mais plutôt la destination
-
-- Lors de la création d'un trajet on vas liés les gares qui le conçerne, Dans un trajet on a la gare de départ, la gare de destination et les gares intermédiares
-    - Chaque destination à son tarif du genre de gare en gare
-    - En créant le trajet on sélectionne les gares du trajet par ordre
-    - Les gares entre le trajet ne clôture pas le voyage mais receptionne
-    - Les gares intermédiare peuvent vendre les tickets d'un départ(voyage) qui vient vers eux sans tenir compte des places occupées ou siège grisé et s'ils ont vendu plus de tickets il programme un autre départ
-    - Vente simultanée sur un car selon le trajet où passera le car
-
-- Pour la vente de tickets
-    - Des clients descendent dans les gare intermédiares du trajet et d'autres prennent leur place
-    - On doit pouvoir revendre un ticket, si un client descend en cours de chemin et que d'autres monte on doit pouvoir revendre le même sièges
-
-- Dans voyage on un chauffeur et un commercial, le commercial est lié à la gare de départ ce qui lui permet de voir les sièges grisés, le commercial peut vendre les tickets en route via un TPE dans le cas un client monte en route, si un client décend il demande à l'administrateur de la gare de provenance de dégrisé le siège pour qu'il le revende
+- dateembauche 'nullable' sur Personnel
+- datecreation 'nullable' sur Gare
+- On.. la liste des utilisateurs d'une gare sur la page show, faire le filtre gare dans le UserTable seulement pour l'admin de l'entreprise
+- Pour le 'ApiUser' on reçois 'gare' nullable - libelle, ville, id
+- On.. tester les actions par ressource en donnant les permissions
 
 
 
 
+### `UserController.php` — filtre des gares pour `ROLE_ADMIN_GARE`
 
+```php
+// Dans new() et edit() — même logique dans les deux
+
+if ($this->isGranted('ROLE_ADMIN_GARE') && !$this->isGranted('ROLE_ADMIN')) {
+    // On appelle /api/me pour récupérer la gare de l'admin gare connecté
+    $me = $this->api->item('/api/me');
+    // On ne lui expose que sa propre gare dans le select
+    $availableGares = isset($me['gare']) ? [$me['gare']] : [];
+} else {
+    $availableGares = $this->api->collection('/api/gares');
+}
+
+// Ou..
+if($this->isGranted('ROLE_ADMIN_GARE') && !$this->isGranted('ROLE_ADMIN')) {
+    $availableGares = !empty($user->getGare()) ? [$user->getGare()] : [];
+} else {
+    $availableGares = $this->api->collection('/api/gares');
+}
+```
+
+
+
+
+Deux endroits à mettre à jour : `user/show.html.twig` et `UserTable.tsx`.Maintenant `UserTable.tsx` — la variable `promouvable` doit exclure les `ROLE_ADMIN_GARE` :Vérification :Voici les codes :
+
+---
+
+### `user/show.html.twig`
+
+```twig
+{% if app.user.founder and not user.founder and app.user.id != user.id %}
+{% set isAdminGareAlready = 'ROLE_ADMIN_GARE' in user.roles %}
+
+{% if isAdminGareAlready and not isAdmin %}
+    {# ✅ Bloqué — bouton grisé avec tooltip #}
+    <button type="button"
+            disabled
+            title="Révoquez d'abord le rôle d'administrateur de gare"
+            class="flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium opacity-50 cursor-not-allowed">
+        Promouvoir en administrateur
+    </button>
+{% else %}
+    {# ✅ Normal — peut être promu ou rétrogradé #}
+    <form method="post" action="{{ path('admin.user.promouvoir', { id: user.id }) }}" class="w-full"
+          onsubmit="return confirm('{{ isAdmin ? 'Rétrograder' : 'Promouvoir' }} cet utilisateur ?')">
+        <button type="submit" class="...">
+            {{ isAdmin ? 'Rétrograder en utilisateur' : 'Promouvoir en administrateur' }}
+        </button>
+    </form>
+{% endif %}
+{% endif %}
+```
+
+---
+
+### `UserTable.tsx`
+
+```tsx
+const promouvable        = currentUserIsFounder && !isSelf && !user.isFounder
+const peutEtrePromu      = promouvable && !isAdminGare       // ✅ libre — peut être promu/rétrogradé
+const bloqueParAdminGare = promouvable && !isAdmin && isAdminGare  // ✅ bloqué — est admin gare
+
+{(peutEtrePromu || bloqueParAdminGare) && <DropdownMenuSeparator />}
+
+{/* ✅ Bloqué — item désactivé avec tooltip */}
+{bloqueParAdminGare && (
+    <DropdownMenuItem disabled>
+        <span className="w-full text-left text-muted-foreground cursor-not-allowed text-xs"
+              title="Révoquez d'abord le rôle d'administrateur de gare">
+            Promouvoir en administrateur
+        </span>
+    </DropdownMenuItem>
+)}
+
+{/* ✅ Normal */}
+{peutEtrePromu && (
+    <DropdownMenuItem asChild>
+        <form method="POST" action={`/admin/utilisateurs/${user.id}/promouvoir`} ...>
+            <button ...>
+                {isAdmin ? 'Rétrograder en utilisateur' : 'Promouvoir en administrateur'}
+            </button>
+        </form>
+    </DropdownMenuItem>
+)}
+```
+
+---
+
+**La logique des 3 variables :**
+
+- `promouvable` — condition de base : fondateur connecté, pas soi-même, pas le fondateur cible
+- `peutEtrePromu` — `promouvable` ET pas admin gare → bouton actif
+- `bloqueParAdminGare` — `promouvable` ET admin gare ET pas encore admin entreprise → bouton grisé visible
+
+Le séparateur s'affiche si l'un ou l'autre est vrai, pour ne pas avoir un séparateur orphelin.
+
+On passe à l'étape 3 maintenant ?
 
 
 
@@ -148,7 +171,6 @@ foreach ($detailpersonnels as $detail) {
 
 **Recommandation : Driver.js** — plus adapté à ton cas car tu as des guides par module (contextuels par page), il est plus léger, gratuit et son rendu est plus moderne.
 
----
 
 
 
@@ -652,552 +674,6 @@ private function buildBilleterieSpreadsheet(array $billetterie, string $debut, s
 ```
 
 Le pattern est posé — `ExportService` + méthode privée `buildXxxSpreadsheet` + template Twig pour le PDF. On applique la même structure pour tous les autres modules. On continue avec **Agents** ?
-
-
-
-
-
-
-
-
-Le problème est bien identifié. Il faut un composant `RemoteSelect` qui fait de la recherche distante via l'API au lieu de charger toute la collection.
-
----
-
-## Architecture
-
-Trois cas d'usage à couvrir :
-- Filtre dans `ServerDataTable` (type `remote_select`)
-- Select dans formulaire Twig + vanilla JS
-- Select dans composant React (TicketForm, etc.)
-
----
-
-## 1. Hook `useRemoteSelect.ts`
-
-```ts
-// assets/react/hooks/useRemoteSelect.ts
-import { useState, useEffect, useRef, useCallback } from 'react'
-
-interface Option {
-    value: string
-    label: string
-}
-
-interface UseRemoteSelectOptions {
-    endpoint: string           // ex: '/auth/search?apiPath=/api/fournisseurs'
-    labelKey: string           // ex: 'nom', 'libelle'
-    valueKey?: string          // défaut: 'id'
-    minChars?: number          // défaut: 2
-    debounce?: number          // défaut: 300ms
-    initialValue?: string      // id sélectionné au chargement (pour edit)
-    initialLabel?: string      // label affiché au chargement (pour edit)
-    searchParam?: string       // param de recherche, défaut: 'search'
-}
-
-export function useRemoteSelect({
-    endpoint,
-    labelKey,
-    valueKey = 'id',
-    minChars = 2,
-    debounce = 300,
-    initialValue,
-    initialLabel,
-    searchParam = 'search',
-}: UseRemoteSelectOptions) {
-    const [query, setQuery]       = useState('')
-    const [options, setOptions]   = useState<Option[]>([])
-    const [loading, setLoading]   = useState(false)
-    const [selected, setSelected] = useState<Option | null>(
-        initialValue && initialLabel
-            ? { value: initialValue, label: initialLabel }
-            : null
-    )
-    const [open, setOpen] = useState(false)
-    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-    const abortRef = useRef<AbortController | null>(null)
-
-    const search = useCallback(async (q: string) => {
-        if (q.length < minChars) {
-            setOptions([])
-            return
-        }
-
-        // Annuler la requête précédente
-        abortRef.current?.abort()
-        abortRef.current = new AbortController()
-
-        setLoading(true)
-        try {
-            const url = new URL(endpoint, window.location.origin)
-            url.searchParams.set(searchParam, q)
-
-            const res = await fetch(url.toString(), {
-                signal: abortRef.current.signal,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            })
-            const data = await res.json()
-
-            // Supporte hydra:member et member
-            const items = data['hydra:member'] ?? data['member'] ?? data ?? []
-            setOptions(items.map((item: any) => ({
-                value: String(item[valueKey]),
-                label: item[labelKey],
-            })))
-        } catch (e: any) {
-            if (e.name !== 'AbortError') setOptions([])
-        } finally {
-            setLoading(false)
-        }
-    }, [endpoint, labelKey, valueKey, minChars, searchParam])
-
-    useEffect(() => {
-        if (debounceRef.current) clearTimeout(debounceRef.current)
-        debounceRef.current = setTimeout(() => search(query), debounce)
-        return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-    }, [query, search, debounce])
-
-    const select = (opt: Option) => {
-        setSelected(opt)
-        setQuery('')
-        setOptions([])
-        setOpen(false)
-    }
-
-    const clear = () => {
-        setSelected(null)
-        setQuery('')
-        setOptions([])
-    }
-
-    return { query, setQuery, options, loading, selected, select, clear, open, setOpen }
-}
-```
-
----
-
-## 2. Endpoint de recherche côté frontend Symfony
-
-Un endpoint générique qui proxifie la recherche vers l'API backend :
-
-```php
-// src/Controller/SearchController.php
-#[Route('/ressource/search', name: 'ressource.search', methods: ['GET'])]
-public function search(Request $request): JsonResponse
-{
-    $apiPath = $request->query->get('apiPath');
-    if (!$apiPath) {
-        return $this->json(['error' => 'apiPath requis'], 400);
-    }
-
-    // Sécurité — whitelist des endpoints autorisés
-    $allowed = [
-        '/api/fournisseurs',
-        '/api/personnels',
-        '/api/cars',
-        '/api/trajets',
-        '/api/pieces',
-        '/api/gares',
-        '/api/voyages',
-    ];
-
-    if (!in_array($apiPath, $allowed, true)) {
-        return $this->json(['error' => 'Endpoint non autorisé'], 403);
-    }
-
-    // Transmettre tous les query params sauf apiPath
-    $params = $request->query->all();
-    unset($params['apiPath']);
-
-    try {
-        $data = $this->api->get($apiPath, $params);
-        return $this->json($data);
-    } catch (ApiException $e) {
-        return $this->json(['error' => $e->getMessage()], $e->getCode());
-    }
-}
-```
-
----
-
-## 3. Composant `RemoteSelect.tsx`
-
-```tsx
-// assets/react/components/ui/remote-select.tsx
-import { useRef, useEffect } from 'react'
-import { Loader2, X, Search } from 'lucide-react'
-import { useRemoteSelect } from '../../hooks/useRemoteSelect'
-import { cn } from '../../../lib/utils'
-
-interface Props {
-    // Config recherche
-    apiPath: string          // ex: '/api/fournisseurs'
-    labelKey: string         // ex: 'nom'
-    valueKey?: string
-    searchParam?: string     // param API Platform, ex: 'nom' (pour SearchFilter 'partial')
-    minChars?: number
-
-    // Valeur
-    value?: string
-    onChange: (value: string, label: string) => void
-    onClear?: () => void
-
-    // Affichage
-    placeholder?: string
-    initialLabel?: string    // label à afficher si value est déjà défini (mode edit)
-    className?: string
-    disabled?: boolean
-
-    // Champ hidden pour form natif
-    name?: string
-}
-
-export function RemoteSelect({
-    apiPath,
-    labelKey,
-    valueKey = 'id',
-    searchParam = 'search',
-    minChars = 2,
-    value,
-    onChange,
-    onClear,
-    placeholder = 'Rechercher…',
-    initialLabel,
-    className,
-    disabled,
-    name,
-}: Props) {
-    const containerRef = useRef<HTMLDivElement>(null)
-
-    const endpoint = `/ressource/search?apiPath=${encodeURIComponent(apiPath)}`
-
-    const {
-        query, setQuery,
-        options, loading,
-        selected, select, clear,
-        open, setOpen,
-    } = useRemoteSelect({
-        endpoint,
-        labelKey,
-        valueKey,
-        minChars,
-        searchParam,
-        initialValue: value,
-        initialLabel,
-    })
-
-    // Fermer en cliquant dehors
-    useEffect(() => {
-        const handler = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                setOpen(false)
-            }
-        }
-        document.addEventListener('mousedown', handler)
-        return () => document.removeEventListener('mousedown', handler)
-    }, [setOpen])
-
-    const handleSelect = (opt: { value: string; label: string }) => {
-        select(opt)
-        onChange(opt.value, opt.label)
-    }
-
-    const handleClear = () => {
-        clear()
-        onClear?.()
-        onChange('', '')
-    }
-
-    const displayValue = selected?.label ?? ''
-
-    return (
-        <div ref={containerRef} className={cn('relative', className)}>
-            {/* Champ hidden pour form natif */}
-            {name && <input type="hidden" name={name} value={selected?.value ?? ''} />}
-
-            <div className={cn(
-                'flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm',
-                'ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
-                disabled && 'opacity-50 pointer-events-none'
-            )}>
-                <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-
-                {selected && !open ? (
-                    // Affichage de la valeur sélectionnée
-                    <span
-                        className="flex-1 cursor-pointer truncate"
-                        onClick={() => { setOpen(true); setQuery('') }}
-                    >
-                        {displayValue}
-                    </span>
-                ) : (
-                    <input
-                        type="text"
-                        value={query}
-                        onChange={e => { setQuery(e.target.value); setOpen(true) }}
-                        onFocus={() => setOpen(true)}
-                        placeholder={selected ? displayValue : placeholder}
-                        className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
-                        autoComplete="off"
-                    />
-                )}
-
-                {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />}
-
-                {selected && (
-                    <button
-                        type="button"
-                        onClick={handleClear}
-                        className="text-muted-foreground hover:text-foreground shrink-0"
-                    >
-                        <X className="h-4 w-4" />
-                    </button>
-                )}
-            </div>
-
-            {/* Dropdown résultats */}
-            {open && (query.length >= minChars) && (
-                <div className={cn(
-                    'absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md',
-                    'max-h-60 overflow-y-auto'
-                )}>
-                    {loading ? (
-                        <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Recherche…
-                        </div>
-                    ) : options.length === 0 ? (
-                        <div className="px-3 py-2 text-sm text-muted-foreground">
-                            Aucun résultat
-                        </div>
-                    ) : (
-                        options.map(opt => (
-                            <button
-                                key={opt.value}
-                                type="button"
-                                className={cn(
-                                    'w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground',
-                                    selected?.value === opt.value && 'bg-accent/50 font-medium'
-                                )}
-                                onMouseDown={e => e.preventDefault()} // évite blur avant click
-                                onClick={() => handleSelect(opt)}
-                            >
-                                {opt.label}
-                            </button>
-                        ))
-                    )}
-                </div>
-            )}
-        </div>
-    )
-}
-```
-
----
-
-## 4. Intégration dans `ServerTableFilter`
-
-### Nouveau type dans `useServerTable.ts`
-
-```ts
-export interface ServerTableFilter {
-    type: 'text' | 'select' | 'date_range' | 'remote_select' // ← nouveau
-    name: string
-    label: string
-    placeholder?: string
-    options?: { label: string; value: string }[]
-    // Config remote_select
-    remote?: {
-        apiPath: string
-        labelKey: string
-        valueKey?: string
-        searchParam?: string
-    }
-}
-```
-
-### Dans `ServerDataTable.tsx`
-
-```tsx
-// Ajouter le cas remote_select dans le render des filtres
-if (filter.type === 'remote_select' && filter.remote) {
-    const currentId    = queryParams[filter.name] ?? ''
-    const currentLabel = queryParams[`${filter.name}_label`] ?? ''
-
-    return (
-        <RemoteSelect
-            key={filter.name}
-            apiPath={filter.remote.apiPath}
-            labelKey={filter.remote.labelKey}
-            valueKey={filter.remote.valueKey}
-            searchParam={filter.remote.searchParam}
-            placeholder={filter.placeholder ?? filter.label}
-            value={currentId}
-            initialLabel={currentLabel}
-            onChange={(val, label) => {
-                navigate({
-                    [filter.name]: val || null,
-                    [`${filter.name}_label`]: label || null,
-                    page: '1',
-                })
-            }}
-            onClear={() => {
-                navigate({
-                    [filter.name]: null,
-                    [`${filter.name}_label`]: null,
-                    page: '1',
-                })
-            }}
-        />
-    )
-}
-```
-
-> On stocke le label dans l'URL (`fournisseur_label=Dupont`) pour pouvoir le réafficher après un reload de page — sinon le `RemoteSelect` n'aurait que l'id sans savoir quoi afficher.
-
----
-
-## 5. Utilisation dans `ApprovisionnementTable`
-
-```tsx
-// Avant
-{
-    type: 'select',
-    name: 'fournisseur',
-    label: 'Fournisseur',
-    options: fournisseurs.map((f) => ({ value: `${f.id}`, label: f.libelle })),
-},
-
-// Après — plus besoin de passer fournisseurs en prop
-{
-    type: 'remote_select',
-    name: 'fournisseur',
-    label: 'Fournisseur',
-    placeholder: 'Rechercher un fournisseur…',
-    remote: {
-        apiPath: '/api/fournisseurs',
-        labelKey: 'nom',
-        searchParam: 'nom',  // correspond au SearchFilter 'partial' sur 'nom'
-    },
-},
-```
-
-Et dans le controller, plus besoin de charger la collection :
-
-```php
-// Avant
-'fournisseurs' => $this->api->collection('/api/fournisseurs')
-
-// Après — supprimer complètement cette ligne
-```
-
----
-
-## 6. Pour les formulaires Twig (new/edit) — vanilla JS
-
-Pour les `<select>` natifs dans les templates Twig, un web component léger sans React :
-
-```js
-// assets/js/remote-select.js
-// Usage : <div data-remote-select data-api-path="/api/fournisseurs"
-//              data-label-key="nom" data-search-param="nom"
-//              data-name="fournisseur" data-initial-value="3" data-initial-label="Dupont SARL">
-//         </div>
-
-document.querySelectorAll('[data-remote-select]').forEach(container => {
-    const { apiPath, labelKey, searchParam = 'search', name,
-            initialValue, initialLabel } = container.dataset
-
-    const endpoint = `/ressource/search?apiPath=${encodeURIComponent(apiPath)}`
-
-    container.innerHTML = `
-        <div class="relative">
-            <input type="hidden" name="${name}" value="${initialValue ?? ''}">
-            <div class="flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm">
-                <input type="text" placeholder="Rechercher…" autocomplete="off"
-                    class="flex-1 bg-transparent outline-none placeholder:text-muted-foreground remote-input"
-                    value="${initialLabel ?? ''}">
-            </div>
-            <div class="remote-dropdown absolute z-50 mt-1 w-full rounded-md border bg-white shadow-md hidden max-h-60 overflow-y-auto"></div>
-        </div>
-    `
-
-    const hiddenInput = container.querySelector('input[type="hidden"]')
-    const textInput   = container.querySelector('.remote-input')
-    const dropdown    = container.querySelector('.remote-dropdown')
-    let debounce: any = null
-    let abort: AbortController | null = null
-
-    textInput.addEventListener('input', () => {
-        const q = textInput.value.trim()
-        if (q.length < 2) { dropdown.classList.add('hidden'); return }
-
-        clearTimeout(debounce)
-        debounce = setTimeout(async () => {
-            abort?.abort()
-            abort = new AbortController()
-
-            const url = `${endpoint}&${searchParam}=${encodeURIComponent(q)}`
-            const res  = await fetch(url, { signal: abort.signal, headers: { 'X-Requested-With': 'XMLHttpRequest' } }).catch(() => null)
-            if (!res) return
-
-            const data  = await res.json()
-            const items = data['hydra:member'] ?? data['member'] ?? []
-
-            dropdown.innerHTML = items.length === 0
-                ? '<div class="px-3 py-2 text-sm text-gray-500">Aucun résultat</div>'
-                : items.map((item: any) => `
-                    <button type="button" data-value="${item.id}" data-label="${item[labelKey]}"
-                        class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100">
-                        ${item[labelKey]}
-                    </button>
-                `).join('')
-
-            dropdown.classList.remove('hidden')
-
-            dropdown.querySelectorAll('button').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    hiddenInput.value  = btn.dataset.value
-                    textInput.value    = btn.dataset.label
-                    dropdown.classList.add('hidden')
-                })
-            })
-        }, 300)
-    })
-
-    // Fermer en cliquant dehors
-    document.addEventListener('click', e => {
-        if (!container.contains(e.target as Node)) dropdown.classList.add('hidden')
-    })
-})
-```
-
-Dans Twig :
-
-```twig
-{# new.html.twig / edit.html.twig — remplace le <select> #}
-<div
-    data-remote-select
-    data-api-path="/api/fournisseurs"
-    data-label-key="nom"
-    data-search-param="nom"
-    data-name="fournisseur"
-    data-initial-value="{{ approvisionnement.fournisseur.id ?? '' }}"
-    data-initial-label="{{ approvisionnement.fournisseur.nom ?? '' }}"
-></div>
-```
-
----
-
-## Récap
-
-| Contexte | Solution |
-|---|---|
-| Filtre `ServerDataTable` | `type: 'remote_select'` dans `ServerTableFilter` |
-| Formulaire React | Composant `<RemoteSelect>` direct |
-| Formulaire Twig natif | Web component vanilla JS `data-remote-select` |
-| Backend | `SearchController::search()` proxy générique |
-| Controller Symfony | Supprimer les `$this->api->collection(...)` pour les gros selects |
 
 
 

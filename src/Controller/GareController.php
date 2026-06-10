@@ -133,6 +133,24 @@ final class GareController extends AbstractController
         ]);
     }
 
+    #[Route('/{id}/suspendre', name: 'suspendre', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function suspendre(int $id, Request $request): Response
+    {
+        if($this->isCsrfTokenValid('suspendre_gare', $request->request->get('_token'))) {
+            try {
+                $this->api->patch('/api/gares/' . $id . '/suspendre');
+                $this->addFlash('success', 'Le statut de la gare a été modifié avec succès');
+            } catch(ApiException $e) {
+                $response = $this->apiExceptionHandler->handle($e, null, 'gare.index');
+                if($response) {
+                    return $response;
+                }
+            }
+        }
+        return $this->redirectToRoute('gare.index');
+    }
+
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('GARE_SUPPRIMER')]
     public function delete(int $id, Request $request): Response

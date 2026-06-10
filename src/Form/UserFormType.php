@@ -32,6 +32,13 @@ class UserFormType extends AbstractType
             $roleChoices[$label] = $role['id'];
         }
 
+        $availableGares = $options['available_gares'] ?? [];
+        $gareChoices = [];
+        foreach($availableGares as $gare) {
+            $gareChoices[$gare['libelle'] . ' - ' . $gare['ville']] = $gare['id'];
+        }
+        $gareChoices = ['-- Choisir une gare --' => null] + $gareChoices;
+
         $builder
             ->add('nom', TextType::class, [
                 'label' => 'Nom',
@@ -53,6 +60,12 @@ class UserFormType extends AbstractType
                     new NotBlank(),
                     new Email(),
                 ]
+            ])
+            ->add('gare', ChoiceType::class, [
+                'label' => 'Gare',
+                'required' => false,
+                'placeholder' => '-- Choisir la gare --',
+                'choices' => $gareChoices
             ])
            ->add('password', RepeatedType::class, [
                 'type' => PasswordType::class,
@@ -89,7 +102,8 @@ class UserFormType extends AbstractType
             'csrf_field_name' => '_token',
             'csrf_token_id' => 'user',
             'data_class' => null,
-            'available_roles' => []
+            'available_roles' => [],
+            'available_gares' => []
         ]);
     }
 }

@@ -4,5 +4,7 @@ export interface Gare {
     ville: string
     libelle: string
     contact1: string
-    contact2?: string
+    contact2?: string,
+    statut: 'ACTIF' | 'SUSPENDU',
+    datecreation?: string
 }
