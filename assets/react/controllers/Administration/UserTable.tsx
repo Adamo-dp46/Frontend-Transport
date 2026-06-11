@@ -152,10 +152,16 @@ function buildColumns(
                     - Plus 'const suspendable = canEdit && !isAdmin && !isSelf' pour inclure le super admin, l'admin normal peut suspendre tous sauf un admin et le super admin peut suspendre tous sauf lui même
                 */
                 const editable = canEdit && (isSuperAdmin || !isAdmin)
-                const promouvable = currentUserIsFounder && !isSelf && !user.isFounder
-                const isAdminGare  = user.roles.includes('ROLE_ADMIN_GARE')
-                const peutAdminGare = canPromouvoirAdminGare && !isSelf && !user.isFounder && !isAdmin
-
+                const isAdminGare = user.roles.includes('ROLE_ADMIN_GARE')
+                const hasGare = !!user.gare /*
+                    - Pour vérifier si l'utilisateur est dans une gare
+                */
+                const promouvable = currentUserIsFounder && !isSelf && !user.isFounder && !isAdminGare /*
+                    - On ne peut pas promouvoir en administrateur entreprise si ce n'est pas le fondateur qui agit, si c'est soi même, si la cible est le fondateur et s'il est administrateur de gare
+                */
+                const peutAdminGare = canPromouvoirAdminGare && !isSelf && !user.isFounder && !isAdmin /*
+                    - On.. gare si ce n'est pas un administrateur d'entreprise qui agit, si.. et si l'utilisateur est administrateur entreprise
+                */
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -203,18 +209,25 @@ function buildColumns(
                             {peutAdminGare && <DropdownMenuSeparator />}
                             {peutAdminGare && (
                                 <DropdownMenuItem asChild>
-                                    <form method="POST" action={`/admin/utilisateurs/${user.id}/promouvoir/gare`}
-                                        onSubmit={(e) => {
-                                            const action = isAdminGare ? 'révoquer comme administrateur de gare' : 'nommer administrateur de gare'
-                                            if(!confirm(`Voulez-vous ${action} cet utilisateur ?`)) {
-                                                e.preventDefault()
-                                            }
-                                        }}>
-                                        <input type="hidden" name="_token" value={csrfPromouvoirAdminGare} />
-                                        <button type="submit" className={`w-full text-left ${isAdminGare ? 'text-orange-600' : 'text-green-600'}`}>
-                                            {isAdminGare ? 'Révoquer admin de gare' : 'Nommer admin de gare'}
+                                    {!isAdminGare && !hasGare ? (
+                                        <button type="button" disabled title="L'utilisateur doit être lié à une gare" className="w-full text-left text-muted-foreground opacity-50 cursor-not-allowed">
+                                            Nommer admin de gare
                                         </button>
-                                    </form>
+                                    ) : (
+                                        <form method="post" action={`/admin/utilisateurs/${user.id}/promouvoir/gare`}
+                                            onSubmit={(e) => {
+                                                const action = isAdminGare ? 'révoquer comme administrateur de gare' : 'nommer administrateur de gare'
+                                                if(!confirm(`Voulez-vous ${action} cet utilisateur ?`)) {
+                                                    e.preventDefault()
+                                                }
+                                            }}
+                                        >
+                                            <input type="hidden" name="_token" value={csrfPromouvoirAdminGare} />
+                                            <button type="submit" className={`w-full text-left ${isAdminGare ? 'text-orange-600' : 'text-green-600'}`}>
+                                                {isAdminGare ? 'Révoquer admin de gare' : 'Nommer admin de gare'}
+                                            </button>
+                                        </form>
+                                    )}
                                 </DropdownMenuItem>
                             )}
 

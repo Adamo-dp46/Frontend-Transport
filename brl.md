@@ -24,105 +24,117 @@
 
 
 
-### `UserController.php` — filtre des gares pour `ROLE_ADMIN_GARE`
 
-```php
-// Dans new() et edit() — même logique dans les deux
 
-if ($this->isGranted('ROLE_ADMIN_GARE') && !$this->isGranted('ROLE_ADMIN')) {
-    // On appelle /api/me pour récupérer la gare de l'admin gare connecté
-    $me = $this->api->item('/api/me');
-    // On ne lui expose que sa propre gare dans le select
-    $availableGares = isset($me['gare']) ? [$me['gare']] : [];
-} else {
-    $availableGares = $this->api->collection('/api/gares');
-}
-
-// Ou..
-if($this->isGranted('ROLE_ADMIN_GARE') && !$this->isGranted('ROLE_ADMIN')) {
-    $availableGares = !empty($user->getGare()) ? [$user->getGare()] : [];
-} else {
-    $availableGares = $this->api->collection('/api/gares');
-}
-```
+- Pour autoriser le bypass du `ROLE_ADMIN_GARE` on.. `ApiUser::hasPermission()` puis `PermissionVoter`
 
 
 
 
-Deux endroits à mettre à jour : `user/show.html.twig` et `UserTable.tsx`.Maintenant `UserTable.tsx` — la variable `promouvable` doit exclure les `ROLE_ADMIN_GARE` :Vérification :Voici les codes :
+
+
+
+
+
+
+
+Maintenant la section Inventaire, Propriétaire et Personnel :Maintenant la section Administration — masquer Rôles & Permissions et Entreprise pour `ROLE_ADMIN_GARE` :Vérifions que le résultat est propre :Propre et complet. Voici le code final du `base.html.twig` pour la sidebar :
 
 ---
 
-### `user/show.html.twig`
+### `base.html.twig` — sidebar (extrait modifié)
 
 ```twig
-{% if app.user.founder and not user.founder and app.user.id != user.id %}
-{% set isAdminGareAlready = 'ROLE_ADMIN_GARE' in user.roles %}
+{% set isAdminGare = is_granted('ROLE_ADMIN_GARE') %} {#
+    - On calcule une seule fois pour toute la sidebar.
+      ROLE_ADMIN_GARE bypass le PermissionVoter donc sans cette variable
+      il verrait toute la sidebar comme un ROLE_ADMIN.
+#}
 
-{% if isAdminGareAlready and not isAdmin %}
-    {# ✅ Bloqué — bouton grisé avec tooltip #}
-    <button type="button"
-            disabled
-            title="Révoquez d'abord le rôle d'administrateur de gare"
-            class="flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium opacity-50 cursor-not-allowed">
-        Promouvoir en administrateur
-    </button>
-{% else %}
-    {# ✅ Normal — peut être promu ou rétrogradé #}
-    <form method="post" action="{{ path('admin.user.promouvoir', { id: user.id }) }}" class="w-full"
-          onsubmit="return confirm('{{ isAdmin ? 'Rétrograder' : 'Promouvoir' }} cet utilisateur ?')">
-        <button type="submit" class="...">
-            {{ isAdmin ? 'Rétrograder en utilisateur' : 'Promouvoir en administrateur' }}
-        </button>
-    </form>
+{# Tableau de bord — visible pour tous sauf ROLE_SUPER_ADMIN #}
+{% if not is_granted('ROLE_SUPER_ADMIN') %}
+<a href="{{ path('home') }}" ...>Tableau de bord</a>
 {% endif %}
+
+{# Stock & Approvisionnement — masqué pour ROLE_ADMIN_GARE #}
+{% if not isAdminGare %}
+    <button data-submenu="sub-stock">Stock & Approvisionnement</button>
+    <div class="submenu" id="sub-stock">...</div>
 {% endif %}
+
+{# Flotte & Maintenance — masqué pour ROLE_ADMIN_GARE #}
+{% if not isAdminGare %}
+    <button data-submenu="sub-flotte">Flotte & Maintenance</button>
+    <div class="submenu" id="sub-flotte">...</div>
+{% endif %}
+
+{# Exploitation — visible mais items filtrés #}
+<button data-submenu="sub-exploitation">Exploitation</button>
+<div class="submenu" id="sub-exploitation">
+    {# Gares, Tarifs de trajet, Tarif de bagage, Trajets : masqués pour ROLE_ADMIN_GARE #}
+    {% if not isAdminGare and is_granted('GARE_VOIR') %}..Gares..{% endif %}
+    {% if not isAdminGare and is_granted('TARIF_VOIR') %}..Tarifs..{% endif %}
+    {% if not isAdminGare and is_granted('TARIFBAGAGE_VOIR') %}..Tarif bagage..{% endif %}
+    {% if not isAdminGare and is_granted('TRAJET_VOIR') %}..Trajets..{% endif %}
+    {# Voyages et Bagages : visibles pour ROLE_ADMIN_GARE #}
+    {% if is_granted('VOYAGE_VOIR') %}..Voyages..{% endif %}
+    {% if is_granted('BAGAGE_VOIR') %}..Bagage..{% endif %}
+</div>
+
+{# Billetterie — entièrement visible pour ROLE_ADMIN_GARE #}
+<button data-submenu="sub-billetterie">Billetterie</button>
+<div class="submenu" id="sub-billetterie">...</div>
+
+{# Courrier — visible mais Tarif courrier masqué pour ROLE_ADMIN_GARE #}
+<button data-submenu="sub-courrier">Courrier</button>
+<div class="submenu" id="sub-courrier">
+    {% if not isAdminGare and is_granted('TARIFCOURRIER_VOIR') %}..Tarif courrier..{% endif %}
+    {% if is_granted('COURRIER_VOIR') %}..Courrier..{% endif %}
+</div>
+
+{# Inventaire — masqué pour ROLE_ADMIN_GARE #}
+{% if not isAdminGare and is_granted('INVENTAIRE_VOIR') %}..Inventaire..{% endif %}
+
+{# Propriétaire — masqué pour ROLE_ADMIN_GARE #}
+{% if is_granted('ROLE_ADMIN') and not isAdminGare %}..Propriétaire..{% endif %}
+
+{# Personnel — masqué pour ROLE_ADMIN_GARE #}
+{% if not isAdminGare %}
+    <button data-submenu="sub-personnel">Personnel</button>
+    <div class="submenu" id="sub-personnel">...</div>
+{% endif %}
+
+{# Administration — items filtrés #}
+<button data-submenu="sub-admin">Administration</button>
+<div class="submenu" id="sub-admin">
+    {# Rôles & Permissions : masqué pour ROLE_ADMIN_GARE #}
+    {% if not isAdminGare and is_granted('ROLE_VOIR') %}..Rôles..{% endif %}
+    {# Utilisateurs : visible pour ROLE_ADMIN_GARE #}
+    {% if is_granted('USER_VOIR') or is_granted('ROLE_SUPER_ADMIN') %}..Utilisateurs..{% endif %}
+    {# Entreprise : masqué pour ROLE_ADMIN_GARE #}
+    {% if not isAdminGare %}
+        {% if is_granted('ROLE_SUPER_ADMIN') %}..Entreprises..{% endif %}
+        {% if is_granted('ROLE_ADMIN') %}..Entreprise..{% endif %}
+    {% endif %}
+</div>
 ```
 
 ---
 
-### `UserTable.tsx`
+## Récapitulatif Étape 4 ✅
 
-```tsx
-const promouvable        = currentUserIsFounder && !isSelf && !user.isFounder
-const peutEtrePromu      = promouvable && !isAdminGare       // ✅ libre — peut être promu/rétrogradé
-const bloqueParAdminGare = promouvable && !isAdmin && isAdminGare  // ✅ bloqué — est admin gare
+Un seul `{% set isAdminGare %}` calculé en tête de sidebar, utilisé partout — zéro appel `is_granted` dupliqué.
 
-{(peutEtrePromu || bloqueParAdminGare) && <DropdownMenuSeparator />}
+**Ce que voit un `ROLE_ADMIN_GARE` :** Tableau de bord, Exploitation (Voyages + Bagage uniquement), Billetterie, Courrier (sans les tarifs), Administration (Utilisateurs uniquement).
 
-{/* ✅ Bloqué — item désactivé avec tooltip */}
-{bloqueParAdminGare && (
-    <DropdownMenuItem disabled>
-        <span className="w-full text-left text-muted-foreground cursor-not-allowed text-xs"
-              title="Révoquez d'abord le rôle d'administrateur de gare">
-            Promouvoir en administrateur
-        </span>
-    </DropdownMenuItem>
-)}
-
-{/* ✅ Normal */}
-{peutEtrePromu && (
-    <DropdownMenuItem asChild>
-        <form method="POST" action={`/admin/utilisateurs/${user.id}/promouvoir`} ...>
-            <button ...>
-                {isAdmin ? 'Rétrograder en utilisateur' : 'Promouvoir en administrateur'}
-            </button>
-        </form>
-    </DropdownMenuItem>
-)}
-```
+**Ce qu'il ne voit pas :** Stock, Flotte, Inventaire, Personnel, Propriétaire, Gares/Tarifs/Trajets, Rôles & Permissions, Entreprise.
 
 ---
 
-**La logique des 3 variables :**
+On a couvert toutes les étapes prévues (1, 3, 4 — l'étape 2 GareScopeExtension étant reportée). Tu veux qu'on attaque autre chose ?
 
-- `promouvable` — condition de base : fondateur connecté, pas soi-même, pas le fondateur cible
-- `peutEtrePromu` — `promouvable` ET pas admin gare → bouton actif
-- `bloqueParAdminGare` — `promouvable` ET admin gare ET pas encore admin entreprise → bouton grisé visible
 
-Le séparateur s'affiche si l'un ou l'autre est vrai, pour ne pas avoir un séparateur orphelin.
-
-On passe à l'étape 3 maintenant ?
+- Si l'utilisateur est lié à une gare on empêche qu'il soit admin entreprise
 
 
 

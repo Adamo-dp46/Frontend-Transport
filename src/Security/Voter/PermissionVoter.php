@@ -12,7 +12,8 @@ final class PermissionVoter extends Voter
     private const SYMFONY_ROLES = [
         'ROLE_USER',
         'ROLE_ADMIN',
-        'ROLE_SUPER_ADMIN'
+        'ROLE_SUPER_ADMIN',
+        'ROLE_ADMIN_GARE'
     ];
 
     protected function supports(string $attribute, mixed $subject): bool

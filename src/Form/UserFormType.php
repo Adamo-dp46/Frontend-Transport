@@ -61,12 +61,6 @@ class UserFormType extends AbstractType
                     new Email(),
                 ]
             ])
-            ->add('gare', ChoiceType::class, [
-                'label' => 'Gare',
-                'required' => false,
-                'placeholder' => '-- Choisir la gare --',
-                'choices' => $gareChoices
-            ])
            ->add('password', RepeatedType::class, [
                 'type' => PasswordType::class,
                 'invalid_message' => 'Les mots de passe doivent correspondrent',
@@ -93,6 +87,17 @@ class UserFormType extends AbstractType
                 'choices' => $roleChoices
             ])
         ;
+
+        if(!$options['hide_gare']) { /*
+            - Un 'ROLE_ADMIN_GARE' ne voit pas ce champ vu que sa gare est auto affectée
+        */
+            $builder->add('gare', ChoiceType::class, [
+                'label' => 'Gare',
+                'required' => false,
+                'placeholder' => '-- Choisir la gare --',
+                'choices' => $gareChoices
+            ]);
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -103,7 +108,8 @@ class UserFormType extends AbstractType
             'csrf_token_id' => 'user',
             'data_class' => null,
             'available_roles' => [],
-            'available_gares' => []
+            'available_gares' => [],
+            'hide_gare' => false
         ]);
     }
 }

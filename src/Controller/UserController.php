@@ -77,10 +77,20 @@ final class UserController extends AbstractController
     #[IsGranted('USER_CREER')]
     public function new(Request $request): Response
     {
+        $isAdminGare = $this->isGranted('ROLE_ADMIN_GARE');
         $availableRoles = [];
+        $availableGares = [];
         try {
             $availableRoles = $this->api->collection('/api/roles');
-            $availableGares = $this->api->collection('/api/gares');
+            if(!$isAdminGare) {
+                $availableGares = $this->api->collection('/api/gares');
+            } /* - Ou..
+                if($this->isGranted('ROLE_ADMIN_GARE') && !$this->isGranted('ROLE_ADMIN')) {
+                    $availableGares = !empty($user->getGare()) ? [$user->getGare()] : [];
+                } else {
+                    $availableGares = $this->api->collection('/api/gares');
+                }
+            */
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.index');
             if($response) {
@@ -90,7 +100,8 @@ final class UserController extends AbstractController
 
         $form = $this->createForm(UserFormType::class, null, [
             'available_roles' => $availableRoles,
-            'available_gares' => $availableGares
+            'available_gares' => $availableGares,
+            'hide_gare' => $isAdminGare
         ]);
         $form->handleRequest($request);
 
@@ -111,9 +122,13 @@ final class UserController extends AbstractController
                 'userRoles' => $userRolesPayload
             ];
 
-            $gareId = $form->get('gare')->getData();
-            if($gareId) {
-                $payload['gare'] = '/api/gares/' . $gareId;
+            if(!$isAdminGare) {
+                $gareId = $form->get('gare')->getData();
+                if($gareId) {
+                    $payload['gare'] = '/api/gares/' . $gareId; /*
+                        - On n'envoie pas le champ gare pour un 'ROLE_ADMIN_GARE' vu qu'il sera auto affecté
+                    */
+                }
             }
 
             try {
@@ -137,12 +152,15 @@ final class UserController extends AbstractController
     #[IsGranted('USER_MODIFIER')]
     public function edit(int $id, Request $request): RedirectResponse|Response
     {
+        $isAdminGare = $this->isGranted('ROLE_ADMIN_GARE');
         $availableRoles = [];
         $availableGares = [];
         try {
             $user = $this->api->item('/api/users/' . $id);
             $availableRoles = $this->api->collection('/api/roles');
-            $availableGares = $this->api->collection('/api/gares');
+            if(!$isAdminGare) {
+                $availableGares = $this->api->collection('/api/gares');
+            }
         } catch (ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.index');
             if($response) {
@@ -164,7 +182,8 @@ final class UserController extends AbstractController
             ]
         ), [
             'available_roles' => $availableRoles,
-            'available_gares' => $availableGares
+            'available_gares' => $availableGares,
+            'hide_gare' => $isAdminGare
         ]);
         $form->handleRequest($request);
 
@@ -182,8 +201,10 @@ final class UserController extends AbstractController
                 'userRoles' => $userRolesPayload
             ];
 
-            $gareId = $form->get('gare')->getData();
-            $payload['gare'] = $gareId ? '/api/gares/' . $gareId : null;
+            if(!$isAdminGare) {
+                $gareId = $form->get('gare')->getData();
+                $payload['gare'] = $gareId ? '/api/gares/' . $gareId : null;
+            }
 
             $newPassword = $form->get('password')->getData();
             if($newPassword) {
@@ -237,12 +258,12 @@ final class UserController extends AbstractController
             $this->api->patch('/api/users/' . $id . '/promouvoir');
             $this->addFlash('success', 'Le rôle de l\'utilisateur a été mis à jour');
         } catch(ApiException $e) {
-            $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.show', ['id' => $id]);
+            $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.index');
             if($response) {
                 return $response;
             }
         }
-        return $this->redirectToRoute('admin.user.show', ['id' => $id]);
+        return $this->redirectToRoute('admin.user.index');
     }
 
     #[Route('/{id}/promouvoir/gare', name: 'promouvoir.gare', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
@@ -254,12 +275,12 @@ final class UserController extends AbstractController
                 $this->api->patch('/api/users/' . $id . '/promouvoir/gare');
                 $this->addFlash('success', 'Le rôle d\'administrateur de gare a été mis à jour');
             } catch(ApiException $e) {
-                $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.show', ['id' => $id]);
+                $response = $this->apiExceptionHandler->handle($e, null, 'admin.user.index');
                 if($response) {
                     return $response;
                 }
             }
         }
-        return $this->redirectToRoute('admin.user.show', ['id' => $id]);
+        return $this->redirectToRoute('admin.user.index');
     }
 }

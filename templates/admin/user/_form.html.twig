@@ -4,7 +4,9 @@
             <div>{{ form_row(form.nom) }}</div>
             <div>{{ form_row(form.prenom) }}</div>
             <div>{{ form_row(form.email) }}</div>
-            <div>{{ form_row(form.gare) }}</div>
+            {% if is_granted('ROLE_ADMIN') %}
+                <div>{{ form_row(form.gare) }}</div>
+            {% endif %}
         </div>
     </div>
     <div class="rounded-xl border bg-card shadow-sm p-4 mb-3">

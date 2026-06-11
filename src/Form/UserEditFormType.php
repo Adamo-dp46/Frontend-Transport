@@ -89,13 +89,16 @@ class UserEditFormType extends AbstractType
                 'expanded' => true,
                 'choices' => $roleChoices
             ])
-            ->add('gare', ChoiceType::class, [
+        ;
+
+        if(!$options['hide_gare']) {
+            $builder->add('gare', ChoiceType::class, [
                 'label' => 'Gare',
                 'required' => false,
                 'placeholder' => '-- Choisir la gare --',
                 'choices' => $gareChoices
-            ])
-        ;
+            ]);
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -105,7 +108,8 @@ class UserEditFormType extends AbstractType
             'csrf_field_name' => '_token',
             'csrf_token_id' => 'useredit',
             'available_roles' => [],
-            'available_gares' => []
+            'available_gares' => [],
+            'hide_gare' => false
         ]);
     }
 }

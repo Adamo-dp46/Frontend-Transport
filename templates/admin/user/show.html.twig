@@ -259,6 +259,7 @@
                 🔑 Gérer les rôles
             </a>
             {% endif %}
+
             {% set isAdmin = 'ROLE_ADMIN' in user.roles %}
             {% set isSelf  = app.user.id == user.id %}
             {% set confirmMsg = user.statut == 'ACTIF' ? 'Suspendre' : 'Réactiver' %}
@@ -276,17 +277,31 @@
             </form>
             {% endif %}
 
-            {% if app.user.founder and not user.founder and app.user.id != user.id %}
-            <form method="post" action="{{ path('admin.user.promouvoir', { id: user.id }) }}" class="inline" onsubmit="return confirm('{{ 'ROLE_ADMIN' in user.roles ? 'Rétrograder' : 'Promouvoir' }} cet utilisateur ?')">
-                <button type="submit" class="btn {{ 'ROLE_ADMIN' in user.roles ? 'btn-secondary' : 'btn-primary' }}">
-                    {{ 'ROLE_ADMIN' in user.roles ? 'Rétrograder en utilisateur' : 'Promouvoir en administrateur' }}
-                </button>
-            </form>
-            {% endif %}
             {% if user.founder %}
             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800">
                 👑 Fondateur
             </span>
+            {% endif %}
+
+            {% if app.user.founder and not user.founder and app.user.id != user.id %}
+            {% set isAdminGareAlready = 'ROLE_ADMIN_GARE' in user.roles %}
+            {% if isAdminGareAlready and not isAdmin %}
+                {# ✅ Bloqué — bouton grisé avec tooltip #}
+                <button type="button"
+                        disabled
+                        title="Révoquez d'abord le rôle d'administrateur de gare"
+                        class="flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium opacity-50 cursor-not-allowed">
+                    Promouvoir en administrateur
+                </button>
+            {% else %}
+                {# ✅ Normal — peut être promu ou rétrogradé #}
+                <form method="post" action="{{ path('admin.user.promouvoir', { id: user.id }) }}" class="w-full"
+                    onsubmit="return confirm('{{ isAdmin ? 'Rétrograder' : 'Promouvoir' }} cet utilisateur ?')">
+                    <button type="submit" class="...">
+                        {{ isAdmin ? 'Rétrograder en utilisateur' : 'Promouvoir en administrateur' }}
+                    </button>
+                </form>
+            {% endif %}
             {% endif %}
 
             {#

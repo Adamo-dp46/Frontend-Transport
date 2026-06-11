@@ -81,13 +81,14 @@ class ApiUser implements UserInterface, PasswordAuthenticatedUserInterface
             return true;
         }
 
+        if(in_array('ROLE_ADMIN_GARE', $this->getRoles(), true)) {
+            return true;
+        }
+
         foreach($this->getMetierRoles() as $userRole) {
             $permissions = $userRole['role']['permissions'] ?? [];
             foreach($permissions as $permission) {
-                if(
-                    strtolower($permission['entity']) === strtolower($entity) &&
-                    strtoupper($permission['action']) === strtoupper($action)
-                ) {
+                if(strtolower($permission['entity']) === strtolower($entity) && strtoupper($permission['action']) === strtoupper($action)) {
                     return true;
                 }
             }
