@@ -3,8 +3,8 @@
 namespace App\Form;
 
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\NumberType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -13,25 +13,37 @@ class TarifFormType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $gareChoices = [];
+        foreach ($options['gares'] as $g) {
+            $label = $g['libelle'];
+            if (!empty($g['ville'])) {
+                $label .= ' · ' . $g['ville'];
+            }
+            $gareChoices[$label] = $g['id'];
+        }
+
         $builder
-            ->add('libelle', TextType::class, [
-                'label' => 'Libellé',
-                'constraints' => [
-                    new Assert\NotBlank(),
-                    new Assert\Length(max: 150)
-                ]
+            ->add('garedepart', ChoiceType::class, [
+                'label' => 'Gare de départ',
+                'choices' => $gareChoices,
+                'placeholder' => '-- Sélectionner la gare de départ --',
+                'constraints' => [new Assert\NotNull()]
             ])
-            ->add('montant', NumberType::class, [
+            ->add('garearrivee', ChoiceType::class, [
+                'label' => "Gare d'arrivée",
+                'choices' => $gareChoices,
+                'placeholder' => "-- Sélectionner la gare d'arrivée --",
+                'constraints' => [new Assert\NotNull()]
+            ])
+            ->add('montant', IntegerType::class, [
                 'label' => 'Montant (FCFA)',
-                'scale' => 0,
+                'attr' => ['min' => 0],
                 'constraints' => [
                     new Assert\NotNull(),
                     new Assert\Positive()
-                ],
-                'attr' => [
-                    'placeholder' => '0'
                 ]
-            ]);
+            ])
+        ;
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -39,7 +51,8 @@ class TarifFormType extends AbstractType
         $resolver->setDefaults([
             'csrf_protection' => true,
             'csrf_field_name' => '_token',
-            'csrf_token_id' => 'tarif'
+            'csrf_token_id' => 'tarif',
+            'gares' => []
         ]);
     }
 }

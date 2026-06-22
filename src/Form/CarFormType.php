@@ -91,13 +91,13 @@ class CarFormType extends AbstractType
                 'required' => false
             ])
             ->add('siegesGauche', IntegerType::class, [
-                'label' => 'Le nombre de rangée à gauche',
-                'help' => 'Cette information sera utilisé pour la disposition des sièges',
+                'label' => 'Sièges par rangée (côté gauche)',
+                'help' => 'Nombre de sièges par rangée du côté gauche ; le nombre de rangées est déduit du nombre total de sièges',
                 // 'help_html' => true
             ])
             ->add('siegesDroite', IntegerType::class, [
-                'label' => 'Le nombre de rangée à droite',
-                'help' => 'Cette information sera utilisé pour la disposition des sièges'
+                'label' => 'Sièges par rangée (côté droit)',
+                'help' => 'Nombre de sièges par rangée du côté droit ; le nombre de rangées est déduit du nombre total de sièges'
             ])
         ;
     }

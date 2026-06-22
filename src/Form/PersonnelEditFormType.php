@@ -4,6 +4,7 @@ namespace App\Form;
 
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -63,6 +64,12 @@ class PersonnelEditFormType extends AbstractType
                 'constraints' => [
                     new NotNull(),
                 ],
+            ])
+            ->add('dateembauche', DateType::class, [
+                'label' => 'Date d\'embauche',
+                'widget' => 'single_text',
+                'input' => 'datetime_immutable',
+                'required' => false,
             ])
             ->add('image', FileType::class, [
                 'label' => 'Photo',

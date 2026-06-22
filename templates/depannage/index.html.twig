@@ -26,7 +26,8 @@
         cars: cars,
         canEdit: is_granted('DEPANNAGE_MODIFIER'),
         canDelete: is_granted('DEPANNAGE_SUPPRIMER'),
-        csrfDelete: csrf_token('delete_depannage')
+        csrfDelete: csrf_token('delete_depannage'),
+        csrfAnnuler: csrf_token('annuler_depannage')
     }) }} class="mb-3"
 >
     <div class="flex items-center justify-center gap-6">

@@ -20,9 +20,9 @@
 <div class="rounded-xl border bg-card shadow-sm p-6">
     {{ form_start(form) }}
         <div class="mb-3">{{ form_row(form.car) }}</div>
-        <div class="flex items-center justify-end gap-3">
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
             <a href="{{ path('voyage.index') }}" class="btn btn-secondary">Annuler</a>
-            <button class="btn btn-primary">Créer</button>
+            <button class="btn btn-primary">Affecter</button>
         </div>
     {{ form_end(form) }}
 </div>

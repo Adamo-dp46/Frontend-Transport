@@ -26,12 +26,17 @@
         queryParams: queryParams,
         canEdit: is_granted('USER_MODIFIER'),
         currentUserId: app.user.id,
+        currentUserGareId: app.user.gare.id ?? null,
+        isAdmin: is_granted('ROLE_ADMIN'),
         csrfDelete: csrf_token('delete_user'),
         apiUrl: api_url,
         isSuperAdmin: is_granted('ROLE_SUPER_ADMIN'),
+        canSuspend: is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN') or is_granted('ROLE_ADMIN_GARE'),
         currentUserIsFounder: app.user.founder,
         canPromouvoirAdminGare: is_granted('ROLE_ADMIN'),
-        csrfPromouvoirAdminGare: csrf_token('promouvoir_admin_gare')
+        csrfPromouvoirAdminGare: csrf_token('promouvoir_admin_gare'),
+        canFilterGare: is_granted('ROLE_ADMIN'),
+        gares: gares|default([])
     }) }}
     class="mb-3"
 > {# currentUserRoles: app.user.roles #}

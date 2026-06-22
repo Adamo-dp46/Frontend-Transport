@@ -1,17 +1,18 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Modifier le tarif #{{ tarif.id }}{% endblock %}
+{% block title %}Modifier un tarif{% endblock %}
 
 {% block body %}
 <div class="flex items-center gap-3 mb-4">
     <a href="{{ path('tarif.index') }}" class="btn-icon">
-        <svg class="h-5 w-5" aria-hidden="true" width="14" height="14">
+        <svg class="h-5 w-5" aria-hidden="true">
             <use href="{{ asset('sprite.svg') }}#chevron-left"></use>
         </svg>
     </a>
-    <div>
-        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Modifier le tarif #{{ tarif.id }}</h1>
-    </div>
+    <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">
+        Modifier&nbsp;:
+        {{ tarif.garedepart.libelle ?? '?' }} → {{ tarif.garearrivee.libelle ?? '?' }}
+    </h1>
 </div>
-{% include 'tarif/_form.html.twig' with {button: 'Modifier'} %}
+{% include 'tarif/_form.html.twig' with { button: 'Enregistrer' } %}
 {% endblock %}

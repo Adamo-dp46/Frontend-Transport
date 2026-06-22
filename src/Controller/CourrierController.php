@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Controller\Trait\GareActionTrait;
 use App\Domain\Helper\ApiExceptionHandlerHelper;
 use App\Domain\Helper\ApiHelper;
 use App\Domain\Helper\TableHelper;
@@ -9,7 +10,7 @@ use App\Domain\Service\PdfService;
 use App\Security\Exception\ApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -20,6 +21,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 final class CourrierController extends AbstractController
 {
+    use GareActionTrait;
+
     public function __construct(
         private readonly ApiHelper $api,
         private readonly ApiExceptionHandlerHelper $apiExceptionHandler,
@@ -68,8 +71,12 @@ final class CourrierController extends AbstractController
             if ($response) return $response;
         }
 
+        // Livraison / perte se font à la gare de destination ; un agent d'une autre gare ne voit pas ces boutons
+        $peutAgir = $this->peutAgirSurGare($courrier['garearrivee']['id'] ?? null);
+
         return $this->render('courrier/show.html.twig', [
-            'courrier' => $courrier
+            'courrier' => $courrier,
+            'peutAgir' => $peutAgir
         ]);
     }
 
@@ -77,110 +84,108 @@ final class CourrierController extends AbstractController
     #[IsGranted('COURRIER_CREER')]
     public function new(Request $request): Response
     {
-        try {
-            $gares = $this->api->collection('/api/gares');
-            $voyages = $this->api->collection('/api/voyages?exists[datefin]=false');
-            $tarifcourriers = $this->api->collection('/api/tarifcourriers');
-        } catch(ApiException $e) {
-            $response = $this->apiExceptionHandler->handle($e, null, 'courrier.index');
-            if($response) {
-                return $response;
-            }
-        }
-
-        if($request->isMethod('POST')) {
-            $data = $request->request->all();
-            $details = $this->buildDetails($data);
-            if(empty($details)) {
-                $this->addFlash('error', 'Veuillez ajouter au moins un colis');
-            } else {
-                $payload = [
-                    'nomexpediteur' => $data['nomexpediteur'] ?? '',
-                    'contactexpediteur' => $data['contactexpediteur'] ?? '',
-                    'nomdestinataire' => $data['nomdestinataire'] ?? '',
-                    'contactdestinataire'=> $data['contactdestinataire'] ?? '',
-                    'gareDepart' => (int)($data['gareDepart'] ?? 0), // !!
-                    'gareArrivee' => (int)($data['gareArrivee'] ?? 0),
-                    'voyage' => !empty($data['voyage']) ? (int) $data['voyage'] : null,
-                    'fraissuivi' => !empty($data['fraissuivi']) ? (int) $data['fraissuivi'] : null,
-                    'modepaiement' => $data['modepaiement'] ?? 'ENVOI',
-                    'details' => $details
-                ];
-
-                try {
-                    $this->api->post('/api/courriers', $payload);
-                    $this->addFlash('success', 'Le courrier a été enregistré avec succès');
-                    return $this->redirectToRoute('courrier.index');
-                } catch(ApiException $e) {
-                    $response = $this->apiExceptionHandler->handle($e, null, 'courrier.new');
-                    if($response) {
-                        return $response;
-                    }
+        if ($request->isMethod('GET')) {
+            try {
+                $voyages = $this->api->collection('/api/voyages?exists[datefin]=false');
+                $tarifcourriers = $this->api->collection('/api/tarifcourriers');
+            } catch(ApiException $e) {
+                $response = $this->apiExceptionHandler->handle($e, null, 'courrier.index');
+                if($response) {
+                    return $response;
                 }
             }
+
+            $userGare = $this->getUser()->getGare();
+            $voyageId = $request->query->getInt('voyage'); // raccourci depuis la liste des voyages
+
+            return $this->render('courrier/new.html.twig', [
+                'voyages' => $voyages,
+                'tarifcourriers' => $tarifcourriers,
+                'userGareId' => $userGare['id'] ?? null,
+                'userGareLibelle' => $userGare['libelle'] ?? null,
+                'preselectVoyageId' => $voyageId ?: null
+            ]);
         }
 
-        return $this->render('courrier/new.html.twig', [
-            'gares' => $gares,
-            'voyages' => $voyages,
-            'tarifcourriers' => $tarifcourriers
-        ]);
+        // POST : JSON envoyé par le composant React CourrierForm
+        try {
+            $payload = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return $this->json(['detail' => 'Corps de requête JSON invalide'], 400);
+        }
+
+        try {
+            $courrier = $this->api->post('/api/courriers', $this->buildPayload($payload));
+            return $this->json(['created' => $courrier['id'] ?? null]);
+        } catch (ApiException $e) {
+            return $this->json(['detail' => $e->getMessage()], $e->getCode() ?: 422);
+        }
+    }
+
+    #[Route('/arrets/{id}', name: 'arrets', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('COURRIER_VOIR')]
+    public function arrets(int $id): JsonResponse
+    {
+        try {
+            $voyage = $this->api->item('/api/voyages/' . $id);
+            $ligneId = $voyage['ligne']['id'] ?? null;
+            if (!$ligneId) {
+                return $this->json(['arrets' => []]); // voyage non rattaché à une ligne
+            }
+            $ligne = $this->api->item('/api/lignes/' . $ligneId);
+            $arrets = array_map(fn($a) => [
+                'id' => $a['gare']['id'],
+                'libelle' => $a['gare']['libelle'],
+                'ville' => $a['gare']['ville'] ?? null,
+                'ordre' => $a['ordre'],
+            ], $ligne['arrets'] ?? []);
+            usort($arrets, fn($x, $y) => $x['ordre'] <=> $y['ordre']);
+            return $this->json(['arrets' => $arrets]);
+        } catch (ApiException $e) {
+            return $this->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
     }
 
     #[Route('/{id}/modifier', name: 'edit', methods: ['GET', 'POST'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('COURRIER_MODIFIER')]
     public function edit(int $id, Request $request): Response
     {
-        try {
-            $courrier = $this->api->item('/api/courriers/' . $id);
-            $gares = $this->api->collection('/api/gares');
-            $voyages = $this->api->collection('/api/voyages?exists[datefin]=false');
-            $tarifcourriers = $this->api->collection('/api/tarifcourriers');
-        } catch(ApiException $e) {
-            $response = $this->apiExceptionHandler->handle($e, null, 'courrier.index');
-            if($response) {
-                return $response;
-            }
-        }
-
-        if($request->isMethod('POST')) {
-            $data = $request->request->all();
-            $details = $this->buildDetails($data);
-            if (empty($details)) {
-                $this->addFlash('error', 'Veuillez ajouter au moins un colis');
-            } else {
-                $payload = [
-                    'nomexpediteur' => $data['nomexpediteur'] ?? '',
-                    'contactexpediteur' => $data['contactexpediteur'] ?? '',
-                    'nomdestinataire' => $data['nomdestinataire'] ?? '',
-                    'contactdestinataire'=> $data['contactdestinataire'] ?? '',
-                    'gareDepart' => (int)($data['gareDepart'] ?? 0),
-                    'gareArrivee' => (int)($data['gareArrivee'] ?? 0),
-                    'voyage' => !empty($data['voyage']) ? (int)$data['voyage'] : null,
-                    'fraissuivi' => !empty($data['fraissuivi']) ? (int)$data['fraissuivi'] : null,
-                    'modepaiement' => $data['modepaiement'] ?? 'ENVOI',
-                    'details' => $details
-                ];
-
-                try {
-                    $this->api->patch('/api/courriers/' . $id, $payload);
-                    $this->addFlash('success', 'Le courrier a été modifié avec succès');
-                    return $this->redirectToRoute('courrier.show', ['id' => $id]);
-                } catch(ApiException $e) {
-                    $response = $this->apiExceptionHandler->handle($e, null, 'courrier.edit', ['id' => $id]);
-                    if($response) {
-                        return $response;
-                    }
+        if ($request->isMethod('GET')) {
+            try {
+                $courrier = $this->api->item('/api/courriers/' . $id);
+                $voyages = $this->api->collection('/api/voyages?exists[datefin]=false');
+                $tarifcourriers = $this->api->collection('/api/tarifcourriers');
+            } catch(ApiException $e) {
+                $response = $this->apiExceptionHandler->handle($e, null, 'courrier.index');
+                if($response) {
+                    return $response;
                 }
             }
+
+            $userGare = $this->getUser()->getGare();
+
+            return $this->render('courrier/edit.html.twig', [
+                'courrier' => $courrier,
+                'voyages' => $voyages,
+                'tarifcourriers' => $tarifcourriers,
+                'userGareId' => $userGare['id'] ?? null,
+                'userGareLibelle' => $userGare['libelle'] ?? null
+            ]);
         }
 
-        return $this->render('courrier/edit.html.twig', [
-            'courrier' => $courrier,
-            'gares' => $gares,
-            'voyages' => $voyages,
-            'tarifcourriers' => $tarifcourriers
-        ]);
+        // POST : JSON envoyé par le composant React CourrierForm
+        try {
+            $payload = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return $this->json(['detail' => 'Corps de requête JSON invalide'], 400);
+        }
+
+        try {
+            $this->api->patch('/api/courriers/' . $id, $this->buildPayload($payload));
+            return $this->json(['updated' => $id]);
+        } catch (ApiException $e) {
+            return $this->json(['detail' => $e->getMessage()], $e->getCode() ?: 422);
+        }
     }
 
     #[Route('/{id}/livrer', name: 'livrer', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
@@ -232,6 +237,23 @@ final class CourrierController extends AbstractController
         }
 
         return $this->redirectToRoute('courrier.show', ['id' => $id]);
+    }
+
+    #[Route('/colis/{id}/perdu', name: 'colis.perdu', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('COURRIER_MODIFIER')]
+    public function colisperdu(int $id, Request $request): Response
+    {
+        $courrierId = $request->request->get('courrier_id');
+        try {
+            $this->api->patch('/api/detailcourriers/' . $id . '/perdu');
+            $this->addFlash('success', 'Le colis a été déclaré perdu');
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e, null, 'courrier.show', ['id' => $courrierId]);
+            if($response) {
+                return $response;
+            }
+        }
+        return $this->redirectToRoute('courrier.show', ['id' => $courrierId]);
     }
 
     #[Route('/{id}/print', name: 'print', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
@@ -294,32 +316,34 @@ final class CourrierController extends AbstractController
         return $this->redirectToRoute('courrier.index');
     }
 
-    private function buildDetails(array $data): array
+    /**
+     * Construit le payload API à partir du JSON envoyé par le composant React.
+     * Les gares/voyage peuvent être nulls (un courrier sans voyage n'a pas d'itinéraire).
+     * La taxe de chaque colis est recalculée côté API via findTarifForValeur.
+     */
+    private function buildPayload(array $data): array
     {
-        $details = [];
-        $natures = $data['detail_nature'] ?? [];
-        $designations= $data['detail_designation'] ?? [];
-        $emballages = $data['detail_emballage'] ?? [];
-        $types = $data['detail_type'] ?? [];
-        $poids = $data['detail_poids'] ?? [];
-        $valeurs = $data['detail_valeur'] ?? [];
-        $tarifs = $data['detail_tarif'] ?? []; // !!
+        $details = array_map(fn($d) => [
+            'id' => isset($d['id']) && $d['id'] !== '' && $d['id'] !== null ? (int) $d['id'] : null, // id du colis existant (édition) → réconciliation côté API
+            'nature' => $d['nature'] ?? '',
+            'designation' => $d['designation'] ?? '',
+            'emballage' => !empty($d['emballage']) ? $d['emballage'] : null,
+            'type' => $d['type'] ?? 'NORMAL',
+            'poids' => isset($d['poids']) && $d['poids'] !== '' && $d['poids'] !== null ? (int) $d['poids'] : null,
+            'valeur' => (int) ($d['valeur'] ?? 0),
+        ], $data['details'] ?? []);
 
-        foreach($natures as $i => $nature) {
-            if(!empty($nature) && !empty($valeurs[$i])) {
-                $details[] = [
-                    'nature' => $nature,
-                    'designation' => $designations[$i] ?? '',
-                    'emballage' => !empty($emballages[$i]) ? $emballages[$i] : null,
-                    'type' => $types[$i] ?? 'NORMAL',
-                    'poids' => !empty($poids[$i]) ? (int) $poids[$i] : null,
-                    'valeur' => (int) $valeurs[$i] /*
-                        'detail_tarif' est l'id du 'TarifCourrier', pas utilisé directement par le processor qui recalcule via 'findTarifForValeur' mais utile pour valider côté client que la valeur est dans la bonne tranche
-                    */
-                ];
-            }
-        }
-
-        return $details;
+        return [
+            'nomexpediteur' => $data['nomexpediteur'] ?? '',
+            'contactexpediteur' => $data['contactexpediteur'] ?? '',
+            'nomdestinataire' => $data['nomdestinataire'] ?? '',
+            'contactdestinataire' => $data['contactdestinataire'] ?? '',
+            'gareDepart' => !empty($data['gareDepart']) ? (int) $data['gareDepart'] : null,
+            'gareArrivee' => !empty($data['gareArrivee']) ? (int) $data['gareArrivee'] : null,
+            'voyage' => !empty($data['voyage']) ? (int) $data['voyage'] : null,
+            'fraissuivi' => !empty($data['fraissuivi']) ? (int) $data['fraissuivi'] : null,
+            'modepaiement' => $data['modepaiement'] ?? 'ENVOI',
+            'details' => $details,
+        ];
     }
 }

@@ -22,7 +22,7 @@ final class RegisterController extends AbstractController
     }
 
     #[Route('/inscription', name: 'app_register')]
-    #[IsGranted('ROLE_SUPER_ADMIN')]
+    // #[IsGranted('ROLE_SUPER_ADMIN')]
     public function register(Request $request): Response
     {
         $form = $this->createForm(RegisterFormType::class);

@@ -1,79 +1,51 @@
 {% extends 'base.html.twig' %}
+{% import 'components/detail.html.twig' as ui %}
 
-{% block title %}Inventaire #({{ inventaire.id }}){% endblock %}
+{% block title %}Inventaire #{{ inventaire.id }}{% endblock %}
+
+{% set isEntree = inventaire.typemouvement == 'ENTREE' %}
+{% set refLabels = { APPROVISIONNEMENT: 'Approvisionnement', DEPANNAGE: 'Dépannage', AJUSTEMENT: 'Ajustement' } %}
+{% set refTones = { APPROVISIONNEMENT: 'blue', DEPANNAGE: 'orange', AJUSTEMENT: 'purple' } %}
 
 {% block body %}
-<div class="flex items-center gap-3 mb-5">
-    <a href="{{ path('inventaire.index') }}" class="btn-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-    </a>
-    <div>
-        <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2] mb-1">Mouvement #{{ inventaire.id }}</h1>
-        <p class="text-muted-foreground text-sm">
-            {{ inventaire.datemouvement ? inventaire.datemouvement|date('d/m/Y à H:i') : '' }}
+<div class="max-w-[820px] mx-auto">
+
+    {# En-tête #}
+    <div class="mb-6">
+        <a href="{{ path('inventaire.index') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            Retour aux mouvements
+        </a>
+        <div class="flex items-center gap-2 flex-wrap mb-0.5">
+            <p class="text-xs uppercase tracking-wide text-muted-foreground">Mouvement de stock</p>
+            {{ ui.badge((isEntree ? '↑ Entrée' : '↓ Sortie'), isEntree ? 'green' : 'red') }}
+        </div>
+        <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2]">Mouvement #{{ inventaire.id }}</h1>
+        <p class="text-sm text-muted-foreground mt-1">{{ inventaire.datemouvement ? inventaire.datemouvement|date('d/m/Y à H:i') : '' }}</p>
+    </div>
+
+    {# Quantité (hero) #}
+    <div class="card p-5 mb-4">
+        <p class="text-xs text-muted-foreground">Quantité du mouvement</p>
+        <p class="text-3xl font-semibold tabular-nums mt-0.5 {{ isEntree ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+            {{ isEntree ? '+' : '−' }}{{ inventaire.quantite }} <span class="text-sm font-normal text-muted-foreground">unité(s)</span>
         </p>
     </div>
-</div>
 
-<div class="container">
-    <div class="card p-4">
-        {# Type #}
-        <div class="flex items-center justify-between py-2 border-b">
-            <span class="text-muted-foreground">Type de mouvement</span>
-            {% if inventaire.typemouvement == 'ENTREE' %}
-                <span class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">↑ Entrée</span>
-            {% else %}
-                <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">↓ Sortie</span>
-            {% endif %}
-        </div>
-    
-        {# Pièce #}
-        <div class="flex items-center justify-between py-2 border-b">
-            <span class="text-muted-foreground">Pièce</span>
-            <span class="font-medium font-mono text-xs">{{ inventaire.pieceName }}</span>
-        </div>
-
-        <div class="flex items-center justify-between py-2 border-b">
-            <span class="text-muted-foreground">Auteur</span>
-            <span class="font-medium font-mono">{{ inventaire.createdByNom ?? '' }} {{ inventaire.createdByPrenom ?? '' }}</span>
-        </div>
-    
-        {# Quantité #}
-        <div class="flex items-center justify-between py-2 border-b">
-            <span class="text-muted-foreground">Quantité</span>
-            <span class="font-bold text-xl tabular-nums
-                {{ inventaire.typemouvement == 'ENTREE' ? 'text-green-600' : 'text-red-600' }}">
-                {{ inventaire.typemouvement == 'ENTREE' ? '+' : '-' }}{{ inventaire.quantite }}
-            </span>
-        </div>
-    
-        {# Origine #}
-        <div class="flex items-center justify-between py-2 border-b">
-            <span class="text-muted-foreground">Origine</span>
-            <div class="flex items-center gap-2">
-                {% set refColors = {
-                    APPROVISIONNEMENT: 'bg-blue-100 text-blue-700',
-                    DEPANNAGE: 'bg-orange-100 text-orange-700',
-                    AJUSTEMENT: 'bg-purple-100 text-purple-700'
-                } %}
-                {% set refLabels = {
-                    APPROVISIONNEMENT: 'Approvisionnement',
-                    DEPANNAGE: 'Dépannage',
-                    AJUSTEMENT: 'Ajustement'
-                } %}
-                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
-                    {{ refColors[inventaire.referencetype] ?? 'bg-gray-100 text-gray-600' }}">
-                    {{ refLabels[inventaire.referencetype] ?? inventaire.referencetype }}
-                </span>
+    {# Détail #}
+    <div class="card p-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+            <div class="min-w-0">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">Type de mouvement</p>
+                <div class="mt-1">{{ ui.badge((isEntree ? '↑ Entrée' : '↓ Sortie'), isEntree ? 'green' : 'red') }}</div>
             </div>
-        </div>
-    
-        {# Date #}
-        <div class="flex items-center justify-between py-2">
-            <span class="text-muted-foreground">Date du mouvement</span>
-            <span>{{ inventaire.datemouvement ? inventaire.datemouvement|date('d/m/Y H:i:s') : '—' }}</span>
+            <div class="min-w-0">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">Origine</p>
+                <div class="mt-1">{{ ui.badge(refLabels[inventaire.referencetype] ?? inventaire.referencetype, refTones[inventaire.referencetype] ?? 'zinc') }}</div>
+            </div>
+            {{ ui.field('Pièce', inventaire.pieceName, true) }}
+            {{ ui.field('Auteur', (inventaire.createdByNom ?? '') ~ ' ' ~ (inventaire.createdByPrenom ?? '')) }}
+            {{ ui.field('Date du mouvement', inventaire.datemouvement ? inventaire.datemouvement|date('d/m/Y à H:i:s') : null) }}
         </div>
     </div>
 </div>

@@ -15,6 +15,7 @@
     > Pour gérer les filtres côté serveur on a crée `TableHelper` et `TableQueryBuilder`
     > !! éviter de passer `api_url` dans les controller pour les vues on l'a fait globalement dans `twig.yaml`
     > !! ne pas surcharger les `select` on a `SearchController`, `tom-select-remote.js` et `remote-combobox.tsx`
+    > !! autoriser le bypass du `ROLE_ADMIN_GARE` on.. `ApiUser::hasPermission()` puis `PermissionVoter`
     > On a utiliser le système de cache natif de symfony `CacheInterface`
     > !! les icônes `lucide.dev` et `claude`
     > Pour le guide
@@ -25,8 +26,6 @@
         > !! avec une page `/aide` qui contient des sections par module, captures d'écran, descriptions..
 
 - **Git**
-    > git remote add origin git@github.com:Damo-dp45/Frontend-Transport.git
-    > git branch -M main
     > git push -u origin main
 
 - **Production**

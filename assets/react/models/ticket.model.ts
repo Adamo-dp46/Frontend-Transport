@@ -1,5 +1,8 @@
+import { Gare } from "./gare.model"
 import { Siege } from "./siege.model"
 import { Voyage } from "./voyage.model"
+
+export type TicketStatut = "VALIDE" | "REPORTE" | "ANNULE"
 
 export interface Ticket {
     id: number
@@ -10,4 +13,9 @@ export interface Ticket {
     codeticket: string
     voyage: Voyage
     createdAt: string
+    gare: Gare
+    garedescente: Gare
+    statut: TicketStatut
+    // Renseigné sur un billet issu d'un REPORT : pointe vers le billet désisté d'origine
+    ticketOrigine?: { id: number; codeticket: string } | null
 }

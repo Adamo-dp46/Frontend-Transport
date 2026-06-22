@@ -1,134 +1,93 @@
 {% extends 'base.html.twig' %}
+{% import 'components/detail.html.twig' as ui %}
 
 {% block title %}Approvisionnement #{{ approvisionnement.id }}{% endblock %}
 
 {% block body %}
-<div class="flex flex-col mb-5 gap-3 sm:flex-row sm:items-start sm:justify-between sm:mb-5">
-    <div>
-        <h1 class="text-2xl font-bold tracking-[-0.55px] leading-tight mb-1">Approvisionnement #{{ approvisionnement.id }}</h1>
-        <p class="text-sm font-light text-muted-foreground">
-            Créé le {{ approvisionnement.createdAt|date("m/d/Y à H:i") }}
-        </p>
-    </div>
-    <div class="flex items-center gap-2 flex-wrap sm:shrink-0">
-        <a href="{{ path('approvisionnement.index') }}" class="btn btn-secondary flex-1 justify-center sm:flex-none">
-            <svg class="h-5 w-5" aria-hidden="true" width="14" height="14"><use href="{{ asset('sprite.svg') }}#chevron-left"></use></svg>
-            Retour
-        </a>
+{% set total = 0 %}
+{% for d in approvisionnement.detailapprovisionnements %}{% set total = total + (d.quantite * d.prixunitaire) %}{% endfor %}
+<div class="max-w-[1100px] mx-auto">
+
+    {# En-tête #}
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+        <div class="min-w-0">
+            <a href="{{ path('approvisionnement.index') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Retour aux approvisionnements
+            </a>
+            <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">Approvisionnement</p>
+                {% if approvisionnement.statut is defined and approvisionnement.statut == 'ANNULE' %}{{ ui.badge('Annulé', 'red') }}{% endif %}
+            </div>
+            <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2]">Approvisionnement #{{ approvisionnement.id }}</h1>
+            <p class="text-sm text-muted-foreground mt-1">Créé le {{ approvisionnement.createdAt|date('d/m/Y à H:i') }}</p>
+        </div>
         {% if is_granted('APPROVISIONNEMENT_MODIFIER') %}
-        <a href="{{ path('approvisionnement.edit', {id: approvisionnement.id }) }}" class="btn btn-primary flex-1 justify-center sm:flex-none">
-            <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
-            Modifier
-        </a>
+        <div class="flex items-center gap-2 flex-wrap shrink-0">
+            <a href="{{ path('approvisionnement.edit', {id: approvisionnement.id }) }}" class="btn btn-primary">
+                <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+                Modifier
+            </a>
+        </div>
         {% endif %}
     </div>
-</div>
 
-<div class="grid grid-cols-3 gap-4 mb-4">
-    <div class="card p-4 text-center">
-        <p class="text-lg uppercase tracking-wide mb-1">Nombre de références</p>
-        <p class="text-4xl font-black tabular-nums mb-1">
-            {{ approvisionnement.detailapprovisionnements|length }}
-        </p>
-        <p class="text-xs text-muted-foreground">unité(s)</p>
+    {# KPI #}
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+        {{ ui.stat('Références', approvisionnement.detailapprovisionnements|length) }}
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Montant total</p>
+            <p class="text-2xl font-semibold tabular-nums text-primary mt-0.5">{{ total|number_format(0, ',', ' ') }} <span class="text-xs font-normal text-muted-foreground">FCFA</span></p>
+        </div>
     </div>
-    <div class="card p-4 text-center">
-        <p class="text-lg uppercase tracking-wide mb-1">Montant total</p>
-        <p class="text-3xl font-black tabular-nums mb-1">
-            {% set total = 0 %}
-            {% for d in approvisionnement.detailapprovisionnements %}
-                {% set total = total + (d.quantite * d.prixunitaire) %}
-            {% endfor %}
-            {{ total|number_format(0, ',', ' ') }}
-        </p>
-        <p class="text-xs text-muted-foreground">FCFA</p>
-    </div>
-</div>
 
-<div class="card p-6 mb-4">
-    <p class="text-lg font-light text-muted-foreground mb-2">Fournisseur</p>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <p>
-            <span class="font-semibold">Libellé</span>: {{ approvisionnement.fournisseur.libelle }}
-        </p>
-        <p>
-            <span class="font-semibold">Nom</span>: {{ approvisionnement.fournisseur.nom }}
-        </p>
-        <p>
-            <span class="font-semibold">Contact</span>: {{ approvisionnement.fournisseur.contact ?? '..' }}
-        </p>
-        <p>
-            <span class="font-semibold">Email</span>: {{ approvisionnement.fournisseur.email ?? '..' }}
-        </p>
-        <p>
-            <span class="font-semibold">Adresse</span>: {{ approvisionnement.fournisseur.adresse ?? '..' }}
-        </p>
+    {# Fournisseur #}
+    <div class="card p-6 mb-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Fournisseur</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+            {{ ui.field('Libellé', approvisionnement.fournisseur.libelle) }}
+            {{ ui.field('Nom', approvisionnement.fournisseur.nom) }}
+            {{ ui.field('Contact', approvisionnement.fournisseur.contact) }}
+            {{ ui.field('Email', approvisionnement.fournisseur.email) }}
+            {{ ui.field('Adresse', approvisionnement.fournisseur.adresse) }}
+        </div>
     </div>
-</div>
 
-<div class="card">
-    <div class="border-b p-4">
-        <h2 class="text-2xl font-semibold">Détail des pièces</h2>
-    </div>
-    <table class="w-full text-sm">
-        <thead>
-            <tr class="border-b bg-muted/40">
-                <th class="text-left px-4 py-3 font-semibold">Pièce</th>
-                <th class="text-right px-4 py-3 font-semibold">Quantité</th>
-                <th class="text-right px-4 py-3 font-semibold">Prix unitaire</th>
-                <th class="text-right px-4 py-3 font-semibold">Total</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y">
-            {% for detail in approvisionnement.detailapprovisionnements %}
-            <tr class="hover:bg-muted/20 transition-colors">
-                <td class="px-4 py-3 font-medium">{{ detail.piece.libelle ?? '—' }}</td>
-                <td class="px-4 py-3 text-right tabular-nums">{{ detail.quantite }}</td>
-                <td class="px-4 py-3 text-right tabular-nums">{{ detail.prixunitaire|number_format(0, ',', ' ') }} FCFA</td>
-                <td class="px-4 py-3 text-right tabular-nums font-semibold">
-                    {{ (detail.quantite * detail.prixunitaire)|number_format(0, ',', ' ') }} FCFA
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="4" class="px-4 py-8 text-center text-muted-foreground">Aucun détail disponible</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        {% if approvisionnement.detailapprovisionnements|length > 0 %}
-        <tfoot>
-            <tr class="border-t bg-muted/20">
-                <td colspan="3" class="px-4 py-3 text-right font-bold">Total :</td>
-                <td class="px-4 py-3 text-right tabular-nums font-bold text-base">
-                    {{ total|number_format(0, ',', ' ') }} FCFA
-                </td>
-            </tr>
-        </tfoot>
-        {% endif %}
-    </table>
-</div>
-{#
-    {% if is_granted('APPROVISIONNEMENT_MODIFIER') %}
-    <form method="POST"
-        action="{{ path('approvisionnement.verrouiller', { id: approvisionnement.id }) }}"
-        class="inline"
-        onsubmit="return confirm('{{ approvisionnement.verrouille ? 'Déverrouiller' : 'Verrouiller' }} cet approvisionnement ?')">
-        <button type="submit" class="btn {{ approvisionnement.verrouille ? 'btn-secondary' : 'btn-warning' }}">
-            {% if approvisionnement.verrouille %}
-                <svg class="h-4 w-4" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#unlock"></use></svg>
-                Déverrouiller
-            {% else %}
-                <svg class="h-4 w-4" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#lock"></use></svg>
-                Verrouiller
+    {# Détail des pièces #}
+    <div class="card overflow-hidden">
+        <div class="border-b border-border p-4">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Détail des pièces</h2>
+        </div>
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-border bg-muted/40 text-muted-foreground">
+                    <th class="text-left px-4 py-2.5 font-medium">Pièce</th>
+                    <th class="text-right px-4 py-2.5 font-medium">Quantité</th>
+                    <th class="text-right px-4 py-2.5 font-medium">Prix unitaire</th>
+                    <th class="text-right px-4 py-2.5 font-medium">Total</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+                {% for detail in approvisionnement.detailapprovisionnements %}
+                <tr class="hover:bg-muted/20 transition-colors">
+                    <td class="px-4 py-3 font-medium">{{ detail.piece.libelle ?? '—' }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">{{ detail.quantite }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums">{{ detail.prixunitaire|number_format(0, ',', ' ') }} FCFA</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-semibold">{{ (detail.quantite * detail.prixunitaire)|number_format(0, ',', ' ') }} FCFA</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="px-4 py-8 text-center text-muted-foreground">Aucun détail disponible</td></tr>
+                {% endfor %}
+            </tbody>
+            {% if approvisionnement.detailapprovisionnements|length > 0 %}
+            <tfoot>
+                <tr class="border-t border-border bg-muted/20">
+                    <td colspan="3" class="px-4 py-3 text-right font-semibold">Total</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-bold">{{ total|number_format(0, ',', ' ') }} FCFA</td>
+                </tr>
+            </tfoot>
             {% endif %}
-        </button>
-    </form>
-    {% endif %}
-
-    {% if is_granted('APPROVISIONNEMENT_MODIFIER') and not approvisionnement.verrouille %}
-    <a href="{{ path('approvisionnement.edit', { id: approvisionnement.id }) }}" class="btn btn-primary">
-        Modifier
-    </a>
-    {% endif %}
-#}
+        </table>
+    </div>
+</div>
 {% endblock %}

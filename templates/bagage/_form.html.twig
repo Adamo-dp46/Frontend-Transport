@@ -8,7 +8,7 @@
                 <select id="voyage" name="voyage" class="input">
                     <option value="">-- Choisir un voyage --</option>
                     {% for voyage in voyages %}
-                        <option value="{{ voyage.id }}">
+                        <option value="{{ voyage.id }}" {{ voyageId is defined and voyageId and voyageId == voyage.id ? 'selected' : '' }}>
                             {{ voyage.codevoyage }} - {{ voyage.provenance }} → {{ voyage.destination }}
                         </option>
                     {% endfor %}
@@ -30,6 +30,15 @@
                 </p>
             </div>
             {% endif %}
+            <div class="field sm:col-span-2">
+                <label class="label" for="garedescente">Gare de descente</label>
+                <select id="garedescente" name="garedescente" class="input" data-current="{{ bagage.garedescente.id ?? '' }}" data-usergare="{{ userGareId ?? '' }}" disabled>
+                    <option value="">-- Choisir un voyage d'abord --</option>
+                </select>
+                <p class="text-xs text-muted-foreground mt-1">
+                    {% if userGareId %}Départ depuis votre gare ({{ userGareLibelle }}). {% endif %}Où le client récupère son bagage. Laissé vide = terminus.
+                </p>
+            </div>
             <div class="field">
                 <label class="label" for="nomclient">Nom du client <span class="text-red-500">*</span></label>
                 <input type="text" id="nomclient" name="nomclient" class="input" value="{{ bagage.nomclient ?? '' }}" required>
@@ -147,5 +156,55 @@ document.addEventListener('turbo:load', function () {
     if (poidsInput.value) {
         poidsInput.dispatchEvent(new Event('input'));
     }
+});
+</script>
+
+<script>
+// Gare de descente limitée aux arrêts de la ligne du voyage choisi (désactivée tant qu'aucun voyage)
+document.addEventListener('turbo:load', function () {
+    const voyageSelect   = document.getElementById('voyage');
+    const descenteSelect = document.getElementById('garedescente');
+    if (!voyageSelect || !descenteSelect) return;
+
+    const current = descenteSelect.dataset.current || '';
+    const usergare = descenteSelect.dataset.usergare || '';
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+    function setPlaceholder(text) {
+        descenteSelect.innerHTML = '<option value="">' + text + '</option>';
+        descenteSelect.disabled = true;
+    }
+
+    async function applyArrets(voyageId) {
+        if (!voyageId) { setPlaceholder("-- Choisir un voyage d'abord --"); return; }
+        try {
+            const res  = await fetch('/bagage/arrets/' + voyageId);
+            const data = await res.json();
+            const all  = data.arrets || [];
+            let arrets;
+            if (usergare) {
+                // Agent rattaché à une gare : la descente ne peut être qu'après SA gare (= origine du bagage)
+                const agent = all.find(function (a) { return String(a.id) === String(usergare); });
+                if (!agent) { setPlaceholder("Votre gare n'est pas desservie par ce voyage"); return; }
+                arrets = all.filter(function (a) { return a.ordre > agent.ordre; });
+            } else {
+                arrets = all.slice(1); // on exclut l'origine
+            }
+            if (arrets.length === 0) { setPlaceholder('Aucun arrêt disponible'); return; }
+            let html = '<option value="">-- Terminus par défaut --</option>';
+            arrets.forEach(function (a) {
+                const sel   = String(a.id) === String(current) ? ' selected' : '';
+                const ville = a.ville ? ' (' + esc(a.ville) + ')' : '';
+                html += '<option value="' + a.id + '"' + sel + '>' + esc(a.libelle) + ville + '</option>';
+            });
+            descenteSelect.innerHTML = html;
+            descenteSelect.disabled = false;
+        } catch (e) {
+            setPlaceholder('Erreur de chargement');
+        }
+    }
+
+    voyageSelect.addEventListener('change', function () { applyArrets(this.value); });
+    if (voyageSelect.value) { applyArrets(voyageSelect.value); }
 });
 </script>

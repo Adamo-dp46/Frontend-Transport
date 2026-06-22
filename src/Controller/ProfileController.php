@@ -41,12 +41,13 @@ final class ProfileController extends AbstractController
             $data = $request->request->all();
 
             try {
-                $this->api->patch('/api/users/' . $user->getId(), [
-                    'email'  => trim($data['email']  ?? ''),
+                $this->api->patch('/api/me', [
+                    'email' => trim($data['email']  ?? ''),
                     'nom' => trim($data['nom'] ?? ''),
-                    'prenom' => trim($data['prenom']  ?? ''),
-                ]);
-
+                    'prenom' => trim($data['prenom']  ?? '')
+                ]); /*
+                    - Endpoint de self-service '/api/me' (et non '/api/users/{id}' réservé à l'admin et bloqué par le guard de gestion)
+                */
                 $this->addFlash('success', 'Profil mis à jour avec succès');
                 $this->apiClient->refreshCurrentUser();
                 return $this->redirectToRoute('profile.index');
@@ -55,9 +56,9 @@ final class ProfileController extends AbstractController
             }
         }
 
-        return $this->render('profile/profil_edit.html.twig', [
-            'user'  => $userData,
-            'error' => $error,
+        return $this->render('profile/edit.html.twig', [
+            'user' => $userData,
+            'error' => $error
         ]);
     }
 
@@ -66,33 +67,32 @@ final class ProfileController extends AbstractController
     #[Route('/mot-de-passe', name: 'password', methods: ['GET', 'POST'])]
     public function password(Request $request): Response
     {
-        /** @var \App\Entity\ApiUser $user */
-        $user  = $this->getUser();
         $error = null;
-
-        if ($request->isMethod('POST')) {
+        if($request->isMethod('POST')) {
             $data = $request->request->all();
 
             $currentPassword = $data['currentPassword'] ?? '';
-            $newPassword     = $data['newPassword']     ?? '';
+            $newPassword = $data['newPassword']     ?? '';
             $confirmPassword = $data['confirmPassword'] ?? '';
 
             if (empty($currentPassword) || empty($newPassword)) {
                 $error = 'Tous les champs sont requis.';
             } elseif ($newPassword !== $confirmPassword) {
                 $error = 'Le nouveau mot de passe et la confirmation ne correspondent pas.';
-            } elseif (strlen($newPassword) < 8) {
-                $error = 'Le mot de passe doit contenir au moins 8 caractères.';
+            } elseif (strlen($newPassword) < 4) {
+                $error = 'Le mot de passe doit contenir au moins 4 caractères.';
             } else {
                 try {
-                    $this->api->patch('/api/users/' . $user->getId() . '/password', [
+                    $this->api->post('/api/me/password', [
                         'currentPassword' => $currentPassword,
                         'newPassword'     => $newPassword,
-                    ]);
+                    ]); /*
+                        - POST '/api/me/password' (ChangePasswordProcessor) ; c'est un POST côté API, pas un PATCH
+                    */
 
                     $this->addFlash('success', 'Mot de passe modifié avec succès');
                     $this->apiClient->refreshCurrentUser();
-                    return $this->redirectToRoute('profil.index');
+                    return $this->redirectToRoute('profile.index');
 
                 } catch (ApiException $e) {
                     $error = $e->getMessage();
@@ -100,7 +100,7 @@ final class ProfileController extends AbstractController
             }
         }
 
-        return $this->render('profile/profil_password.html.twig', [
+        return $this->render('profile/password.html.twig', [
             'error' => $error,
         ]);
     }

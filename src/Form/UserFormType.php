@@ -87,7 +87,6 @@ class UserFormType extends AbstractType
                 'choices' => $roleChoices
             ])
         ;
-
         if(!$options['hide_gare']) { /*
             - Un 'ROLE_ADMIN_GARE' ne voit pas ce champ vu que sa gare est auto affectée
         */

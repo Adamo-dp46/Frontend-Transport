@@ -11,19 +11,9 @@ use Symfony\Component\Validator\Constraints\NotNull;
 
 class VoyageEditFormType extends AbstractType
 {
-    private function buildGareChoices(array $gares): array
-    {
-        $choices = [];
-        foreach($gares as $g) {
-            $label = $g['libelle'] . ' - ' . ($g['ville'] ?? '');
-            $choices[$label] = $g['id'];
-        }
-        return $choices;
-    }
-
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $gareChoices = $this->buildGareChoices($options['gares']);
+        // provenance/destination dérivent de la ligne (non éditables) ; on ne modifie que la date et le car
         $carChoices = [];
         foreach ($options['cars'] as $c) {
             $label = $c['matricule'] . ' (' . ($c['marque']['libelle'] ?? '-') . ')';
@@ -32,21 +22,9 @@ class VoyageEditFormType extends AbstractType
 
         $builder
             ->add('car', ChoiceType::class, [
-                'label' => 'Véhicule retourné (optionnel)',
+                'label' => 'Véhicule (optionnel)',
                 'choices' => $carChoices,
                 'required' => false
-            ])
-            ->add('provenance', ChoiceType::class, [
-                'label' => 'Gare de départ',
-                'choices' => $gareChoices,
-                'placeholder' => '-- Sélectionner une gare de départ --',
-                'constraints' => [new NotNull()]
-            ])
-            ->add('destination', ChoiceType::class, [
-                'label' => 'Gare d\'arrivée',
-                'choices' => $gareChoices,
-                'placeholder' => '-- Sélectionner une gare d\'arrivée --',
-                'constraints' => [new NotNull()]
             ])
             ->add('datedebut', DateTimeType::class, [
                 'label' => 'Date et heure de départ',
@@ -62,8 +40,7 @@ class VoyageEditFormType extends AbstractType
             'csrf_protection' => true,
             'csrf_field_name' => '_token',
             'csrf_token_id' => 'voyageedit',
-            'cars' => [],
-            'gares' => []
+            'cars' => []
         ]);
     }
 }

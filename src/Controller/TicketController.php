@@ -2,10 +2,12 @@
 
 namespace App\Controller;
 
+use App\Controller\Trait\GareActionTrait;
 use App\Domain\Helper\ApiExceptionHandlerHelper;
 use App\Domain\Helper\ApiHelper;
 use App\Domain\Helper\TableHelper;
 use App\Domain\Service\PdfService;
+use App\Domain\Service\QrCodeService;
 use App\Form\TicketEditFormType;
 use App\Security\Exception\ApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,6 +15,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -20,13 +23,82 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 final class TicketController extends AbstractController
 {
+    use GareActionTrait;
+
     public function __construct(
         private readonly ApiHelper $api,
         private readonly ApiExceptionHandlerHelper $apiExceptionHandler,
         private readonly PdfService $pdfService,
-        private readonly TableHelper $tableHelper
+        private readonly TableHelper $tableHelper,
+        private readonly QrCodeService $qrCode
     )
     {
+    }
+
+    private ?array $entrepriseCache = null;
+    private bool $entrepriseFetched = false;
+
+    /**
+     * Ajoute au tableau d'un ticket un QR code (data-URI PNG). Consommé par le
+     * template (clé `qrcode`).
+     *
+     * Choix retenu : le QR encode SIMPLEMENT le code du billet (ex. TCK-2026-12).
+     * L'agent le scanne et lit/vérifie le code à l'œil — pas de route ni de page
+     * de vérification nécessaire.
+     */
+    private function withQrcode(?array $ticket): ?array
+    {
+        if (!$ticket || empty($ticket['codeticket'])) {
+            return $ticket;
+        }
+
+        $ticket['qrcode'] = $this->qrCode->dataUri($ticket['codeticket']);
+
+        /*
+            // -- Approche alternative : QR encodant une URL de vérification --
+            // Le QR renvoie vers une page (ticket.verify + templates/ticket/verify.html.twig)
+            // qui affiche la validité du billet. Pour basculer dessus : décommenter ce bloc,
+            // réactiver la route verify() plus bas, et le template show.html.twig.
+            $url = $this->generateUrl(
+                'ticket.verify',
+                ['code' => $ticket['codeticket']],
+                UrlGeneratorInterface::ABSOLUTE_URL
+            );
+            $ticket['qrcode'] = $this->qrCode->dataUri($url);
+        */
+
+        return $ticket;
+    }
+
+    /**
+     * Récupère l'entreprise de l'utilisateur connecté (en-tête du billet),
+     * mémorisée le temps de la requête. Le logo est embarqué en base64 car
+     * Dompdf a le chargement d'images distantes désactivé.
+     */
+    private function getEntreprise(): ?array
+    {
+        if ($this->entrepriseFetched) {
+            return $this->entrepriseCache;
+        }
+        $this->entrepriseFetched = true;
+
+        try {
+            $entreprise = $this->api->item('/api/me/entreprise');
+        } catch (\Throwable) {
+            return $this->entrepriseCache = null;
+        }
+
+        $contentUrl = $entreprise['image']['contentUrl'] ?? null;
+        if ($contentUrl) {
+            try {
+                $raw = $this->api->raw($contentUrl);
+                $entreprise['logo'] = 'data:' . $raw['content_type'] . ';base64,' . base64_encode($raw['body']);
+            } catch (\Throwable) {
+                // logo non embarquable → le template retombe sur le sigle/libellé
+            }
+        }
+
+        return $this->entrepriseCache = $entreprise;
     }
 
     #[Route('', name: 'index', methods: ['GET'])]
@@ -52,6 +124,38 @@ final class TicketController extends AbstractController
         return $this->render('ticket/index.html.twig', $data);
     }
 
+    /*
+        // -- Approche alternative (URL de vérification) — DÉSACTIVÉE --
+        // Page de vérification d'un billet, cible du QR si on encode une URL.
+        // À réactiver avec le bloc URL de withQrcode() et templates/ticket/verify.html.twig.
+        // Un agent connecté scanne le QR : on retrouve le ticket par son code et on
+        // affiche sa validité. Le périmètre entreprise/gare de l'API garantit qu'un agent
+        // ne valide que les billets de son ressort.
+        #[Route('/verifier/{code}', name: 'verify', methods: ['GET'], requirements: ['code' => '[^/]+'])]
+        public function verify(string $code): Response
+        {
+            $ticket = null;
+            try {
+                // Le SearchFilter sur codeticket est "partial" → on confirme l'égalité stricte
+                $matches = $this->api->collection('/api/tickets', ['codeticket' => $code]);
+                foreach ($matches as $candidate) {
+                    if (($candidate['codeticket'] ?? null) === $code) {
+                        $ticket = $candidate;
+                        break;
+                    }
+                }
+            } catch (ApiException) {
+                // ticket introuvable / hors périmètre → considéré non valide
+            }
+
+            return $this->render('ticket/verify.html.twig', [
+                'code' => $code,
+                'ticket' => $ticket,
+                'valid' => $ticket !== null,
+            ]);
+        }
+    */
+
     #[Route('/{id}', name: 'show', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('TICKET_VOIR')]
     public function show(int $id): Response
@@ -65,8 +169,12 @@ final class TicketController extends AbstractController
             }
         }
 
+        // Modif / désistement réservés à la gare émettrice (gare de montée du ticket)
+        $peutAgir = $this->peutAgirSurGare($ticket['gare']['id'] ?? null);
+
         return $this->render('ticket/show.html.twig', [
-            'ticket' => $ticket
+            'ticket' => $this->withQrcode($ticket),
+            'peutAgir' => $peutAgir
         ]);
     }
 
@@ -77,11 +185,16 @@ final class TicketController extends AbstractController
         if($request->isMethod('GET')) {
             $voyages = $this->api->collection('/api/voyages?exists[datefin]=false');
             $gares = $this->api->collection('/api/gares');
+            $beneficiaires = $this->api->collection('/api/beneficiaires');
+            $userGare = $this->getUser()->getGare();
 
             return $this->render('ticket/new.html.twig', [
                 'voyages' => $voyages,
                 'gares' => $gares,
-                'preselect_voyage' => $request->query->getInt('voyage')
+                'beneficiaires' => $beneficiaires,
+                'preselect_voyage' => $request->query->getInt('voyage'),
+                'userGareId' => $userGare['id'] ?? null,
+                'userGareLibelle' => $userGare['libelle'] ?? null
             ]);
         }
 
@@ -110,9 +223,14 @@ final class TicketController extends AbstractController
                 $ticket = $this->api->post('/api/tickets', [
                     'voyage' => $t['voyage'], // IRI /api/voyages/{id}
                     'siege' => $t['siege'], // IRI /api/sieges/{id}
-                    'gare' => $t['gare'],      // ← nouveau IRI
+                    'gare' => $t['gare'],      // gare de MONTÉE (IRI)
+                    'garedescente' => $t['garedescente'] ?? null, // gare de DESCENTE (IRI) ; null = terminus (bout en bout)
                     'nomclient' => $t['nomclient']     ?? null,
-                    'contactclient' => $t['contactclient'] ?? null
+                    'contactclient' => $t['contactclient'] ?? null,
+                    // Remise (le backend calcule le montant et exige un bénéficiaire si remise)
+                    'remisetype' => $t['remisetype'] ?? null,
+                    'remisevaleur' => isset($t['remisevaleur']) ? (int) $t['remisevaleur'] : null,
+                    'beneficiaire' => $t['beneficiaire'] ?? null // IRI /api/beneficiaires/{id}
                 ]);
                 $created[] = $ticket['id'];
             } catch (ApiException $e) {
@@ -127,9 +245,87 @@ final class TicketController extends AbstractController
         return $this->json(['created' => $created, 'errors' => $errors]);
     }
 
+    /**
+     * Désistement d'un billet : page de saisie (GET) et relais vers l'API (POST).
+     *  - REPORT     : reporte le client sur un autre voyage de la même ligne (nouveau billet).
+     *  - ANNULATION : annule et rembourse le billet.
+     * Dans les deux cas, le siège du billet d'origine est libéré.
+     */
+    #[Route('/{id}/desister', name: 'desister', methods: ['GET', 'POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('TICKET_MODIFIER')]
+    public function desister(int $id, Request $request): Response
+    {
+        // POST (JSON depuis React) : on relaie au processor de l'API
+        if ($request->isMethod('POST')) {
+            try {
+                $payload = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
+                return $this->json(['error' => 'Corps de requête JSON invalide'], 400);
+            }
+
+            $mode = $payload['mode'] ?? null;
+            $body = [
+                'mode' => $mode,
+                'motif' => $payload['motif'] ?? null,
+            ];
+            if ($mode === 'REPORT') {
+                $body['voyage'] = $payload['voyage'] ?? null; // IRI /api/voyages/{id}
+                $body['siege'] = $payload['siege'] ?? null;   // IRI /api/sieges/{id}
+            }
+
+            try {
+                // L'API renvoie le billet résultant (nouveau billet si report, billet annulé sinon)
+                $ticket = $this->api->patch('/api/tickets/' . $id . '/desister', $body);
+                return $this->json(['ok' => true, 'id' => $ticket['id'] ?? $id, 'mode' => $mode]);
+            } catch (ApiException $e) {
+                return $this->json(['error' => $e->getMessage()], $e->getCode() ?: 400);
+            }
+        }
+
+        // GET : page de désistement
+        try {
+            $ticket = $this->api->item('/api/tickets/' . $id);
+        } catch (ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e, null, 'ticket.index');
+            if ($response) {
+                return $response;
+            }
+        }
+
+        if (($ticket['statut'] ?? 'VALIDE') !== 'VALIDE') {
+            $this->addFlash('error', 'Ce billet ne peut pas être désisté (déjà reporté ou annulé).');
+            return $this->redirectToRoute('ticket.show', ['id' => $id]);
+        }
+
+        // Voyages de report : même ligne, ouverts, hors voyage d'origine.
+        // La ligne n'est pas exposée dans 'read:Ticket' → on la lit via le voyage (read:Voyage).
+        $voyagesCible = [];
+        $voyageOrigineId = $ticket['voyage']['id'] ?? null;
+        try {
+            $voyage = $this->api->item('/api/voyages/' . $voyageOrigineId);
+            $ligneId = $voyage['ligne']['id'] ?? null;
+            if ($ligneId) {
+                $voyagesCible = array_values(array_filter(
+                    $this->api->collection('/api/voyages', [
+                        'ligne.id' => $ligneId,
+                        'exists[datefin]' => 'false',
+                    ]),
+                    fn($v) => ($v['id'] ?? null) !== $voyageOrigineId
+                ));
+            }
+        } catch (ApiException) {
+            // ligne/voyages indisponibles → liste vide (seul le mode ANNULATION restera utilisable)
+        }
+
+        return $this->render('ticket/desister.html.twig', [
+            'ticket' => $ticket,
+            'voyagesCible' => $voyagesCible,
+        ]);
+    }
+
     #[Route('/sieges/{id}', name: 'sieges', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('TICKET_VOIR')]
-    public function sieges(int $id): JsonResponse
+    public function sieges(int $id, Request $request): JsonResponse
     {
         try {
             // 1. Charger le voyage pour récupérer le car
@@ -145,11 +341,20 @@ final class TicketController extends AbstractController
                 ]);
             }
 
-            // 2. Appeler le SiegeStateProvider : sièges du car + statut pour ce voyage
-            $sieges = $this->api->collection(
-                '/api/sieges?car=' . urlencode('/api/cars/' . $carId)
-                . '&voyage=' . $id
-            );
+            // 2. Appeler le SiegeStateProvider : disponibilité PAR TRONÇON si montée/descente fournies
+            $query = [
+                'car' => '/api/cars/' . $carId,
+                'voyage' => $id,
+            ];
+            $montee = $request->query->get('montee');
+            $descente = $request->query->get('descente');
+            if ($montee) {
+                $query['montee'] = $montee;
+            }
+            if ($descente) {
+                $query['descente'] = $descente;
+            }
+            $sieges = $this->api->collection('/api/sieges', $query);
 
             return $this->json([
                 'siegesGauche' => $voyage['car']['siegesGauche'] ?? 2,
@@ -162,6 +367,51 @@ final class TicketController extends AbstractController
                 ['error' => 'Impossible de charger les sièges : ' . $e->getMessage()],
                 $e->getCode() ?: 500
             );
+        }
+    }
+
+    #[Route('/arrets/{id}', name: 'arrets', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('TICKET_VOIR')]
+    public function arrets(int $id): JsonResponse
+    {
+        try {
+            $voyage = $this->api->item('/api/voyages/' . $id);
+            $ligneId = $voyage['ligne']['id'] ?? null;
+            if (!$ligneId) {
+                return $this->json(['arrets' => []]); // voyage non rattaché à une ligne
+            }
+            $ligne = $this->api->item('/api/lignes/' . $ligneId);
+            $arrets = array_map(fn($a) => [
+                'id' => $a['gare']['id'],
+                'libelle' => $a['gare']['libelle'],
+                'ville' => $a['gare']['ville'] ?? null,
+                'ordre' => $a['ordre'],
+            ], $ligne['arrets'] ?? []);
+            usort($arrets, fn($x, $y) => $x['ordre'] <=> $y['ordre']);
+            return $this->json(['arrets' => $arrets]);
+        } catch (ApiException $e) {
+            return $this->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
+    }
+
+    #[Route('/tarif', name: 'tarif', methods: ['GET'])]
+    #[IsGranted('TICKET_VOIR')]
+    public function tarif(Request $request): JsonResponse
+    {
+        $montee = $request->query->get('montee');
+        $descente = $request->query->get('descente');
+        if (!$montee || !$descente) {
+            return $this->json(['montant' => null]);
+        }
+        try {
+            // Prix issu de la grille tarifaire globale (gare → gare) de l'entreprise
+            $tarifs = $this->api->collection('/api/tarifs', [
+                'garedepart.id' => $montee,
+                'garearrivee.id' => $descente,
+            ]);
+            return $this->json(['montant' => $tarifs[0]['montant'] ?? null]);
+        } catch (ApiException $e) {
+            return $this->json(['montant' => null, 'error' => $e->getMessage()], $e->getCode() ?: 500);
         }
     }
 
@@ -254,10 +504,14 @@ final class TicketController extends AbstractController
             }
         }
 
-        return $this->pdfService->generate(
+        return $this->pdfService->generateThermalAutofit(
             'mails/ticket/thermalpdf.html.twig',
-            ['ticket' => $ticket],
-            'ticket-' . ($ticket['codeticket'] ?? $id) . '.pdf'
+            [
+                'ticket' => $this->withQrcode($ticket),
+                'entreprise' => $this->getEntreprise(),
+            ],
+            'ticket-' . ($ticket['codeticket'] ?? $id) . '.pdf',
+            1
         );
     }
 
@@ -278,7 +532,7 @@ final class TicketController extends AbstractController
         $tickets = [];
         foreach ($ids as $id) {
             try {
-                $tickets[] = $this->api->item('/api/tickets/' . (int)$id);
+                $tickets[] = $this->withQrcode($this->api->item('/api/tickets/' . (int)$id));
             } catch (ApiException) {
                 // On ignore les tickets inaccessibles
             }
@@ -288,10 +542,14 @@ final class TicketController extends AbstractController
             return $this->json(['detail' => 'Aucun ticket trouvé'], 404);
         }
 
-        return $this->pdfService->generate(
+        return $this->pdfService->generateThermalAutofit(
             'mails/ticket/thermalpdf.html.twig',
-            ['tickets' => $tickets],
-            'tickets-lot-' . date('YmdHis') . '.pdf'
+            [
+                'tickets' => $tickets,
+                'entreprise' => $this->getEntreprise(),
+            ],
+            'tickets-lot-' . date('YmdHis') . '.pdf',
+            count($tickets)
         );
     }
 

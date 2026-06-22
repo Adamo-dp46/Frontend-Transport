@@ -1,42 +1,21 @@
 {% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
 
 {% block title %}Personnel{% endblock %}
 
 {% block body %}
-<div class="flex items-start justify-between gap-4 max-sm:flex-col mb-6">
-    <div>
-        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Personnel</h1>
-    </div>
-    <form method="get" action="{{ path('billetterie') }}" class="flex items-center gap-2 shrink-0 max-sm:w-full">
-        <input type="date" name="debut" value="{{ debut }}" class="input input-sm" />
-        <span class="text-muted-foreground text-sm">→</span>
-        <input type="date" name="fin" value="{{ fin }}" class="input input-sm" />
-        <button type="submit" class="bg-blue-900 p-2 rounded-2xl">
-            Filtrer
-        </button>
-    </form>
-</div>
+{{ s.pageHeader('Personnel', 'Affectations', 'personnels', debut, fin) }}
 
 <section class="mb-10">
-    <h2 class="text-lg font-medium mb-4">Personnel</h2>
-
-    {# KPI #}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div class="card p-4">
-            <p class="text-xs text-muted-foreground mb-1">Total personnels</p>
-            <p class="text-2xl font-semibold">{{ personnel.totalPersonnels }}</p>
-        </div>
-        <div class="card p-4">
-            <p class="text-xs text-muted-foreground mb-1">Actifs sur la période</p>
-            <p class="text-2xl font-semibold">{{ personnel.personnelsActifs }}</p>
-        </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {{ s.kpi('Total personnels', personnel.totalPersonnels, '', 'blue', 'users') }}
+        {{ s.kpi('Actifs sur la période', personnel.personnelsActifs, '', 'emerald', 'check') }}
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
         {# Affectations par personnel — barres groupées #}
-        <div class="card p-4">
-            <p class="text-sm font-medium mb-3">Affectations par personnel</p>
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Affectations par personnel</p>
             <canvas id="chartPersonnelAffectations" height="160"
                 data-values="{{ personnel.performances | map(p => {
                     label: p.prenom ~ ' ' ~ p.nom,
@@ -48,8 +27,8 @@
         </div>
 
         {# Tableau détail #}
-        <div class="card p-4">
-            <p class="text-sm font-medium mb-3">Détail affectations</p>
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Détail affectations</p>
             <table class="w-full text-sm">
                 <thead>
                     <tr class="text-left text-muted-foreground border-b">
@@ -65,10 +44,10 @@
                     <tr class="border-b last:border-0">
                         <td class="py-2">{{ p.prenom }} {{ p.nom }}</td>
                         <td class="py-2 text-muted-foreground">{{ p.type }}</td>
-                        <td class="py-2 text-right">{{ p.nbvoyages }}</td>
-                        <td class="py-2 text-right">{{ p.nbdepannages }}</td>
+                        <td class="py-2 text-right tabular-nums">{{ p.nbvoyages }}</td>
+                        <td class="py-2 text-right tabular-nums">{{ p.nbdepannages }}</td>
                         <td class="py-2 text-right">
-                            <span class="text-xs px-2 py-0.5 rounded-full {{ p.actif ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
+                            <span class="text-xs px-2 py-0.5 rounded-full {{ p.actif ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400' }}">
                                 {{ p.actif ? 'Actif' : 'Inactif' }}
                             </span>
                         </td>
@@ -77,7 +56,6 @@
                 </tbody>
             </table>
         </div>
-
     </div>
 </section>
 {% endblock %}

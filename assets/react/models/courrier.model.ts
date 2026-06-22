@@ -19,8 +19,8 @@ export interface Courrier {
     nomdestinataire: string
     contactexpediteur: string
     contactdestinataire: string
-    garedepart: Gare
-    garearrivee: Gare
+    garedepart: Gare | null
+    garearrivee: Gare | null
     voyage: Voyage | null
     montant: number
     fraissuivi: number | null

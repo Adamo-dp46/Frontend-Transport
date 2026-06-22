@@ -26,6 +26,7 @@ type Props = {
     canEdit: boolean,
     canDelete: boolean,
     csrfDelete: string
+    csrfAnnuler: string
 }
 
 function buildColumns(
@@ -34,7 +35,8 @@ function buildColumns(
     getSortState: (f: string) => 'asc' | 'desc' | false,
     canEdit: boolean,
     canDelete: boolean,
-    csrfDelete: string
+    csrfDelete: string,
+    csrfAnnuler: string
 ): ColumnDef<Approvisionnement>[]{
 
     const sortUrls = (field: string) => ({
@@ -87,10 +89,10 @@ function buildColumns(
             },
         },
         {
-            accessorKey: 'verrouille',
+            id: 'statut',
             header: '',
-            cell: ({ row }) => row.original.verrouille
-                ? <Badge className="bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300">🔒 Verrouillé</Badge>
+            cell: ({ row }) => row.original.statut === 'ANNULE'
+                ? <Badge className="bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">Annulé</Badge>
                 : null
         },
         {
@@ -108,9 +110,11 @@ function buildColumns(
             id: "actions",
             cell: ({ row }) => {
                 const approvisionnement = row.original
-                const verrouillable = canEdit
-                const editable = canEdit && !approvisionnement.verrouille
-                const deletable = canDelete && !approvisionnement.verrouille
+                // Verrouiller désactivé (remplacé par l'annulation) — plus de garde sur 'verrouille'
+                const annule = approvisionnement.statut === 'ANNULE'
+                const editable = canEdit && !annule
+                const annulable = canEdit && !annule
+                const deletable = canDelete
 
                 return (
                     <DropdownMenu>
@@ -132,27 +136,37 @@ function buildColumns(
                                 </DropdownMenuItem>
                             )}
 
+                            {/* Verrouiller désactivé (remplacé par l'annulation) — réactivable :
                             {verrouillable && <DropdownMenuSeparator />}
                             {verrouillable && (
                                 <DropdownMenuItem asChild>
+                                    <form method="POST" action={`/approvisionnement/${approvisionnement.id}/verrouiller`}>
+                                        <button type="submit" className="w-full text-left text-orange-600">
+                                            {approvisionnement.verrouille ? 'Déverrouiller' : 'Verrouiller'}
+                                        </button>
+                                    </form>
+                                </DropdownMenuItem>
+                            )}
+                            */}
+
+                            {annulable && <DropdownMenuSeparator />}
+                            {annulable && (
+                                <DropdownMenuItem asChild>
                                     <form
                                         method="POST"
-                                        action={`/approvisionnement/${approvisionnement.id}/verrouiller`}
+                                        action={`/approvisionnement/${approvisionnement.id}/annuler`}
                                         onSubmit={(e) => {
-                                            const action = approvisionnement.verrouille ? 'déverrouiller' : 'verrouiller'
-                                            if (!confirm(`Voulez-vous ${action} cet approvisionnement ?`)) {
+                                            if(!confirm("Annuler cet approvisionnement ? Les pièces entrées seront retirées du stock.")) {
                                                 e.preventDefault()
                                             }
                                         }}
                                     >
+                                        <input type="hidden" name="_token" value={csrfAnnuler} />
                                         <button
                                             type="submit"
-                                            className={`w-full text-left ${approvisionnement.verrouille
-                                                ? 'text-green-600 focus:text-green-700'
-                                                : 'text-orange-600 focus:text-orange-700'
-                                            }`}
+                                            className="w-full text-left text-orange-600 focus:text-orange-700"
                                         >
-                                            {approvisionnement.verrouille ? 'Déverrouiller' : 'Verrouiller'}
+                                            Annuler
                                         </button>
                                     </form>
                                 </DropdownMenuItem>
@@ -195,13 +209,14 @@ export default function ApprovisionnementTable({
     fournisseurs,
     canEdit,
     canDelete,
-    csrfDelete
+    csrfDelete,
+    csrfAnnuler
 }: Props) {
 
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete),
-        [queryParams, canEdit, canDelete, csrfDelete]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete, csrfAnnuler),
+        [queryParams, canEdit, canDelete, csrfDelete, csrfAnnuler]
     )
     const filters: ServerTableFilter[] = useMemo(() => [
         {

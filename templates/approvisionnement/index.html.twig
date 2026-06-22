@@ -26,7 +26,8 @@
         fournisseurs: fournisseurs,
         canEdit: is_granted('APPROVISIONNEMENT_MODIFIER'),
         canDelete: is_granted('APPROVISIONNEMENT_SUPPRIMER'),
-        csrfDelete: csrf_token('delete_approvisionnement')
+        csrfDelete: csrf_token('delete_approvisionnement'),
+        csrfAnnuler: csrf_token('annuler_approvisionnement')
     }) }} class="mb-3 mt-3"
 >
     <div class="flex items-center justify-center gap-6">

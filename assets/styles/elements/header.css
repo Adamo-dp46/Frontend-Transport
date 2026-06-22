@@ -8,16 +8,6 @@
   position:relative;z-index:100;
 }
 .topbar-left{display:flex;align-items:center;gap:.5rem;flex:1;min-width:0;}
-/*
-  .breadcrumb{
-    display:flex;align-items:center;gap:.25rem;
-    font-size:.875rem;white-space:nowrap;
-    overflow:hidden;
-  }
-  .breadcrumb-sep{color:var(--border);margin:0 .0625rem;}
-  .breadcrumb-current{font-weight:500;}
-  .breadcrumb-parent{color:var(--muted-foreground);}
-  .breadcrumb-parent:hover{color:var(--foreground);}
 
 .topbar-search{
   position:relative;flex:1;
@@ -57,7 +47,7 @@ kbd{
   font-family:'Geist Mono',monospace;
   font-size:.625rem;font-weight:500;color:var(--muted-foreground);
 }
-*/
+
 .topbar-right{display:flex;align-items:center;gap:.25rem;flex-shrink:0;}
 .topbar-divider{width:1px;height:1.25rem;background:var(--border);margin:0 .25rem;}
 

@@ -13,5 +13,5 @@
         <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Nouvel utilisateur</h1>
     </div>
 </div>
-{% include 'admin/user/_form.html.twig' with {button: 'Créer'} %}
+{% include 'admin/user/_form.html.twig' with {button: 'Créer', isAdminGare: isAdminGare} %}
 {% endblock %}

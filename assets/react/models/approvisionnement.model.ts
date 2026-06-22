@@ -14,5 +14,6 @@ export interface Approvisionnement {
     fournisseur: Fournisseur
     detailapprovisionnements: Detailapprovisionnement[]
     verrouille?: boolean
+    statut?: "VALIDE" | "ANNULE"
     createdAt: string
 }

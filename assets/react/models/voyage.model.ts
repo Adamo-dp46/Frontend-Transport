@@ -1,10 +1,17 @@
 import { Car } from "./car.model"
 import { Detailpersonnel } from "./detailpersonnel.model"
-import { Trajet } from "./trajet.model"
 
 interface Ref {
     id: number
     motif: string
+}
+
+interface LigneRef {
+    id: number
+    codeligne: string
+    libelle: string | null
+    gareorigine?: { id: number; libelle: string }
+    gareterminus?: { id: number; libelle: string }
 }
 
 export interface Voyage {
@@ -14,12 +21,12 @@ export interface Voyage {
     destination: string
     datedebut: string
     datefin: string | null
-    trajet: Trajet
+    ligne: LigneRef
     car: Car | null
     detailpersonnels: Detailpersonnel[]
     courriers: Ref[]
     bagages: Ref[]
     placestotal: number,
-    placesoccupees: number
+    ticketsCount: number // nb de billets actifs vendus (compté à la volée côté API ; remplace 'placesoccupees')
     createdAt: string
 }

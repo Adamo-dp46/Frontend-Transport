@@ -24,7 +24,9 @@
     voyages: voyages,
     canEdit: is_granted('BAGAGE_MODIFIER'),
     canDelete: is_granted('BAGAGE_SUPPRIMER'),
-    csrfDelete: csrf_token('delete_bagage')
+    csrfDelete: csrf_token('delete_bagage'),
+    userGareId: app.user.gare ? app.user.gare.id : null,
+    isAdmin: is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN')
 }) }} class="mb-3">
     <div class="flex items-center justify-center gap-6">
         <twig:Spinner class="size-8" />

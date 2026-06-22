@@ -4,7 +4,7 @@
             <div>{{ form_row(form.nom) }}</div>
             <div>{{ form_row(form.prenom) }}</div>
             <div>{{ form_row(form.email) }}</div>
-            {% if is_granted('ROLE_ADMIN') %}
+            {% if isAdminGare == false %}
                 <div>{{ form_row(form.gare) }}</div>
             {% endif %}
         </div>
@@ -33,7 +33,7 @@
        {% endif %}
        {{ form_errors(form.roles) }}
     </div>
-    <div class="flex items-center justify-end gap-3">
+    <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
         <a href="{{ path('admin.user.index') }}" class="btn btn-secondary">Annuler</a>
         <button class="btn btn-primary">
             {{ button }}

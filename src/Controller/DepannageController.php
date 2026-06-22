@@ -251,6 +251,24 @@ final class DepannageController extends AbstractController
         return $this->redirectToRoute('depannage.index');
     }
 
+    #[Route('/{id}/annuler', name: 'annuler', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('DEPANNAGE_MODIFIER')]
+    public function annuler(int $id, Request $request): Response
+    {
+        if($this->isCsrfTokenValid('annuler_depannage', $request->request->get('_token'))) {
+            try {
+                $this->api->patch('/api/depannages/' . $id . '/annuler');
+                $this->addFlash('success', 'Le dépannage a été annulé : le stock a été restauré');
+            } catch (ApiException $e) {
+                $response = $this->apiExceptionHandler->handle($e, null, 'depannage.index');
+                if($response) {
+                    return $response;
+                }
+            }
+        }
+        return $this->redirectToRoute('depannage.index');
+    }
+
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('DEPANNAGE_SUPPRIMER')]
     public function delete(int $id, Request $request): Response

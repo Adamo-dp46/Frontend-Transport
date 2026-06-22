@@ -28,11 +28,12 @@
         .header-top {
             background: #1a5c3a;
             color: #fff;
-            padding: 4mm 5mm;
         }
 
+        /* Padding porté par les cellules (et non le conteneur) : évite le débordement Dompdf
+           d'un tableau width:100% à l'intérieur d'une boîte paddée. */
         .header-top table { width: 100%; border-collapse: collapse; }
-        .header-top td { vertical-align: middle; padding: 0; border: none; }
+        .header-top td { vertical-align: middle; padding: 4mm 5mm; border: none; }
         .header-top .td-right { text-align: right; }
 
         .doc-title { font-size: 14pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
@@ -217,12 +218,12 @@
                         <div class="info-label">Capacité totale</div>
                         <div class="info-value">{{ bordereau.voyage.placestotal }} places</div>
                         <div style="margin-top:1.5mm;">
-                            <div class="info-label">Places restantes</div>
-                            <div class="info-value" style="color:#27ae60;">{{ bordereau.placesrestantes }}</div>
+                            <div class="info-label">Tickets voyage</div>
+                            <div class="info-value">{{ bordereau.voyage.placesoccupees }}</div>
                         </div>
                     </td>
                     <td style="width:23%;">
-                        <div class="info-label">Tickets vendus</div>
+                        <div class="info-label">Tickets cette gare</div>
                         <div class="info-value" style="color:#c0392b;">{{ bordereau.nbtickets }}</div>
                         <div style="margin-top:1.5mm;">
                             <div class="info-label">Gare émettrice</div>
@@ -258,19 +259,19 @@
             <tr>
                 <td class="fill">
                     <div class="summary-number">{{ bordereau.nbtickets }}</div>
-                    <div class="summary-label">Tickets vendus</div>
+                    <div class="summary-label">Tickets cette gare</div>
                 </td>
                 <td class="accent">
                     <div class="summary-number">{{ bordereau.voyage.placesoccupees }}</div>
-                    <div class="summary-label">Places occupées</div>
+                    <div class="summary-label">Tickets voyage (total)</div>
                 </td>
                 <td>
-                    <div class="summary-number">{{ bordereau.placesrestantes }}</div>
-                    <div class="summary-label">Places restantes</div>
-                </td>
-                <td class="fill">
                     <div class="summary-number">{{ bordereau.voyage.placestotal }}</div>
                     <div class="summary-label">Capacité totale</div>
+                </td>
+                <td class="fill">
+                    <div class="summary-number" style="font-size:13pt;">{{ bordereau.recette|number_format(0, ',', ' ') }}</div>
+                    <div class="summary-label">Recette gare (FCFA)</div>
                 </td>
             </tr>
         </table>

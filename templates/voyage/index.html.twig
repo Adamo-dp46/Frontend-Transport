@@ -23,11 +23,17 @@
         voyages: items,
         meta: meta,
         queryParams: queryParams,
-        trajets: trajets,
+        lignes: lignes,
         cars: cars,
         canEdit: is_granted('VOYAGE_MODIFIER'),
         canDelete: is_granted('VOYAGE_SUPPRIMER'),
-        csrfDelete: csrf_token('delete_voyage')
+        csrfDelete: csrf_token('delete_voyage'),
+        currentGareId: app.user.gare.id ?? null,
+        isAdmin: is_granted('ROLE_ADMIN'),
+        csrfReceptionner: csrf_token('receptionner_voyage'),
+        canSellTicket: is_granted('TICKET_CREER'),
+        canAddCourrier: is_granted('COURRIER_CREER'),
+        canAddBagage: is_granted('BAGAGE_CREER')
     }) }}
 >
     <div class="flex items-center justify-center gap-6">

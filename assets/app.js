@@ -8,6 +8,7 @@ import { initDropdowns } from './modules/dropdown.js'
 import { initSidebar } from './modules/sidebar.js'
 import { initTooltips } from './modules/tooltip.js'
 import { initRemoteSelects } from './modules/tom-select-remote.js'
+import { initSearch } from './modules/search.js'
 
 registerReactControllerComponents(require.context('./react/controllers', true, /\.(j|t)sx?$/))
 
@@ -39,6 +40,7 @@ document.addEventListener('turbo:load', () => {
     initSidebar()
     initTooltips()
     initRemoteSelects()
+    initSearch()
     /*
         (() => {
             const badge     = document.getElementById('notifCount');
@@ -76,23 +78,6 @@ document.addEventListener('turbo:load', () => {
             notifList.addEventListener('click', onNotifListClick);
             document.getElementById('markAllReadBtn')?.addEventListener('click', onMarkAllReadClick);
             document.getElementById('viewAllNotifBtn')?.addEventListener('click', closeAllDropdowns);
-        })()
-
-        (() => {
-            const searchInput = document.getElementById('searchInput');
-            if (!searchInput) return;
-
-            const onSearchKeydown = e => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                e.preventDefault();
-                searchInput.focus();
-            }
-            };
-
-            const onSearchFocus = e => e.target.select();
-
-            document.addEventListener('keydown', onSearchKeydown);
-            searchInput.addEventListener('focus', onSearchFocus);
         })()
     */
 
@@ -291,6 +276,62 @@ document.addEventListener('turbo:load', () => {
                     y: { grid: { display: false } },
                 }
             }
+        })
+    }
+
+    const chartStockConso = document.getElementById('chartStockConso')
+    if (chartStockConso) {
+        const data = JSON.parse(chartStockConso.dataset.values)
+        createChart({
+            element: chartStockConso,
+            type: 'bar',
+            labels: data.map(p => p.libelle),
+            datasets: [{ label: 'Quantité', data: data.map(p => p.quantite), backgroundColor: 'rgba(186,117,23,0.75)', borderRadius: 4 }],
+            options: {
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { afterLabel: ctx => `${data[ctx.dataIndex].cout.toLocaleString()} FCFA` } },
+                },
+                scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } }, y: { grid: { display: false } } },
+            },
+        })
+    }
+
+    const chartStockAchats = document.getElementById('chartStockAchats')
+    if (chartStockAchats) {
+        const data = JSON.parse(chartStockAchats.dataset.values)
+        createChart({
+            element: chartStockAchats,
+            type: 'bar',
+            labels: data.map(f => f.libelle),
+            datasets: [{ label: 'Achats', data: data.map(f => f.montant), backgroundColor: 'rgba(29,158,117,0.75)', borderRadius: 4 }],
+            options: {
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => `${ctx.parsed.x.toLocaleString()} FCFA`, afterLabel: ctx => `${data[ctx.dataIndex].nbAppros} appro(s)` } },
+                },
+                scales: { x: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() } }, y: { grid: { display: false } } },
+            },
+        })
+    }
+
+    const chartStockNiveau = document.getElementById('chartStockNiveau')
+    if (chartStockNiveau) {
+        const data = JSON.parse(chartStockNiveau.dataset.values)
+        createChart({
+            element: chartStockNiveau,
+            type: 'bar',
+            labels: data.map(p => p.libelle),
+            datasets: [
+                { label: 'Stock', data: data.map(p => p.stockactuel), backgroundColor: data.map(p => p.critique ? 'rgba(226,75,74,0.8)' : 'rgba(55,138,221,0.8)'), borderRadius: 4 },
+                { label: 'Seuil', data: data.map(p => p.seuilstock), type: 'line', borderColor: '#BA7517', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0 },
+            ],
+            options: {
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } },
+            },
         })
     }
     // -- Les véhicules par état -- //
@@ -603,6 +644,53 @@ document.addEventListener('turbo:load', () => {
             }
         })
     }
+
+    const chartFlotteDispo = document.getElementById('chartFlotteDispo')
+    if (chartFlotteDispo) {
+        const data = JSON.parse(chartFlotteDispo.dataset.values)
+        createChart({
+            element: chartFlotteDispo,
+            type: 'doughnut',
+            labels: data.map(e => e.etat),
+            datasets: [{
+                data: data.map(e => e.nb),
+                backgroundColor: ['#1a6b2f', '#378ADD', '#E24B4A', '#BA7517'],
+                borderWidth: 0,
+                hoverOffset: 6,
+            }],
+            options: {
+                cutout: '65%',
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } } },
+            },
+        })
+    }
+
+    const chartFlottePannes = document.getElementById('chartFlottePannes')
+    if (chartFlottePannes) {
+        const data = JSON.parse(chartFlottePannes.dataset.values)
+        createChart({
+            element: chartFlottePannes,
+            type: 'bar',
+            labels: data.map(t => t.type),
+            datasets: [{
+                label: 'Pannes',
+                data: data.map(t => t.nb),
+                backgroundColor: 'rgba(226,75,74,0.75)',
+                borderRadius: 4,
+            }],
+            options: {
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { afterLabel: ctx => `${data[ctx.dataIndex].cout.toLocaleString()} FCFA` } },
+                },
+                scales: {
+                    x: { beginAtZero: true, ticks: { stepSize: 1 } },
+                    y: { grid: { display: false } },
+                },
+            },
+        })
+    }
     // -- Trajet performance -- //
     const chartTrajetsRecette = document.getElementById('chartTrajetsRecette')
     if(chartTrajetsRecette) {
@@ -721,6 +809,36 @@ document.addEventListener('turbo:load', () => {
                 scales: {
                     x: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() + ' FCFA' } },
                     y: { grid: { display: false } },
+                },
+            },
+        })
+    }
+
+    const chartCourrierTranches = document.getElementById('chartCourrierTranches')
+    if(chartCourrierTranches) {
+        const data = JSON.parse(chartCourrierTranches.dataset.values)
+        createChart({
+            element: chartCourrierTranches,
+            type: 'bar',
+            labels: data.map(t => t.libelle),
+            datasets: [{
+                label: 'Colis',
+                data: data.map(t => t.nb),
+                backgroundColor: 'rgba(55,138,221,0.75)',
+                borderRadius: 4,
+            }],
+            options: {
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: ctx => `${data[ctx.dataIndex].recette.toLocaleString()} FCFA`,
+                        },
+                    },
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } },
+                    x: { grid: { display: false } },
                 },
             },
         })

@@ -185,6 +185,7 @@ final class ApprovisionnementController extends AbstractController
         ]);
     }
 
+    /* -- Verrouiller désactivé (remplacé par l'annulation) — réactivable :
     #[Route('/{id}/verrouiller', name: 'verrouiller', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('APPROVISIONNEMENT_MODIFIER')]
     public function verrouiller(int $id): Response
@@ -199,6 +200,25 @@ final class ApprovisionnementController extends AbstractController
             }
         }
         return $this->redirectToRoute('approvisionnement.show', ['id' => $id]);
+    }
+    */
+
+    #[Route('/{id}/annuler', name: 'annuler', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('APPROVISIONNEMENT_MODIFIER')]
+    public function annuler(int $id, Request $request): Response
+    {
+        if($this->isCsrfTokenValid('annuler_approvisionnement', $request->request->get('_token'))) {
+            try {
+                $this->api->patch('/api/approvisionnements/' . $id . '/annuler');
+                $this->addFlash('success', 'L\'approvisionnement a été annulé : le stock a été retiré');
+            } catch(ApiException $e) {
+                $response = $this->apiExceptionHandler->handle($e, null, 'approvisionnement.index');
+                if($response) {
+                    return $response;
+                }
+            }
+        }
+        return $this->redirectToRoute('approvisionnement.index');
     }
 
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]

@@ -1,332 +1,229 @@
 {% extends 'base.html.twig' %}
+{% import 'components/detail.html.twig' as ui %}
 
 {% block title %}L'utilisateur {{ user.prenom }} {{ user.nom }}{% endblock %}
 
-{% block body %}
-<div class="flex items-center justify-between mb-6">
-    <div class="flex items-center gap-3">
-        <a href="{{ path('admin.user.index') }}" class="btn-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-        </a>
-        <div>
-            <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">
-                {{ user.prenom }} {{ user.nom }}
-            </h1>
-            <p class="text-muted-foreground text-sm mt-0.5">{{ user.email }}</p>
-        </div>
-    </div>
-    {% if is_granted('USER_MODIFIER') %}
-    <a href="{{ path('admin.user.edit', {id: user.id} ) }}" class="btn btn-primary">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-        </svg>
-        Modifier
-    </a>
-    {% endif %}
-</div>
+{% set roleLabels = { ROLE_SUPER_ADMIN: 'Super Admin', ROLE_ADMIN: 'Admin', ROLE_USER: 'Utilisateur', ROLE_ADMIN_GARE: 'Admin de gare' } %}
+{% set roleTones  = { ROLE_SUPER_ADMIN: 'purple', ROLE_ADMIN: 'red', ROLE_USER: 'zinc', ROLE_ADMIN_GARE: 'blue' } %}
 
-{% set roleMap = {
-    'ROLE_SUPER_ADMIN': ['Super Admin', 'bg-purple-100 text-purple-700'],
-    'ROLE_ADMIN': ['Admin', 'bg-red-100 text-red-700'],
-    'ROLE_USER': ['Utilisateur', 'bg-gray-100 text-gray-600'],
-    'ROLE_ADMIN_GARE': ['Admin de gare', 'bg-blue-100 text-blue-700']
-} %}
-
-{#
-    Consolider toutes les permissions de tous les rôles métier
-    en un seul dictionnaire { entite: [actions] } sans doublons
-#}
 {% set permissionsParEntite = {} %}
 {% set nbPermissionsTotal = 0 %}
 {% for userRole in user.userRoles %}
     {% for perm in userRole.role.permissions %}
         {% set nbPermissionsTotal = nbPermissionsTotal + 1 %}
         {% set existing = permissionsParEntite[perm.entity] is defined ? permissionsParEntite[perm.entity] : [] %}
-        {% if perm.action not in existing %}
-            {% set existing = existing|merge([perm.action]) %}
-        {% endif %}
+        {% if perm.action not in existing %}{% set existing = existing|merge([perm.action]) %}{% endif %}
         {% set permissionsParEntite = permissionsParEntite|merge({ (perm.entity): existing }) %}
     {% endfor %}
 {% endfor %}
+{% set actionsOrdre = ['VOIR', 'CREER', 'MODIFIER', 'SUPPRIMER'] %}
+{% set actionTones = { VOIR: 'blue', CREER: 'green', MODIFIER: 'orange', SUPPRIMER: 'red' } %}
 
-{# ── KPI ──────────────────────────────────────────────────────────────────── #}
-<div class="grid grid-cols-3 gap-4 mb-6">
-    <div class="rounded-xl border bg-card shadow-sm p-4 text-center">
-        <p class="text-xs text-muted-foreground uppercase tracking-wide mb-1">Rôles métier</p>
-        <p class="text-3xl font-black tabular-nums">{{ user.userRoles|length }}</p>
-    </div>
-    <div class="rounded-xl border bg-card shadow-sm p-4 text-center">
-        <p class="text-xs text-muted-foreground uppercase tracking-wide mb-1">Permissions</p>
-        <p class="text-3xl font-black tabular-nums text-primary">{{ nbPermissionsTotal }}</p>
-    </div>
-    <div class="rounded-xl border bg-card shadow-sm p-4 text-center">
-        <p class="text-xs text-muted-foreground uppercase tracking-wide mb-1">Entités accessibles</p>
-        <p class="text-3xl font-black tabular-nums">{{ permissionsParEntite|length }}</p>
-    </div>
-</div>
+{% block body %}
+<div class="max-w-[1100px] mx-auto">
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-    {# ── Colonne principale ───────────────────────────────────────────────── #}
-    <div class="lg:col-span-2 space-y-4">
-
-        {# Infos #}
-        <div class="rounded-xl border bg-card shadow-sm p-6">
-            <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Informations</h2>
-            <dl class="text-sm divide-y">
-                <div class="flex justify-between items-center py-2.5">
-                    <dt class="text-muted-foreground">Nom</dt>
-                    <dd class="font-semibold">{{ user.nom }}</dd>
-                </div>
-                <div class="flex justify-between items-center py-2.5">
-                    <dt class="text-muted-foreground">Prénom</dt>
-                    <dd>{{ user.prenom }}</dd>
-                </div>
-                <div class="flex justify-between items-center py-2.5">
-                    <dt class="text-muted-foreground">Email</dt>
-                    <dd>
-                        <a href="mailto:{{ user.email }}" class="text-primary hover:underline">{{ user.email }}</a>
-                    </dd>
-                </div>
-                <div class="flex justify-between items-center py-2.5">
-                    <dt class="text-muted-foreground">Rôle</dt>
-                    <dd class="flex gap-1.5 flex-wrap">
-                        {% for role in user.roles %}
-                            {% set cfg = roleMap[role] ?? [role, 'bg-gray-100 text-gray-600'] %}
-                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ cfg[1] }}">
-                                {{ cfg[0] }}
-                            </span>
-                        {% endfor %}
-                    </dd>
-                </div>
-                {% if user.gare is defined and user.gare is not null %}
-                <div class="flex justify-between items-center py-2.5">
-                    <dt class="text-muted-foreground">Gare</dt>
-                    <dd class="font-semibold">
-                        <a href="{{ path('gare.show', { id: user.gare.id }) }}" class="text-primary hover:underline">
-                            {{ user.gare.libelle }}{% if user.gare.ville is defined %} - {{ user.gare.ville }}{% endif %}
-                        </a>
-                    </dd>
-                </div>
-                {% endif %}
-            </dl>
-        </div>
-
-        {% set statutCfg = user.statut == 'ACTIF'
-            ? ['Actif', 'bg-green-100 text-green-800']
-            : ['Suspendu', 'bg-red-100 text-red-800']
-        %}
-
-        <div class="card p-4">
-            <p class="text-lg font-light text-muted-foreground mb-2">Statut</p>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ statutCfg[1] }}">
-                {{ statutCfg[0] }}
-            </span>
-        </div>
-
-        {# Rôles métier #}
-        <div class="rounded-xl border bg-card shadow-sm overflow-hidden">
-            <div class="flex items-center justify-between px-6 py-4 border-b">
-                <h2 class="text-sm font-semibold">Rôles métier affectés</h2>
-                <span class="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-bold">
-                    {{ user.userRoles|length }}
-                </span>
+    {# En-tête #}
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+        <div class="min-w-0">
+            <a href="{{ path('admin.user.index') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Retour aux utilisateurs
+            </a>
+            <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                <p class="text-xs uppercase tracking-wide text-muted-foreground">Utilisateur</p>
+                {% if user.founder %}{{ ui.badge('👑 Fondateur', 'amber') }}{% endif %}
+                {% for role in user.roles %}{{ ui.badge(roleLabels[role] ?? role, roleTones[role] ?? 'zinc') }}{% endfor %}
             </div>
-            {% if user.userRoles is empty %}
+            <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2] break-words">{{ user.prenom }} {{ user.nom }}</h1>
+            <p class="text-sm text-muted-foreground mt-1">{{ user.email }}</p>
+        </div>
+        {% if is_granted('USER_MODIFIER') %}
+        <div class="flex items-center gap-2 flex-wrap shrink-0">
+            <a href="{{ path('admin.user.edit', {id: user.id} ) }}" class="btn btn-primary">
+                <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
+                Modifier
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {# KPI #}
+    <div class="grid grid-cols-3 gap-3 mb-5">
+        {{ ui.stat('Rôles métier', user.userRoles|length) }}
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground">Permissions</p>
+            <p class="text-2xl font-semibold tabular-nums text-primary mt-0.5">{{ nbPermissionsTotal }}</p>
+        </div>
+        {{ ui.stat('Entités accessibles', permissionsParEntite|length) }}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-4">
+            {# Informations #}
+            <div class="card p-6">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">Informations</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                    {{ ui.field('Nom', user.nom) }}
+                    {{ ui.field('Prénom', user.prenom) }}
+                    {{ ui.field('Email', '<a href="mailto:' ~ user.email ~ '" class="text-primary hover:underline">' ~ user.email ~ '</a>', false, true) }}
+                    <div class="min-w-0">
+                        <p class="text-xs uppercase tracking-wide text-muted-foreground">Rôle</p>
+                        <div class="mt-1 flex gap-1.5 flex-wrap">
+                            {% for role in user.roles %}{{ ui.badge(roleLabels[role] ?? role, roleTones[role] ?? 'zinc') }}{% endfor %}
+                        </div>
+                    </div>
+                    {% if user.gare is defined and user.gare is not null %}
+                    {{ ui.field('Gare', '<a href="' ~ path('gare.show', { id: user.gare.id }) ~ '" class="text-primary hover:underline">' ~ user.gare.libelle ~ (user.gare.ville is defined ? ' - ' ~ user.gare.ville : '') ~ '</a>', false, true) }}
+                    {% endif %}
+                    <div class="min-w-0">
+                        <p class="text-xs uppercase tracking-wide text-muted-foreground">Statut</p>
+                        <div class="mt-1">{{ ui.badge(user.statut == 'ACTIF' ? 'Actif' : 'Suspendu', user.statut == 'ACTIF' ? 'green' : 'red') }}</div>
+                    </div>
+                </div>
+            </div>
+
+            {# Rôles métier affectés #}
+            <div class="card overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Rôles métier affectés</h2>
+                    <span class="text-xs text-muted-foreground">{{ user.userRoles|length }}</span>
+                </div>
+                {% if user.userRoles is empty %}
                 <div class="px-6 py-8 text-center text-sm text-muted-foreground">Aucun rôle métier affecté</div>
-            {% else %}
-                <div class="divide-y">
+                {% else %}
+                <div class="divide-y divide-border">
                     {% for userRole in user.userRoles %}
                     {% set r = userRole.role %}
                     <div class="px-6 py-4 flex items-start justify-between gap-4">
-                        <div>
-                            <p class="font-semibold text-sm">{{ r.name }}</p>
-                            {% if r.description %}
-                                <p class="text-xs text-muted-foreground mt-0.5">{{ r.description }}</p>
-                            {% endif %}
+                        <div class="min-w-0">
+                            <p class="font-medium text-sm">{{ r.name }}</p>
+                            {% if r.description %}<p class="text-xs text-muted-foreground mt-0.5">{{ r.description }}</p>{% endif %}
                             <p class="text-xs text-muted-foreground mt-1">{{ r.permissions|length }} permission(s)</p>
                         </div>
-                        <a href="{{ path('admin.role.show', { id: r.id }) }}"
-                           class="shrink-0 text-xs text-primary hover:underline">Voir →</a>
+                        <a href="{{ path('admin.role.show', { id: r.id }) }}" class="shrink-0 text-xs text-primary hover:underline">Voir →</a>
                     </div>
                     {% endfor %}
                 </div>
-            {% endif %}
-        </div>
-
-        {# Matrice permissions consolidées #}
-        {% if permissionsParEntite|length > 0 %}
-        {% set actionsOrdre = ['VOIR', 'CREER', 'MODIFIER', 'SUPPRIMER'] %}
-        <div class="rounded-xl border bg-card shadow-sm overflow-hidden">
-            <div class="flex items-center justify-between px-6 py-4 border-b">
-                <h2 class="text-sm font-semibold">Permissions consolidées</h2>
-                <span class="text-xs text-muted-foreground">Tous rôles confondus</span>
+                {% endif %}
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-muted/40 border-b">
-                            <th class="text-left px-6 py-3 font-semibold">Entité</th>
-                            {% for action in actionsOrdre %}
-                                <th class="text-center px-4 py-3 font-semibold text-xs">{{ action }}</th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y">
-                        {% for entite, actions in permissionsParEntite %}
-                        <tr class="hover:bg-muted/20 transition-colors">
-                            <td class="px-6 py-3 font-medium">{{ entite }}</td>
-                            {% for action in actionsOrdre %}
+
+            {# Permissions consolidées #}
+            {% if permissionsParEntite|length > 0 %}
+            <div class="card overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Permissions consolidées</h2>
+                    <span class="text-xs text-muted-foreground">Tous rôles confondus</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-muted/40 border-b border-border text-muted-foreground">
+                                <th class="text-left px-6 py-3 font-medium">Entité</th>
+                                {% for action in actionsOrdre %}<th class="text-center px-4 py-3 font-medium text-xs">{{ action }}</th>{% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border">
+                            {% for entite, actions in permissionsParEntite %}
+                            <tr class="hover:bg-muted/20 transition-colors">
+                                <td class="px-6 py-3 font-medium">{{ entite }}</td>
+                                {% for action in actionsOrdre %}
                                 <td class="px-4 py-3 text-center">
                                     {% if action in actions %}
-                                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-600">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                                            </svg>
-                                        </span>
+                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-50 text-green-600 dark:bg-green-950 dark:text-green-300">
+                                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                    </span>
                                     {% else %}
-                                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground/40">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                            </svg>
-                                        </span>
+                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground/30">
+                                        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </span>
                                     {% endif %}
                                 </td>
+                                {% endfor %}
+                            </tr>
                             {% endfor %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
             </div>
+            {% endif %}
         </div>
-        {% endif %}
 
-    </div>
+        {# Sidebar #}
+        <div class="space-y-4">
+            {% if user.fileUrl is defined and user.fileUrl %}
+            <div class="card p-3">
+                <img src="{{ api_url ~ '/media' ~ user.fileUrl ~ '?w=400&h=400&fm=jpg&fit=crop' }}" alt="{{ user.prenom }} {{ user.nom }}" class="w-full h-auto object-cover rounded-md" />
+            </div>
+            {% endif %}
 
-    {# ── Panneau latéral ──────────────────────────────────────────────────── #}
-    <div class="space-y-4">
-        {% if user.fileUrl is defined and user.fileUrl %}
-        <div class="rounded-xl border bg-card shadow-sm p-4">
-            <img
-                src="{{ api_url ~ '/media' ~ user.fileUrl ~ '?w=400&h=400&fm=jpg&fit=crop' }}"
-                alt="{{ user.prenom }} {{ user.nom }}"
-                width="100%"
-                height="auto"
-                class="object-cover rounded-lg"
-            />
-        </div>
-        {% endif %}
-        {# Répartition #}
-        {% if nbPermissionsTotal > 0 %}
-        {% set actionsOrdre = ['VOIR', 'CREER', 'MODIFIER', 'SUPPRIMER'] %}
-        {% set actionColors = {
-            VOIR:      'bg-blue-100 text-blue-700',
-            CREER:     'bg-green-100 text-green-700',
-            MODIFIER:  'bg-orange-100 text-orange-700',
-            SUPPRIMER: 'bg-red-100 text-red-700',
-        } %}
-        <div class="rounded-xl border bg-card shadow-sm p-5 space-y-3">
-            <h2 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Répartition</h2>
-            <div class="space-y-2">
-                {% for action in actionsOrdre %}
+            {% if nbPermissionsTotal > 0 %}
+            <div class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Répartition par action</h2>
+                <div class="space-y-2">
+                    {% for action in actionsOrdre %}
                     {% set count = 0 %}
-                    {% for userRole in user.userRoles %}
-                        {% set count = count + userRole.role.permissions|filter(p => p.action == action)|length %}
-                    {% endfor %}
+                    {% for userRole in user.userRoles %}{% set count = count + userRole.role.permissions|filter(p => p.action == action)|length %}{% endfor %}
                     <div class="flex items-center justify-between text-xs">
-                        <span class="inline-flex items-center rounded-full px-2 py-0.5 font-medium {{ actionColors[action] }}">
-                            {{ action }}
-                        </span>
-                        <span class="font-bold tabular-nums">{{ count }}</span>
+                        {{ ui.badge(action, actionTones[action] ?? 'zinc') }}
+                        <span class="font-semibold tabular-nums">{{ count }}</span>
                     </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
             </div>
-        </div>
-        {% endif %}
-
-        {# Actions #}
-        <div class="rounded-xl border bg-card shadow-sm p-5 space-y-2">
-            <h2 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Actions</h2>
-            {% if is_granted('USER_MODIFIER') %}
-            <a href="{{ path('admin.user.edit', { id: user.id }) }}"
-               class="flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium hover:bg-accent transition-colors">
-                ✏️ Modifier
-            </a>
-            <a href="{{ path('admin.role.show', { id: user.id }) }}"
-               class="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-                🔑 Gérer les rôles
-            </a>
             {% endif %}
 
-            {% set isAdmin = 'ROLE_ADMIN' in user.roles %}
-            {% set isSelf  = app.user.id == user.id %}
-            {% set confirmMsg = user.statut == 'ACTIF' ? 'Suspendre' : 'Réactiver' %}
-            {% set confirmMsg = confirmMsg ~ ' cet utilisateur ?' %}
+            {# Actions #}
+            <div class="card p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Actions</h2>
+                <div class="flex flex-col gap-2">
+                    {% if is_granted('USER_MODIFIER') %}
+                    <a href="{{ path('admin.user.edit', { id: user.id }) }}" class="btn btn-secondary w-full justify-center">Modifier</a>
+                    <a href="{{ path('admin.role.show', { id: user.id }) }}" class="btn btn-primary w-full justify-center">Gérer les rôles</a>
+                    {% endif %}
 
-            {% if is_granted('USER_MODIFIER') and not isAdmin and not isSelf %}
-            <form method="POST"
-                action="{{ path('admin.user.suspendre', { id: user.id }) }}"
-                class="inline"
-                onsubmit="return confirm('{{ confirmMsg }}')">
-                <button type="submit"
-                        class="btn {{ user.statut == 'ACTIF' ? 'btn-warning' : 'btn-success' }}">
-                    {{ user.statut == 'ACTIF' ? 'Suspendre' : 'Réactiver' }}
-                </button>
-            </form>
-            {% endif %}
+                    {% set isAdmin = 'ROLE_ADMIN' in user.roles %}
+                    {% set isSelf  = app.user.id == user.id %}
 
-            {% if user.founder %}
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800">
-                👑 Fondateur
-            </span>
-            {% endif %}
+                    {% if is_granted('ROLE_ADMIN') and not isAdmin and not isSelf %}
+                    <form method="POST" action="{{ path('admin.user.suspendre', { id: user.id }) }}" onsubmit="return confirm('{{ user.statut == 'ACTIF' ? 'Suspendre' : 'Réactiver' }} cet utilisateur ?')">
+                        <button type="submit" class="btn {{ user.statut == 'ACTIF' ? 'btn-warning' : 'btn-success' }} w-full justify-center">
+                            {{ user.statut == 'ACTIF' ? 'Suspendre' : 'Réactiver' }}
+                        </button>
+                    </form>
+                    {% endif %}
 
-            {% if app.user.founder and not user.founder and app.user.id != user.id %}
-            {% set isAdminGareAlready = 'ROLE_ADMIN_GARE' in user.roles %}
-            {% if isAdminGareAlready and not isAdmin %}
-                {# ✅ Bloqué — bouton grisé avec tooltip #}
-                <button type="button"
-                        disabled
-                        title="Révoquez d'abord le rôle d'administrateur de gare"
-                        class="flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium opacity-50 cursor-not-allowed">
-                    Promouvoir en administrateur
-                </button>
-            {% else %}
-                {# ✅ Normal — peut être promu ou rétrogradé #}
-                <form method="post" action="{{ path('admin.user.promouvoir', { id: user.id }) }}" class="w-full"
-                    onsubmit="return confirm('{{ isAdmin ? 'Rétrograder' : 'Promouvoir' }} cet utilisateur ?')">
-                    <button type="submit" class="...">
-                        {{ isAdmin ? 'Rétrograder en utilisateur' : 'Promouvoir en administrateur' }}
+                    {% if app.user.founder and not user.founder and app.user.id != user.id %}
+                    {% set isAdminGareAlready = 'ROLE_ADMIN_GARE' in user.roles %}
+                    {% if isAdminGareAlready and not isAdmin %}
+                    <button type="button" disabled title="Révoquez d'abord le rôle d'administrateur de gare" class="btn btn-secondary w-full justify-center opacity-50 cursor-not-allowed">
+                        Promouvoir en administrateur
                     </button>
-                </form>
-            {% endif %}
-            {% endif %}
+                    {% else %}
+                    <form method="post" action="{{ path('admin.user.promouvoir', { id: user.id }) }}" class="w-full" onsubmit="return confirm('{{ isAdmin ? 'Rétrograder' : 'Promouvoir' }} cet utilisateur ?')">
+                        <button type="submit" class="btn btn-secondary w-full justify-center">
+                            {{ isAdmin ? 'Rétrograder en utilisateur' : 'Promouvoir en administrateur' }}
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% endif %}
 
-            {#
-                Nommer / révoquer admin de gare
-                - Visible pour ROLE_ADMIN uniquement
-                - Impossible si l'user est déjà ROLE_ADMIN ou fondateur
-                - Désactivé si l'user n'a pas de gare liée
-            #}
-            {% set isAdminGare = 'ROLE_ADMIN_GARE' in user.roles %}
-            {% set isAdmin = 'ROLE_ADMIN' in user.roles %}
-
-            {% if is_granted('ROLE_ADMIN') and not user.founder and not isAdmin and app.user.id != user.id %}
-            <form method="post" action="{{ path('admin.user.promouvoir.gare', { id: user.id }) }}" class="w-full" onsubmit="return confirm('{{ isAdminGare ? 'Révoquer' : 'Nommer' }} cet utilisateur comme administrateur de gare ?')">
-                {% if not isAdminGare and (user.gare is not defined or user.gare is null) %}
-                    <button type="button" disabled title="L'utilisateur doit être lié à une gare" class="flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium opacity-50 cursor-not-allowed">
-                        🏪 Nommer admin de gare
-                    </button>
-                {% else %}
-                    <button type="submit"
-                            class="flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium hover:bg-accent transition-colors {{ isAdminGare ? 'text-orange-600 border-orange-300' : 'text-blue-600 border-blue-300' }}">
-                        {{ isAdminGare ? '🏪 Révoquer admin de gare' : '🏪 Nommer admin de gare' }}
-                    </button>
-                {% endif %}
-            </form>
-            {% endif %}
+                    {% set isAdminGare = 'ROLE_ADMIN_GARE' in user.roles %}
+                    {% set isAdmin = 'ROLE_ADMIN' in user.roles %}
+                    {% if is_granted('ROLE_ADMIN') and not user.founder and not isAdmin and app.user.id != user.id %}
+                    <form method="post" action="{{ path('admin.user.promouvoir.gare', { id: user.id }) }}" class="w-full" onsubmit="return confirm('{{ isAdminGare ? 'Révoquer' : 'Nommer' }} cet utilisateur comme administrateur de gare ?')">
+                        {% if not isAdminGare and (user.gare is not defined or user.gare is null) %}
+                        <button type="button" disabled title="L'utilisateur doit être lié à une gare" class="btn btn-secondary w-full justify-center opacity-50 cursor-not-allowed">
+                            🏪 Nommer admin de gare
+                        </button>
+                        {% else %}
+                        <button type="submit" class="btn btn-secondary w-full justify-center {{ isAdminGare ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400' }}">
+                            {{ isAdminGare ? '🏪 Révoquer admin de gare' : '🏪 Nommer admin de gare' }}
+                        </button>
+                        {% endif %}
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>

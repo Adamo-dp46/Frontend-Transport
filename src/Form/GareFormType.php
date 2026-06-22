@@ -3,6 +3,7 @@
 namespace App\Form;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -57,6 +58,12 @@ class GareFormType extends AbstractType
                     new Length(max: 150)
                 ],
                 'required' => false
+            ])
+            ->add('datecreation', DateType::class, [
+                'label' => 'Date de création',
+                'widget' => 'single_text',
+                'input' => 'datetime_immutable',
+                'required' => false,
             ])
         ;
     }

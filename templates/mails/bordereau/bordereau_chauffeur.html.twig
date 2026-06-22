@@ -28,12 +28,12 @@
         .header-top {
             background: #1a3a5c;
             color: #fff;
-            padding: 4mm 5mm;
-            width: 100%;
         }
 
+        /* Padding porté par les cellules (et non le conteneur) : évite le débordement Dompdf
+           d'un tableau width:100% à l'intérieur d'une boîte paddée. */
         .header-top table { width: 100%; border-collapse: collapse; }
-        .header-top td { vertical-align: middle; padding: 0; border: none; }
+        .header-top td { vertical-align: middle; padding: 4mm 5mm; border: none; }
         .header-top .td-right { text-align: right; }
 
         .doc-title {
@@ -245,18 +245,8 @@
                         <div class="info-label">Capacité</div>
                         <div class="info-value">{{ bordereau.voyage.placestotal }} places</div>
                         <div style="margin-top:1.5mm;">
-                            <table style="width:100%;border-collapse:collapse;">
-                                <tr>
-                                    <td style="border:none;padding:0;">
-                                        <div class="info-label">Occupées</div>
-                                        <div class="info-value" style="color:#c0392b;">{{ bordereau.voyage.placesoccupees }}</div>
-                                    </td>
-                                    <td style="border:none;padding:0;text-align:right;">
-                                        <div class="info-label">Libres</div>
-                                        <div class="info-value" style="color:#27ae60;">{{ bordereau.voyage.placestotal - bordereau.voyage.placesoccupees }}</div>
-                                    </td>
-                                </tr>
-                            </table>
+                            <div class="info-label">Tickets vendus</div>
+                            <div class="info-value">{{ bordereau.voyage.placesoccupees }}</div>
                         </div>
                     </td>
                 </tr>
@@ -344,7 +334,6 @@
                         <th>Départ</th>
                         <th>Arrivée</th>
                         <th class="center">Colis</th>
-                        <th class="center">Mode</th>
                         <th class="right">Montant (FCFA)</th>
                     </tr>
                 </thead>
@@ -357,14 +346,13 @@
                         <td>{{ courrier.garedepart }}</td>
                         <td>{{ courrier.garearrivee }}</td>
                         <td class="center">{{ courrier.nbcolis }}</td>
-                        <td class="center"><span class="badge badge-mode">{{ courrier.modepaiement }}</span></td>
                         <td class="right bold">{{ courrier.montant|number_format(0, ',', ' ') }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="7">Sous-total courriers</td>
+                        <td colspan="6">Sous-total courriers</td>
                         <td class="right">{{ stCourriers|number_format(0, ',', ' ') }} FCFA</td>
                     </tr>
                 </tfoot>

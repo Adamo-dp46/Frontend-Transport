@@ -2,12 +2,14 @@
 
 namespace App\Controller;
 
+use App\Controller\Trait\GareActionTrait;
 use App\Domain\Helper\ApiExceptionHandlerHelper;
 use App\Domain\Helper\ApiHelper;
 use App\Domain\Helper\TableHelper;
 use App\Domain\Service\PdfService;
 use App\Security\Exception\ApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -18,6 +20,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 final class BagageController extends AbstractController
 {
+    use GareActionTrait;
+
     public function __construct(
         private readonly ApiHelper $api,
         private readonly ApiExceptionHandlerHelper $apiExceptionHandler,
@@ -66,9 +70,40 @@ final class BagageController extends AbstractController
             }
         }
 
+        // Gare détentrice : origine si pas encore embarqué (ENREGISTRE), sinon gare de descente
+        $detentriceId = ($bagage['statut'] ?? null) === 'ENREGISTRE'
+            ? ($bagage['garedepart']['id'] ?? null)
+            : ($bagage['garedescente']['id'] ?? null);
+        $peutAgir = $this->peutAgirSurGare($detentriceId);
+
         return $this->render('bagage/show.html.twig', [
-            'bagage' => $bagage
+            'bagage' => $bagage,
+            'peutAgir' => $peutAgir
         ]);
+    }
+
+    #[Route('/arrets/{id}', name: 'arrets', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('BAGAGE_VOIR')]
+    public function arrets(int $id): JsonResponse
+    {
+        try {
+            $voyage = $this->api->item('/api/voyages/' . $id);
+            $ligneId = $voyage['ligne']['id'] ?? null;
+            if (!$ligneId) {
+                return $this->json(['arrets' => []]); // voyage non rattaché à une ligne
+            }
+            $ligne = $this->api->item('/api/lignes/' . $ligneId);
+            $arrets = array_map(fn($a) => [
+                'id' => $a['gare']['id'],
+                'libelle' => $a['gare']['libelle'],
+                'ville' => $a['gare']['ville'] ?? null,
+                'ordre' => $a['ordre'],
+            ], $ligne['arrets'] ?? []);
+            usort($arrets, fn($x, $y) => $x['ordre'] <=> $y['ordre']);
+            return $this->json(['arrets' => $arrets]);
+        } catch (ApiException $e) {
+            return $this->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
     }
 
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
@@ -101,10 +136,14 @@ final class BagageController extends AbstractController
             }
         }
 
+        $userGare = $this->getUser()->getGare();
+
         return $this->render('bagage/new.html.twig', [
             'voyages' => $voyages,
             'tarifbagages' => $tarifbagages,
-            'voyageId' => $voyageId
+            'voyageId' => $voyageId,
+            'userGareId' => $userGare['id'] ?? null,
+            'userGareLibelle' => $userGare['libelle'] ?? null
         ]);
     }
 
@@ -138,10 +177,14 @@ final class BagageController extends AbstractController
             }
         }
 
+        $userGare = $this->getUser()->getGare();
+
         return $this->render('bagage/edit.html.twig', [
             'voyages' => $voyages,
             'bagage' => $bagage,
-            'tarifbagages' => $tarifbagages
+            'tarifbagages' => $tarifbagages,
+            'userGareId' => $userGare['id'] ?? null,
+            'userGareLibelle' => $userGare['libelle'] ?? null
         ]);
     }
 
@@ -204,6 +247,8 @@ final class BagageController extends AbstractController
     {
         $payload = [
             'voyage' => !empty($data['voyage']) ? (int)$data['voyage'] : null,
+            'garedepart' => !empty($data['garedepart']) ? (int)$data['garedepart'] : null,
+            'garedescente' => !empty($data['garedescente']) ? (int)$data['garedescente'] : null,
             'nomclient' => $data['nomclient'] ?? '',
             'contactclient' => $data['contactclient'] ?? '',
             'nature' => $data['nature'] ?? '',

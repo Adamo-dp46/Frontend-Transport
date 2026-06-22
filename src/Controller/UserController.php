@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Domain\Helper\ApiExceptionHandlerHelper;
 use App\Domain\Helper\ApiHelper;
 use App\Domain\Helper\TableHelper;
+use App\Entity\ApiUser;
 use App\Form\UserEditFormType;
 use App\Form\UserFormType;
 use App\Security\Exception\ApiException;
@@ -35,18 +36,25 @@ final class UserController extends AbstractController
             throw $this->createAccessDeniedException();
         }
 
+        // Le filtre par gare n'est proposé qu'à l'administrateur d'entreprise
+        $extras = [];
+        if($this->isGranted('ROLE_ADMIN')) {
+            $extras['gares'] = $this->api->collection('/api/gares');
+        }
+
         $data = $this->tableHelper->handleIndex('/api/users',  $request->query->all(),
             [
                 'search' => 'nom',
                 'email' => 'email',
-                'statut' => 'statut'
+                'statut' => 'statut',
+                'gare' => 'gare.id'
             ],
             [
                 'id',
                 'nom',
                 'prenom'
             ],
-            []
+            $extras
         );
 
         return $this->render('admin/user/index.html.twig', $data);
@@ -77,7 +85,11 @@ final class UserController extends AbstractController
     #[IsGranted('USER_CREER')]
     public function new(Request $request): Response
     {
-        $isAdminGare = $this->isGranted('ROLE_ADMIN_GARE');
+        /**
+         * @var ApiUser
+         */
+        $user = $this->getUser();
+        $isAdminGare = $this->isGranted('ROLE_ADMIN_GARE') || $user->getGare() !== null;
         $availableRoles = [];
         $availableGares = [];
         try {
@@ -144,7 +156,8 @@ final class UserController extends AbstractController
         }
 
         return $this->render('admin/user/new.html.twig', [
-            'form' => $form
+            'form' => $form,
+            'isAdminGare' => $isAdminGare
         ]);
     }
 
@@ -152,7 +165,11 @@ final class UserController extends AbstractController
     #[IsGranted('USER_MODIFIER')]
     public function edit(int $id, Request $request): RedirectResponse|Response
     {
-        $isAdminGare = $this->isGranted('ROLE_ADMIN_GARE');
+        /**
+         * @var ApiUser
+         */
+        $user = $this->getUser();
+        $isAdminGare = $this->isGranted('ROLE_ADMIN_GARE') || $user->getGare() !== null;
         $availableRoles = [];
         $availableGares = [];
         try {
@@ -225,14 +242,15 @@ final class UserController extends AbstractController
 
         return $this->render('admin/user/edit.html.twig', [
             'form' => $form,
-            'user' => $user
+            'user' => $user,
+            'isAdminGare' => $isAdminGare
         ]);
     }
 
     #[Route('/{id}/suspendre', name: 'suspendre', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
     public function suspendre(int $id, Request $request): Response
     {
-        if(!$this->isGranted('USER_MODIFIER') && !$this->isGranted('ROLE_SUPER_ADMIN')) {
+        if(!$this->isGranted('ROLE_ADMIN') && !$this->isGranted('ROLE_ADMIN_GARE') && !$this->isGranted('ROLE_SUPER_ADMIN')) {
             throw $this->createAccessDeniedException();
         }
 

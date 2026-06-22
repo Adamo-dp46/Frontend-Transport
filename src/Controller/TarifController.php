@@ -7,6 +7,7 @@ use App\Domain\Helper\ApiHelper;
 use App\Form\TarifFormType;
 use App\Security\Exception\ApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -30,9 +31,9 @@ final class TarifController extends AbstractController
     {
         try {
             $tarifs = $this->api->collection('/api/tarifs');
-        } catch(ApiException $e) {
+        } catch (ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e);
-            if($response) {
+            if ($response) {
                 return $response;
             }
         }
@@ -42,43 +43,43 @@ final class TarifController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'show', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
-    #[IsGranted('TARIF_VOIR')]
-    public function show(int $id): Response
-    {
-        try {
-            $tarif = $this->api->item('/api/tarifs/' . $id);
-        } catch(ApiException $e) {
-            $response = $this->apiExceptionHandler->handle($e, null, 'tarif.index');
-            if($response) {
-                return $response;
-            }
-        }
-
-        return $this->render('tarif/show.html.twig', [
-            'tarif' => $tarif
-        ]);
-    }
-
     #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
     #[IsGranted('TARIF_CREER')]
     public function new(Request $request): Response
     {
-        $form = $this->createForm(TarifFormType::class);
+        try {
+            $gares = $this->api->collection('/api/gares');
+        } catch (ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e, null, 'tarif.index');
+            if ($response) {
+                return $response;
+            }
+        }
+
+        $form = $this->createForm(TarifFormType::class, null, ['gares' => $gares]);
         $form->handleRequest($request);
-        if($form->isSubmitted() && $form->isValid()) {
-            $payload = [
-                'libelle' => $form->get('libelle')->getData(),
-                'montant' => $form->get('montant')->getData()
-            ];
-            try {
-                $this->api->post('/api/tarifs', $payload);
-                $this->addFlash('success', 'Le tarif a été créé avec succès');
-                return $this->redirectToRoute('tarif.index');
-            } catch (ApiException $e) {
-                $response = $this->apiExceptionHandler->handle($e, $form, 'tarif.new');
-                if($response) {
-                    return $response;
+
+        if ($form->isSubmitted()) {
+            if ($form->get('garedepart')->getData() !== null
+                && $form->get('garedepart')->getData() === $form->get('garearrivee')->getData()) {
+                $form->get('garearrivee')->addError(new FormError("La gare d'arrivée doit être différente de la gare de départ"));
+            }
+
+            if ($form->isValid()) {
+                $payload = [
+                    'garedepart' => '/api/gares/' . $form->get('garedepart')->getData(),
+                    'garearrivee' => '/api/gares/' . $form->get('garearrivee')->getData(),
+                    'montant' => $form->get('montant')->getData()
+                ];
+                try {
+                    $this->api->post('/api/tarifs', $payload);
+                    $this->addFlash('success', 'Le tarif a été créé avec succès');
+                    return $this->redirectToRoute('tarif.index');
+                } catch (ApiException $e) {
+                    $response = $this->apiExceptionHandler->handle($e, $form, 'tarif.new');
+                    if ($response) {
+                        return $response;
+                    }
                 }
             }
         }
@@ -94,27 +95,42 @@ final class TarifController extends AbstractController
     {
         try {
             $tarif = $this->api->item('/api/tarifs/' . $id);
-        } catch(ApiException $e) {
+            $gares = $this->api->collection('/api/gares');
+        } catch (ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'tarif.index');
-            if($response) {
+            if ($response) {
                 return $response;
             }
         }
-        $form = $this->createForm(TarifFormType::class, $tarif);
+
+        $form = $this->createForm(TarifFormType::class, [
+            'garedepart' => $tarif['garedepart']['id'] ?? null,
+            'garearrivee' => $tarif['garearrivee']['id'] ?? null,
+            'montant' => (int) $tarif['montant']
+        ], ['gares' => $gares]);
         $form->handleRequest($request);
-        if($form->isSubmitted() && $form->isValid()) {
-            $payload = [
-                'libelle' => $form->get('libelle')->getData(),
-                'montant' => $form->get('montant')->getData()
-            ];
-            try {
-                $this->api->patch('/api/tarifs/' . $id, $payload);
-                $this->addFlash('success', 'Le tarif a été modifié avec succès');
-                return $this->redirectToRoute('tarif.index');
-            } catch(ApiException $e) {
-                $response = $this->apiExceptionHandler->handle($e, $form, 'tarif.edit', ['id' => $id]);
-                if($response) {
-                    return $response;
+
+        if ($form->isSubmitted()) {
+            if ($form->get('garedepart')->getData() !== null
+                && $form->get('garedepart')->getData() === $form->get('garearrivee')->getData()) {
+                $form->get('garearrivee')->addError(new FormError("La gare d'arrivée doit être différente de la gare de départ"));
+            }
+
+            if ($form->isValid()) {
+                $payload = [
+                    'garedepart' => '/api/gares/' . $form->get('garedepart')->getData(),
+                    'garearrivee' => '/api/gares/' . $form->get('garearrivee')->getData(),
+                    'montant' => $form->get('montant')->getData()
+                ];
+                try {
+                    $this->api->patch('/api/tarifs/' . $id, $payload);
+                    $this->addFlash('success', 'Le tarif a été modifié avec succès');
+                    return $this->redirectToRoute('tarif.index');
+                } catch (ApiException $e) {
+                    $response = $this->apiExceptionHandler->handle($e, $form, 'tarif.edit', ['id' => $id]);
+                    if ($response) {
+                        return $response;
+                    }
                 }
             }
         }
@@ -129,13 +145,13 @@ final class TarifController extends AbstractController
     #[IsGranted('TARIF_SUPPRIMER')]
     public function delete(int $id, Request $request): Response
     {
-        if($this->isCsrfTokenValid('delete_tarif', $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete_tarif', $request->request->get('_token'))) {
             try {
                 $this->api->patch('/api/tarifs/' . $id . '/remove');
                 $this->addFlash('success', 'Le tarif a été supprimé avec succès');
-            } catch(ApiException $e) {
+            } catch (ApiException $e) {
                 $response = $this->apiExceptionHandler->handle($e, null, 'tarif.index');
-                if($response) {
+                if ($response) {
                     return $response;
                 }
             }

@@ -4,7 +4,8 @@
 
 {% block body %}
 <div class="mb-8">
-    <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Espace propriétaire</h1>
+    <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-600 mb-1.5">Tableau de bord</p>
+    <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.1]">Espace propriétaire</h1>
     <p class="text-muted-foreground mt-2">Vue d'ensemble de votre compagnie de transport</p>
 </div>
 
@@ -32,6 +33,16 @@
         </div>
         <p class="font-medium text-base mb-1 group-hover:text-primary transition-colors">Caisse</p>
         <p class="text-sm text-muted-foreground">Résumé des encaissements par agent et par jour avec détail par voyage</p>
+    </a>
+
+    {# Stats par gare #}
+    <a href="{{ path('stats.gares') }}" class="card p-6 hover:border-primary transition-colors group">
+        <div class="flex items-start justify-between mb-4">
+            <div class="size-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg">🏪</div>
+            <span class="text-xs text-muted-foreground">Classement · Panier · Agents</span>
+        </div>
+        <p class="font-medium text-base mb-1 group-hover:text-primary transition-colors">Stats par gare</p>
+        <p class="text-sm text-muted-foreground">Recettes par gare : classement, panier moyen, évolution dans le temps et croisement par agent</p>
     </a>
 
     {# Billetterie #}
@@ -104,7 +115,7 @@
         <p class="text-sm text-muted-foreground">Activité des véhicules — voyages, dépannages et coûts de maintenance</p>
     </a>
 
-    {# Trajets #}
+    {# Lignes #}
     <a href="{{ path('trajets') }}" class="card p-6 hover:border-primary transition-colors group">
         <div class="flex items-start justify-between mb-4">
             <div class="size-10 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-lg">
@@ -112,8 +123,18 @@
             </div>
             <span class="text-xs text-muted-foreground">Utilisation · Recettes</span>
         </div>
-        <p class="font-medium text-base mb-1 group-hover:text-primary transition-colors">Trajets</p>
-        <p class="text-sm text-muted-foreground">Trajets les plus utilisés, recettes et nombre de tickets par ligne</p>
+        <p class="font-medium text-base mb-1 group-hover:text-primary transition-colors">Lignes</p>
+        <p class="text-sm text-muted-foreground">Lignes les plus utilisées, recettes et nombre de tickets par ligne</p>
+    </a>
+
+    {# Stock & Approvisionnement #}
+    <a href="{{ path('stats.stock') }}" class="card p-6 hover:border-primary transition-colors group">
+        <div class="flex items-start justify-between mb-4">
+            <div class="size-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-lg">📦</div>
+            <span class="text-xs text-muted-foreground">Valeur · Conso · Achats</span>
+        </div>
+        <p class="font-medium text-base mb-1 group-hover:text-primary transition-colors">Stock & Approvisionnement</p>
+        <p class="text-sm text-muted-foreground">Valeur du stock, rotation, pièces consommées et achats par fournisseur</p>
     </a>
 
 </div>

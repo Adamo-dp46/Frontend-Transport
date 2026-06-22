@@ -1,0 +1,161 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ma gare{% endblock %}
+
+{% block body %}
+{% if gare is null %}
+<div class="max-w-[640px] mx-auto card p-8 text-center mt-6">
+    <h1 class="text-2xl font-light mb-2">Ma gare</h1>
+    <p class="text-muted-foreground">Vous n'êtes rattaché à aucune gare.</p>
+</div>
+{% else %}
+<div class="max-w-[1000px] mx-auto">
+
+    {# En-tête #}
+    <div class="flex items-start justify-between gap-4 flex-wrap mb-5">
+        <div>
+            <p class="text-sm text-muted-foreground">Ma gare</p>
+            <h1 class="text-3xl font-light tracking-[-0.5px] leading-[1.2]">{{ gare.libelle }}</h1>
+            <p class="text-sm text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+                {% if gare.ville %}<span>{{ gare.ville }}</span>{% endif %}
+                {% if gare.statut %}
+                <span class="text-xs px-2 py-0.5 rounded-full {{ gare.statut == 'ACTIF' ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' }}">
+                    {{ gare.statut == 'ACTIF' ? 'Active' : gare.statut|capitalize }}
+                </span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    {# Tableau de bord — activité de la gare #}
+    {% if stats %}
+    {% set periodes = { 'jour': "Aujourd'hui", 'mois': 'Ce mois-ci', 'tout': 'Tout' } %}
+    <div class="mb-6">
+        <div class="flex items-center gap-1 mb-3 text-sm">
+            {% for key, label in periodes %}
+            <a href="{{ path('gare.me', { periode: key }) }}"
+               class="px-3 py-1.5 rounded-md transition-colors {{ periode == key ? 'bg-primary text-primary-foreground font-medium' : 'text-muted-foreground hover:bg-muted' }}">
+                {{ label }}
+            </a>
+            {% endfor %}
+        </div>
+
+        <div class="card p-5 mb-3">
+            <p class="text-xs text-muted-foreground">Recette de la gare · {{ periodes[periode]|lower }}</p>
+            <p class="text-3xl font-semibold tabular-nums">{{ stats.recetteTotale|number_format(0, ',', ' ') }} <span class="text-sm text-muted-foreground">FCFA</span></p>
+            <p class="text-xs text-muted-foreground mt-1">
+                Billets {{ stats.billets.recette|number_format(0, ',', ' ') }}
+                · Courriers {{ stats.courriers.recette|number_format(0, ',', ' ') }}
+                · Bagages {{ stats.bagages.recette|number_format(0, ',', ' ') }}
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="card p-4">
+                <p class="text-xs text-muted-foreground">Billets émis</p>
+                <p class="text-2xl font-semibold tabular-nums">{{ stats.billets.count }}</p>
+                <p class="text-xs text-muted-foreground">{{ stats.billets.recette|number_format(0, ',', ' ') }} F</p>
+            </div>
+            <div class="card p-4">
+                <p class="text-xs text-muted-foreground">Courriers déposés</p>
+                <p class="text-2xl font-semibold tabular-nums">{{ stats.courriers.count }}</p>
+                <p class="text-xs text-muted-foreground">{{ stats.courriers.recette|number_format(0, ',', ' ') }} F</p>
+            </div>
+            <div class="card p-4">
+                <p class="text-xs text-muted-foreground">Bagages enregistrés</p>
+                <p class="text-2xl font-semibold tabular-nums">{{ stats.bagages.count }}</p>
+                <p class="text-xs text-muted-foreground">{{ stats.bagages.recette|number_format(0, ',', ' ') }} F</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# Informations #}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="card p-4">
+            <p class="text-sm font-light text-muted-foreground mb-1">Chef de gare</p>
+            <p class="font-semibold">{{ gare.chefgare ?: '—' }}</p>
+        </div>
+        <div class="card p-4">
+            <p class="text-sm font-light text-muted-foreground mb-1">Ville</p>
+            <p class="font-semibold">{{ gare.ville ?: '—' }}</p>
+        </div>
+        <div class="card p-4">
+            <p class="text-sm font-light text-muted-foreground mb-1">Libellé</p>
+            <p class="font-semibold">{{ gare.libelle }}</p>
+        </div>
+        <div class="card p-4">
+            <p class="text-sm font-light text-muted-foreground mb-1">Contact 1</p>
+            <p class="font-semibold">{{ gare.contact1 ?: '—' }}</p>
+        </div>
+        <div class="card p-4">
+            <p class="text-sm font-light text-muted-foreground mb-1">Contact 2</p>
+            <p class="font-semibold">{{ gare.contact2 ?: '—' }}</p>
+        </div>
+        {% if gare.datecreation is defined and gare.datecreation %}
+        <div class="card p-4">
+            <p class="text-sm font-light text-muted-foreground mb-1">Date de création</p>
+            <p class="font-semibold">{{ gare.datecreation|date('d/m/Y') }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if gare.description %}
+    <div class="card p-4 mb-6">
+        <p class="text-sm font-light text-muted-foreground mb-1">Description</p>
+        <p class="font-semibold">{{ gare.description }}</p>
+    </div>
+    {% endif %}
+
+    {# Agents rattachés à la gare #}
+    {% if is_granted('USER_VOIR') or is_granted('ROLE_SUPER_ADMIN') %}
+    <div class="card p-4">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Agents de la gare</h2>
+            <span class="text-xs text-muted-foreground">{{ users|length }} agent(s)</span>
+        </div>
+        {% if users|length > 0 %}
+        <div class="overflow-hidden rounded-lg border">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-muted-foreground border-b bg-muted/40">
+                        <th class="px-4 py-2.5 font-medium">Nom</th>
+                        <th class="px-4 py-2.5 font-medium">Email</th>
+                        <th class="px-4 py-2.5 font-medium">Rôle</th>
+                        <th class="px-4 py-2.5 font-medium text-center">Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr class="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                        <td class="px-4 py-2.5 font-medium">{{ u.prenom }} {{ u.nom }}</td>
+                        <td class="px-4 py-2.5 text-muted-foreground">{{ u.email }}</td>
+                        <td class="px-4 py-2.5">
+                            {% if u.founder %}
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">👑 Fondateur</span>
+                            {% elseif 'ROLE_ADMIN_GARE' in u.roles %}
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Admin de gare</span>
+                            {% elseif 'ROLE_ADMIN' in u.roles %}
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Admin</span>
+                            {% else %}
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">Utilisateur</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-2.5 text-center">
+                            <span class="text-xs px-2 py-0.5 rounded-full {{ u.statut == 'ACTIF' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                {{ u.statut == 'ACTIF' ? 'Actif' : 'Suspendu' }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-sm text-muted-foreground py-4 text-center">Aucun agent rattaché à cette gare.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

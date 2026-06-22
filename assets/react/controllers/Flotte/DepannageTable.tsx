@@ -26,17 +26,24 @@ type Props = {
     canEdit: boolean
     canDelete: boolean
     csrfDelete: string
+    csrfAnnuler: string
 }
 
 const statut = (statut: string) => {
     const cfg: Record<string, string> = {
         'EN COURS': 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
-        CLOTURE: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300'
+        CLOTURE: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
+        ANNULE: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+    }
+    const labels: Record<string, string> = {
+        'EN COURS': 'En cours',
+        CLOTURE: 'Clôturé',
+        ANNULE: 'Annulé',
     }
 
     return (
         <Badge className={`${cfg[statut] ?? "bg-gray-100 text-gray-600"}`}>
-            {statut === "CLOTURE" ? "Clôturer" : "En cours"}
+            {labels[statut] ?? statut}
         </Badge>
     )
 }
@@ -47,7 +54,8 @@ function buildColumns(
     getSortState: (f: string) => 'asc' | 'desc' | false,
     canEdit: boolean,
     canDelete: boolean,
-    csrfDelete: string
+    csrfDelete: string,
+    csrfAnnuler: string
 ): ColumnDef<Depannage>[] {
 
     const sortUrls = (field: string) => ({
@@ -192,6 +200,28 @@ function buildColumns(
                                         </form>
                                     </DropdownMenuItem>
                                 )}
+                                {canEdit && <DropdownMenuSeparator />}
+                                {canEdit && (
+                                    <DropdownMenuItem asChild>
+                                        <form
+                                            method="POST"
+                                            action={`/depannage/${depannage.id}/annuler`}
+                                            onSubmit={(e) => {
+                                                if(!confirm("Annuler ce dépannage ? Le stock des pièces sera restauré.")) {
+                                                    e.preventDefault()
+                                                }
+                                            }}
+                                        >
+                                            <input type="hidden" name="_token" value={csrfAnnuler} />
+                                            <button
+                                                type="submit"
+                                                className="w-full text-left text-orange-600 focus:text-orange-700"
+                                            >
+                                                Annuler le dépannage
+                                            </button>
+                                        </form>
+                                    </DropdownMenuItem>
+                                )}
                             </>}
 
                             {canDelete && <DropdownMenuSeparator />}
@@ -231,13 +261,14 @@ export default function DepannageTable({
     cars,
     canEdit,
     canDelete,
-    csrfDelete
+    csrfDelete,
+    csrfAnnuler
 }: Props) {
 
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete),
-        [queryParams, canEdit, canDelete, csrfDelete]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete, csrfAnnuler),
+        [queryParams, canEdit, canDelete, csrfDelete, csrfAnnuler]
     )
     const filters: ServerTableFilter[] = useMemo(() => [
         {

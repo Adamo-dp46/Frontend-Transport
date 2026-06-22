@@ -1,42 +1,21 @@
 {% extends 'base.html.twig' %}
+{% import 'home/_stats.html.twig' as s %}
 
-{% block title %}Agent{% endblock %}
+{% block title %}Agents{% endblock %}
 
 {% block body %}
-<div class="flex items-start justify-between gap-4 max-sm:flex-col mb-6">
-    <div>
-        <h1 class="text-4xl font-light tracking-[-0.55px] leading-[1.2]">Billetterie</h1>
-    </div>
-    <form method="get" action="{{ path('billetterie') }}" class="flex items-center gap-2 shrink-0 max-sm:w-full">
-        <input type="date" name="debut" value="{{ debut }}" class="input input-sm" />
-        <span class="text-muted-foreground text-sm">→</span>
-        <input type="date" name="fin" value="{{ fin }}" class="input input-sm" />
-        <button type="submit" class="bg-blue-900 p-2 rounded-2xl">
-            Filtrer
-        </button>
-    </form>
-</div>
+{{ s.pageHeader('Agents', 'Performance', 'agent', debut, fin) }}
 
 <section class="mb-10">
-    <h2 class="text-lg font-medium mb-4">Agents</h2>
-
-    {# KPI #}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div class="card p-4">
-            <p class="text-xs text-muted-foreground mb-1">Total agents</p>
-            <p class="text-2xl font-semibold">{{ agents.totalAgents }}</p>
-        </div>
-        <div class="card p-4">
-            <p class="text-xs text-muted-foreground mb-1">Actifs sur la période</p>
-            <p class="text-2xl font-semibold">{{ agents.agentsActifs }}</p>
-        </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {{ s.kpi('Total agents', agents.totalAgents, '', 'blue', 'users') }}
+        {{ s.kpi('Actifs sur la période', agents.agentsActifs, '', 'emerald', 'check') }}
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
         {# Classement par recette — barres horizontales #}
-        <div class="card p-4">
-            <p class="text-sm font-medium mb-3">Classement par recette</p>
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Classement par recette</p>
             <canvas id="chartAgentsRecette" height="160"
                 data-values="{{ agents.performances | map(a => {
                     label: a.prenom ~ ' ' ~ a.nom,
@@ -48,8 +27,8 @@
         </div>
 
         {# Tableau performances #}
-        <div class="card p-4">
-            <p class="text-sm font-medium mb-3">Détail performances</p>
+        <div class="card p-5">
+            <p class="text-sm font-medium text-muted-foreground mb-4">Détail performances</p>
             <table class="w-full text-sm">
                 <thead>
                     <tr class="text-left text-muted-foreground border-b">
@@ -63,10 +42,10 @@
                     {% for a in agents.performances %}
                     <tr class="border-b last:border-0">
                         <td class="py-2">{{ a.prenom }} {{ a.nom }}</td>
-                        <td class="py-2 text-right">{{ a.nbtickets }}</td>
-                        <td class="py-2 text-right">{{ a.recette | number_format(0, ',', ' ') }} FCFA</td>
+                        <td class="py-2 text-right tabular-nums">{{ a.nbtickets }}</td>
+                        <td class="py-2 text-right tabular-nums">{{ a.recette | number_format(0, ',', ' ') }} FCFA</td>
                         <td class="py-2 text-right">
-                            <span class="text-xs px-2 py-0.5 rounded-full {{ a.actif ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
+                            <span class="text-xs px-2 py-0.5 rounded-full {{ a.actif ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400' }}">
                                 {{ a.actif ? 'Actif' : 'Inactif' }}
                             </span>
                         </td>
@@ -75,7 +54,6 @@
                 </tbody>
             </table>
         </div>
-
     </div>
 </section>
 {% endblock %}

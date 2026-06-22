@@ -49,15 +49,22 @@
 
                 <nav class="sidebar-nav">
                     <div class="sidebar-section">
-                        <div class="sb-section-title">Principal</div>
-
                         {% if not is_granted('ROLE_SUPER_ADMIN') %}
+                        <div class="sb-section-title">Principal</div>
                         <a href="{{ path('home') }}" class="nav-link {{ app.current_route starts with 'home' ? 'active' : '' }}" data-nav data-tooltip="Dashboard">
                             <svg class="nav-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#dashbord"></use></svg>
                             <span class="sb-text">Tableau de bord</span>
                         </a>
                         {% endif %}
 
+                        {% if app.user and app.user.gare %}
+                        <a href="{{ path('gare.me') }}" class="nav-link {{ app.current_route == 'gare.me' ? 'active' : '' }}" data-nav data-tooltip="Ma gare" title="Ma gare">
+                            <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg>
+                            <span class="sb-text">Ma gare</span>
+                        </a>
+                        {% endif %}
+
+                        {% if is_granted('TYPEPIECE_VOIR') or is_granted('MARQUEPIECE_VOIR') or is_granted('MODEL_VOIR') or is_granted('FOURNISSEUR_VOIR') or is_granted('PIECE_VOIR') or is_granted('APPROVISIONNEMENT_VOIR') %}
                         <button class="nav-link" data-submenu="sub-stock" title="Stock & Approvisionnement"> {# On peut mettre un lien 'a' #}
                             <svg class="nav-icon" aria-hidden="true">
                                 <use href="{{ asset('sprite.svg') }}#stock"></use>
@@ -100,7 +107,9 @@
                                 {% endif %}
                             </div>
                         </div>
+                        {% endif %}
 
+                        {% if is_granted('MARQUE_VOIR') or is_granted('MODELVEHICULE_VOIR') or is_granted('TYPEVEHICULE_VOIR') or is_granted('CAR_VOIR') or is_granted('TYPEPANNE_VOIR') or is_granted('DEPANNAGE_VOIR') %}
                         <button class="nav-link" data-submenu="sub-flotte" title="Flotte & Maintenance">
                             <svg class="nav-icon" aria-hidden="true">
                                 <use href="{{ asset('sprite.svg') }}#flotte"></use>
@@ -142,7 +151,9 @@
                                 {% endif %}
                             </div>
                         </div>
+                        {% endif %}
 
+                        {% if is_granted('GARE_VOIR') or is_granted('TARIFBAGAGE_VOIR') or is_granted('LIGNE_VOIR') or is_granted('TARIF_VOIR') or is_granted('VOYAGE_VOIR') or is_granted('BAGAGE_VOIR') %}
                         <button class="nav-link" data-submenu="sub-exploitation" title="Exploitation">
                             <svg class="nav-icon" aria-hidden="true">
                                 <use href="{{ asset('sprite.svg') }}#exploitation"></use>
@@ -157,24 +168,29 @@
                                     <span class="sub-dot"></span>Gares
                                 </a>
                                 {% endif %}
+                                {% if is_granted('LIGNE_VOIR') %}
+                                <a href="{{ path('ligne.index') }}" class="sub-link {{ app.current_route starts with 'ligne.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Lignes
+                                </a>
+                                {% endif %}
                                 {% if is_granted('TARIF_VOIR') %}
                                 <a href="{{ path('tarif.index') }}" class="sub-link {{ app.current_route starts with 'tarif.' ? 'active' : '' }}" data-subnav>
-                                    <span class="sub-dot"></span>Tarifs de trajet
-                                </a>
-                                {% endif %}
-                                {% if is_granted('TARIFBAGAGE_VOIR') %}
-                                <a href="{{ path('tarifbagage.index') }}" class="sub-link {{ app.current_route starts with 'tarifbagage.' ? 'active' : '' }}" data-subnav>
-                                    <span class="sub-dot"></span>Trarif de bagage
-                                </a>
-                                {% endif %}
-                                {% if is_granted('TRAJET_VOIR') %}
-                                <a href="{{ path('trajet.index') }}" class="sub-link {{ app.current_route starts with 'trajet.' ? 'active' : '' }}" data-subnav>
-                                    <span class="sub-dot"></span>Trajets
+                                    <span class="sub-dot"></span>Grille tarifaire
                                 </a>
                                 {% endif %}
                                 {% if is_granted('VOYAGE_VOIR') %}
                                 <a href="{{ path('voyage.index') }}" class="sub-link {{ app.current_route starts with 'voyage.' ? 'active' : '' }}" data-subnav>
                                     <span class="sub-dot"></span>Voyages
+                                </a>
+                                {% endif %}
+                                {% if is_granted('VOYAGE_VOIR') %}
+                                <a href="{{ path('bordereau.index') }}" class="sub-link {{ app.current_route starts with 'bordereau.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Bordereau
+                                </a>
+                                {% endif %}
+                                {% if is_granted('TARIFBAGAGE_VOIR') %}
+                                <a href="{{ path('tarifbagage.index') }}" class="sub-link {{ app.current_route starts with 'tarifbagage.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Trarif de bagage
                                 </a>
                                 {% endif %}
                                 {% if is_granted('BAGAGE_VOIR') %}
@@ -184,7 +200,9 @@
                                 {% endif %}
                             </div>
                         </div>
+                        {% endif %}
 
+                        {% if is_granted('TICKET_VOIR') or is_granted('BENEFICIAIRE_VOIR') %}
                         <button class="nav-link" data-submenu="sub-billetterie" title="Billetterie">
                             <svg class="nav-icon" aria-hidden="true">
                                 <use href="{{ asset('sprite.svg') }}#billetterie"></use>
@@ -199,14 +217,16 @@
                                     <span class="sub-dot"></span>Tickets
                                 </a>
                                 {% endif %}
-                                {% if is_granted('VOYAGE_VOIR') %}
-                                <a href="{{ path('bordereau.index') }}" class="sub-link {{ app.current_route starts with 'bordereau.' ? 'active' : '' }}" data-subnav>
-                                    <span class="sub-dot"></span>Bordereau
+                                {% if is_granted('BENEFICIAIRE_VOIR') %}
+                                <a href="{{ path('beneficiaire.index') }}" class="sub-link {{ app.current_route starts with 'beneficiaire.' ? 'active' : '' }}" data-subnav>
+                                    <span class="sub-dot"></span>Bénéficiaires
                                 </a>
                                 {% endif %}
                             </div>
                         </div>
+                        {% endif %}
 
+                        {% if is_granted('TARIFCOURRIER_VOIR') or is_granted('COURRIER_VOIR') %}
                         <button class="nav-link" data-submenu="sub-courrier" title="Courrier">
                             <svg class="nav-icon" aria-hidden="true">
                                 <use href="{{ asset('sprite.svg') }}#courrier"></use>
@@ -228,6 +248,7 @@
                                 {% endif %}
                             </div>
                         </div>
+                        {% endif %}
 
                         {% if is_granted('INVENTAIRE_VOIR') %}
                         <a href="{{ path('inventaire.index') }}" class="nav-link {{ app.current_route starts with 'inventaire.' ? 'active' : '' }}" data-nav title="Historique des mouvements">
@@ -250,7 +271,7 @@
 
                     <div class="sidebar-section">
                         <div class="sb-section-title">Ressources humaines</div>
-
+                        {% if is_granted('TYPEPERSONNEL_VOIR') or is_granted('PERSONNEL_VOIR') %}
                         <button class="nav-link" data-submenu="sub-personnel" title="Personnel">
                             <svg class="nav-icon" aria-hidden="true">
                                 <use href="{{ asset('sprite.svg') }}#personnel"></use>
@@ -272,7 +293,9 @@
                                 {% endif %}
                             </div>
                         </div>
+                        {% endif %}
 
+                        {% if is_granted('ROLE_VOIR') or is_granted('USER_VOIR') or is_granted('ROLE_SUPER_ADMIN') or is_granted('ROLE_ADMIN') %}
                         <button class="nav-link" data-submenu="sub-admin" title="Administration">
                             <svg class="nav-icon" aria-hidden="true">
                                 <use href="{{ asset('sprite.svg') }}#admin"></use>
@@ -303,6 +326,7 @@
                                 {% endif %}
                             </div>
                         </div>
+                        {% endif %}
                     </div>
                 </nav>
 
@@ -359,18 +383,11 @@
                                 <use href="{{ asset('sprite.svg') }}#panel-left"></use>
                             </svg>
                         </button>
-                        {#
-                            <nav class="breadcrumb">
-                                <a class="breadcrumb-parent" href="{{ path('home') }}">Accueil</a>
-                                <svg class="breadcrumb-sep" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                                <span class="breadcrumb-current">Dashboard</span>
-                            </nav>
-                            <div class="topbar-search">
-                                <svg class="search-icon-top" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                                <input type="text" placeholder="Search..." id="searchInput"/>
-                                <div class="search-kbd-top"><kbd>⌘</kbd><kbd>K</kbd></div>
-                            </div>
-                        #}
+                        <div class="topbar-search">
+                            <svg class="search-icon-top" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                            <input type="text" placeholder="Search..." id="searchInput"/>
+                            <div class="search-kbd-top"><kbd>⌘</kbd><kbd>K</kbd></div>
+                        </div>
                     </div>
                     <div class="topbar-right">
                         {#

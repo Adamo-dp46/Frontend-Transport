@@ -15,7 +15,10 @@
 <div {{ react_component('Billetterie/TicketForm', {
         voyages: voyages,
         gares: gares,
-        preselectVoyageId: preselect_voyage ?? 0
+        beneficiaires: beneficiaires,
+        preselectVoyageId: preselect_voyage ?? 0,
+        userGareId: userGareId,
+        userGareLibelle: userGareLibelle
     }) }}
 >
     <div class="flex items-center justify-center gap-6">

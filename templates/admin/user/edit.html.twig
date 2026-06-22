@@ -13,5 +13,5 @@
         <h1 class="text-3xl font-light tracking-[-0.55px] leading-[1.2]">Modifier l'utilisateur - <span class="font-semibold">{{ user.prenom }} {{ user.nom }}</span></h1>
     </div>
 </div>
-{% include 'admin/user/_form.html.twig' with {button: 'Modifier'} %}
+{% include 'admin/user/_form.html.twig' with {button: 'Modifier', isAdminGare: isAdminGare} %}
 {% endblock %}

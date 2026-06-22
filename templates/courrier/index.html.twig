@@ -24,7 +24,9 @@
     gares: gares,
     canEdit: is_granted('COURRIER_MODIFIER'),
     canDelete: is_granted('COURRIER_SUPPRIMER'),
-    csrfDelete: csrf_token('delete_courrier')
+    csrfDelete: csrf_token('delete_courrier'),
+    userGareId: app.user.gare ? app.user.gare.id : null,
+    isAdmin: is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN')
 }) }} class="mb-3">
     <div class="flex items-center justify-center gap-6">
         <twig:Spinner class="size-8" />

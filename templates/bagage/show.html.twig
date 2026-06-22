@@ -38,13 +38,13 @@
             Ticket de pesée
         </a>
         {% endif %}
-        {% if is_granted('BAGAGE_MODIFIER') and bagage.statut not in ['LIVRE', 'PERDU'] %}
+        {% if is_granted('BAGAGE_MODIFIER') and bagage.statut not in ['LIVRE', 'PERDU'] and peutAgir %}
         <a href="{{ path('bagage.edit', { id: bagage.id }) }}" class="btn btn-primary">
             <svg class="nav-item-icon" aria-hidden="true"><use href="{{ asset('sprite.svg') }}#edit"></use></svg>
             Modifier
         </a>
         {% endif %}
-        {% if is_granted('BAGAGE_SUPPRIMER') and bagage.statut == 'ENREGISTRE' %}
+        {% if is_granted('BAGAGE_SUPPRIMER') and bagage.statut == 'ENREGISTRE' and peutAgir %}
         <form method="POST" action="{{ path('bagage.delete', { id: bagage.id }) }}" class="inline"
               onsubmit="return confirm('Supprimer ce bagage ?')">
             <button type="submit" class="btn btn-danger">Supprimer</button>
@@ -94,6 +94,24 @@
             </p>
         {% else %}
             <p class="text-sm text-muted-foreground">Aucun</p>
+        {% endif %}
+    </div>
+    <div class="card p-4">
+        <p class="text-sm font-light text-muted-foreground mb-3">Gare de départ</p>
+        {% if bagage.garedepart %}
+            <p class="font-semibold">{{ bagage.garedepart.libelle }}</p>
+            {% if bagage.garedepart.ville %}<p class="text-sm text-muted-foreground">{{ bagage.garedepart.ville }}</p>{% endif %}
+        {% else %}
+            <p class="text-sm text-muted-foreground">Non définie</p>
+        {% endif %}
+    </div>
+    <div class="card p-4">
+        <p class="text-sm font-light text-muted-foreground mb-3">Gare de descente</p>
+        {% if bagage.garedescente %}
+            <p class="font-semibold">{{ bagage.garedescente.libelle }}</p>
+            {% if bagage.garedescente.ville %}<p class="text-sm text-muted-foreground">{{ bagage.garedescente.ville }}</p>{% endif %}
+        {% else %}
+            <p class="text-sm text-muted-foreground">Non définie</p>
         {% endif %}
     </div>
     <div class="card p-4">

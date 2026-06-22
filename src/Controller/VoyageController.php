@@ -30,26 +30,6 @@ final class VoyageController extends AbstractController
     {
     }
 
-    private function resolveGareLibelle(array $gares, mixed $gareId): string
-    {
-        foreach($gares as $g) {
-            if((string) $g['id'] === (string) $gareId) {
-                return $g['libelle'];
-            }
-        }
-        return '';
-    }
-
-    private function resolveGareId(array $gares, string $libelle): ?int
-    {
-        foreach($gares as $g) {
-            if($g['libelle'] === $libelle) {
-                return (int) $g['id'];
-            }
-        }
-        return null;
-    }
-
     #[Route('', name: 'index', methods: ['GET'])]
     #[IsGranted('VOYAGE_VOIR')]
     public function index(Request $request): Response
@@ -57,7 +37,7 @@ final class VoyageController extends AbstractController
         $data = $this->tableHelper->handleIndex('/api/voyages',  $request->query->all(),
             [
                 'search' => 'codevoyage',
-                'trajet' => 'trajet.id',
+                'ligne' => 'ligne.id',
                 'car' => 'car.id',
                 'date_from' => 'datedebut[after]',
                 'date_to' => 'datedebut[before]',
@@ -71,7 +51,7 @@ final class VoyageController extends AbstractController
                 'createdAt'
             ],
             [
-                'trajets' => $this->api->collection('/api/trajets'),
+                'lignes' => $this->api->collection('/api/lignes'),
                 'cars' => $this->api->collection('/api/cars')
             ]
         );
@@ -85,7 +65,9 @@ final class VoyageController extends AbstractController
     {
         try {
             $voyage = $this->api->item('/api/voyages/' . $id);
-            $tickets = $this->api->collection('/api/tickets?voyage=' . $id); // Ou.. 'urlencode('/api/voyages/' . $id)'
+            // itemsPerPage élevé : on veut TOUS les tickets du voyage (sinon paginés à 25).
+            // statut=VALIDE : les billets désistés (reportés/annulés) ne comptent ni dans la recette ni dans l'occupation.
+            $tickets = $this->api->collection('/api/tickets', ['voyage' => $id, 'statut' => 'VALIDE', 'itemsPerPage' => 500]);
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'voyage.index');
             if($response) {
@@ -96,13 +78,94 @@ final class VoyageController extends AbstractController
         // Calcul recette côté Symfony
         $recette = array_sum(array_column($tickets, 'prix'));
         $nbrTickets = count($tickets);
-        $tauxRemplissage = $voyage['placestotal'] > 0 ? round(($voyage['placesoccupees'] / $voyage['placestotal']) * 100) : 0;
+        $placestotal = (int)($voyage['placestotal'] ?? 0);
+
+        // ── Occupation PAR TRONÇON ─────────────────────────────────────────
+        // On récupère les arrêts ordonnés de la ligne pour situer chaque ticket
+        $ordreParGare = [];
+        $labelsParOrdre = []; // ordre => libellé gare
+        try {
+            if(!empty($voyage['ligne']['id'])) {
+                $ligne = $this->api->item('/api/lignes/' . $voyage['ligne']['id']);
+                foreach($ligne['arrets'] ?? [] as $a) {
+                    $ordreParGare[$a['gare']['id']] = $a['ordre'];
+                    $labelsParOrdre[$a['ordre']] = $a['gare']['libelle'];
+                }
+                ksort($labelsParOrdre);
+            }
+        } catch(ApiException) {
+            // ligne indisponible -> repli plus bas
+        }
+
+        $segments = [];      // [{depart, arrivee, occupees, taux}]
+        $picOccupation = 0;  // tronçon le plus chargé
+
+        if(count($labelsParOrdre) >= 2) {
+            $ordres = array_keys($labelsParOrdre);
+            $maxOrdre = (int) end($ordres);
+            $labels = array_values($labelsParOrdre);
+
+            // Un ticket [montée, descente) couvre les segments montée..descente-1
+            $occSegment = array_fill(0, $maxOrdre, 0);
+            foreach($tickets as $t) {
+                $m = $ordreParGare[$t['gare']['id'] ?? null] ?? null;
+                $d = !empty($t['garedescente']['id'])
+                    ? ($ordreParGare[$t['garedescente']['id']] ?? $maxOrdre)
+                    : $maxOrdre; // ancien ticket sans descente = jusqu'au terminus
+                if($m === null) {
+                    continue;
+                }
+                for($i = $m; $i < $d; $i++) {
+                    if(isset($occSegment[$i])) {
+                        $occSegment[$i]++;
+                    }
+                }
+            }
+
+            for($i = 0; $i < $maxOrdre; $i++) {
+                $occ = $occSegment[$i] ?? 0;
+                $segments[] = [
+                    'depart' => $labels[$i] ?? '?',
+                    'arrivee' => $labels[$i + 1] ?? '?',
+                    'occupees' => $occ,
+                    'taux' => $placestotal > 0 ? (int) round(($occ / $placestotal) * 100) : 0,
+                ];
+                $picOccupation = max($picOccupation, $occ);
+            }
+        } else {
+            // Pas d'info ligne (repli) : on compte les tickets
+            $picOccupation = $nbrTickets;
+        }
+
+        $placesRestantes = max(0, $placestotal - $picOccupation);
+        $tauxRemplissage = $placestotal > 0 ? (int) round(($picOccupation / $placestotal) * 100) : 0;
 
         return $this->render('voyage/show.html.twig', [
             'voyage' => $voyage,
             'recette' => $recette,
             'nbr_tickets' => $nbrTickets,
-            'taux_remplissage' => $tauxRemplissage
+            'taux_remplissage' => $tauxRemplissage,
+            'places_occupees' => $picOccupation,
+            'places_restantes' => $placesRestantes,
+            'segments' => $segments
+        ]);
+    }
+
+    #[Route('/{id}/manifeste', name: 'manifeste', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('VOYAGE_VOIR')]
+    public function manifeste(int $id): Response
+    {
+        try {
+            $manifeste = $this->api->item('/api/voyages/' . $id . '/manifeste');
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e, null, 'voyage.show', ['id' => $id]);
+            if($response) {
+                return $response;
+            }
+        }
+
+        return $this->render('voyage/manifeste.html.twig', [
+            'm' => $manifeste,
         ]);
     }
 
@@ -111,30 +174,26 @@ final class VoyageController extends AbstractController
     public function new(Request $request): Response
     {
         try {
-            $gares = $this->api->collection('/api/gares');
-            $trajets = $this->api->collection('/api/trajets');
+            $lignes = $this->api->collection('/api/lignes');
             $cars = $this->api->get('/api/cars', ['etat' => 'DISPONIBLE']);
         } catch(ApiException $e) {
-            $response = $this->apiExceptionHandler->handle($e, null, 'trajet.index');
+            $response = $this->apiExceptionHandler->handle($e, null, 'voyage.index');
             if($response) {
                 return $response;
             }
         }
 
-        $refs = [
-            'gares' => $gares,
-            'trajets' => $trajets,
+        $form = $this->createForm(VoyageFormType::class, null, [
+            'lignes' => $lignes,
             'cars' => $cars['member']
-        ];
-        $form = $this->createForm(VoyageFormType::class, null, $refs);
+        ]);
         $form->handleRequest($request);
 
         if($form->isSubmitted() && $form->isValid()) {
+            // provenance/destination sont dérivés de la ligne côté backend (VoyageProcessor)
             $payload = [
-                'provenance' => $this->resolveGareLibelle($refs['gares'], $form->get('provenance')->getData()),
-                'destination' => $this->resolveGareLibelle($refs['gares'], $form->get('destination')->getData()),
                 'datedebut' => $form->get('datedebut')->getData()?->format('Y-m-d\TH:i:s.v\Z'),
-                'trajet' => '/api/trajets/' . $form->get('trajet')->getData()
+                'ligne' => '/api/lignes/' . $form->get('ligne')->getData()
             ];
 
             $carId = $form->get('car')->getData();
@@ -164,11 +223,9 @@ final class VoyageController extends AbstractController
     public function edit(int $id, Request $request): Response
     {
         $cars = [];
-        $gares = [];
         try {
             $voyage = $this->api->item('/api/voyages/' . $id);
             $cars = $this->api->get('/api/cars', ['etat' => 'DISPONIBLE']);
-            $gares = $this->api->collection('/api/gares');
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'voyage.index');
             if($response) {
@@ -188,25 +245,19 @@ final class VoyageController extends AbstractController
             }
         }
         $defaultData = [ /*
-            - Pour pré-remplir avec les valeurs actuelles
+            - Pré-remplissage ; provenance/destination dérivent de la ligne (non éditables)
         */
-            'provenance' => $this->resolveGareId($gares, $voyage['provenance'] ?? ''),
-            'destination' => $this->resolveGareId($gares, $voyage['destination'] ?? ''),
             'datedebut' => new \DateTimeImmutable($voyage['datedebut']),
             'car' => $voyage['car']['id'] ?? null
         ];
 
         $form = $this->createForm(VoyageEditFormType::class, $defaultData, [
-            'cars' => $cars['member'],
-            'gares' => $gares
+            'cars' => $cars['member']
         ]);
         $form->handleRequest($request);
 
         if($form->isSubmitted() && $form->isValid()) {
-            $data = $form->getData();
             $payload = [
-                'provenance' => $this->resolveGareLibelle($gares, (int)$data['provenance']),
-                'destination' => $this->resolveGareLibelle($gares, (int)$data['destination']),
                 'datedebut' => $form->get('datedebut')->getData()?->format('Y-m-d\TH:i:s.v\Z')
             ];
             $carId = $form->get('car')->getData();
@@ -274,6 +325,24 @@ final class VoyageController extends AbstractController
             'form' => $form,
             'voyage' => $voyage
         ]);
+    }
+
+    #[Route('/{id}/receptionner', name: 'receptionner', methods: ['POST'], requirements: ['id' => Requirement::DIGITS])]
+    #[IsGranted('ROLE_USER')]
+    public function receptionner(int $id, Request $request): Response
+    {
+        if ($this->isCsrfTokenValid('receptionner_voyage', $request->request->get('_token'))) {
+            try {
+                $this->api->patch('/api/voyages/' . $id . '/receptionner');
+                $this->addFlash('success', 'Voyage réceptionné à votre gare : les courriers et bagages qui y descendent ont été mis à jour');
+            } catch (ApiException $e) {
+                $response = $this->apiExceptionHandler->handle($e, null, 'voyage.show', ['id' => $id]);
+                if ($response) {
+                    return $response;
+                }
+            }
+        }
+        return $this->redirectToRoute('voyage.show', ['id' => $id]);
     }
 
     #[Route('/{id}/car', name: 'affect.car', methods: ['GET', 'POST'], requirements: ['id' => Requirement::DIGITS])]

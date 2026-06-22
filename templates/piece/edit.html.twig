@@ -3,6 +3,7 @@
 {% block title %}Modifier - {{ piece.libelle }}{% endblock %}
 
 {% block body %}
+{% import 'form/_macros.html.twig' as ui %}
 <div class="flex items-center gap-3 mb-4">
     <a href="{{ path('piece.index') }}" class="btn-icon">
         <svg class="h-5 w-5" aria-hidden="true" width="14" height="14">
@@ -21,9 +22,9 @@
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>{{ form_row(form.libelle) }}</div>
                     <div>{{ form_row(form.prixunitaire) }}</div>
-                    <div>{{ form_row(form.typepiece) }}</div>
-                    <div>{{ form_row(form.marquepiece) }}</div>
-                    <div>{{ form_row(form.model) }}</div>
+                    <div>{{ ui.fieldWithCreate(form.typepiece, 'typepiece', 'Nouveau type', 'TYPEPIECE_CREER') }}</div>
+                    <div>{{ ui.fieldWithCreate(form.marquepiece, 'marquepiece', 'Nouvelle marque', 'MARQUEPIECE_CREER') }}</div>
+                    <div>{{ ui.fieldWithCreate(form.model, 'model', 'Nouveau modèle', 'MODEL_CREER') }}</div>
                 </div>
             </div>
             <div class="flex flex-col gap-4">
@@ -35,7 +36,7 @@
                 {% endif %}
             </div>
         </div>
-        <div class="flex items-center justify-end gap-3">
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
             <a href="{{ path('piece.index') }}" class="btn btn-secondary">Annuler</a>
             <button class="btn btn-primary">
                 Modifier
@@ -43,4 +44,6 @@
         </div>
     {{ form_end(form) }}
 </div>
+
+{% include 'form/_quick_create_modal.html.twig' %}
 {% endblock %}

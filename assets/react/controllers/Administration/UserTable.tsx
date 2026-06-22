@@ -22,13 +22,44 @@ type Props = {
     queryParams: Record<string, string>
     canEdit: boolean
     currentUserId: number // Pour empêcher l'auto suspension
+    currentUserGareId: number | null // gare de l'acteur (périmètre)
+    isAdmin: boolean // ROLE_ADMIN entreprise
     csrfDelete: string
     apiUrl: string
     isSuperAdmin: boolean
+    canSuspend: boolean // peut suspendre : ROLE_ADMIN / SUPER / ADMIN_GARE (pas un simple USER_MODIFIER)
     // currentUserRoles: string[]
     canPromouvoirAdminGare: boolean // true si ROLE_ADMIN
     csrfPromouvoirAdminGare: string
     currentUserIsFounder?: boolean
+    canFilterGare?: boolean // filtre gare visible seulement pour l'admin entreprise
+    gares?: { id: number; libelle: string; ville?: string }[]
+}
+
+/**
+ * Périmètre de gestion (édition / suspension) — miroir frontend du UserManagementGuard backend.
+ * super admin : tout ; admin entreprise : admins de gare + utilisateurs ; admin de gare / utilisateur :
+ * uniquement les utilisateurs SIMPLES de SA gare. Jamais soi-même, ni le fondateur, ni un admin entreprise.
+ */
+function canManageUser(
+    target: User,
+    currentUserId: number,
+    isSuperAdmin: boolean,
+    currentIsAdmin: boolean,
+    currentUserGareId: number | null
+): boolean {
+    if (target.id === currentUserId) return false
+    if (isSuperAdmin) return true
+    if (target.isFounder) return false
+    if (target.roles.includes('ROLE_ADMIN')) return false
+    if (currentIsAdmin) return true
+    // Acteur non-admin rattaché à une gare : utilisateurs simples de SA gare uniquement
+    if (currentUserGareId) {
+        if (target.roles.includes('ROLE_ADMIN_GARE')) return false
+        return !!target.gare && target.gare.id === currentUserGareId
+    }
+    // Utilisateur central sans gare (avec permissions sur User) : gère tout le monde restant
+    return true
 }
 
 function buildColumns(
@@ -37,9 +68,12 @@ function buildColumns(
     getSortState: (f: string) => 'asc' | 'desc' | false,
     canEdit: boolean,
     currentUserId: number,
+    currentUserGareId: number | null,
+    currentIsAdmin: boolean,
     csrfDelete: string,
     apiUrl: string,
     isSuperAdmin: boolean,
+    canSuspend: boolean,
     // currentUserRoles: string[],
     canPromouvoirAdminGare: boolean,
     csrfPromouvoirAdminGare: string,
@@ -92,9 +126,10 @@ function buildColumns(
             id: 'role',
             header: 'Rôle',
             cell: ({ row }) => {
-                const isAdmin = row.original.roles.includes('ROLE_ADMIN')
                 const isFounder = row.original.isFounder
+                const isAdmin = row.original.roles.includes('ROLE_ADMIN')
                 const isAdminGare = row.original.roles.includes('ROLE_ADMIN_GARE')
+                const isSuperAdmin = row.original.roles.includes('ROLE_SUPER_ADMIN')
                 if(isFounder) {
                     return <Badge className="bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300">
                         👑 Fondateur
@@ -102,6 +137,9 @@ function buildColumns(
                 }
                 if(isAdminGare) {
                     return <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">Admin de gare</Badge>
+                }
+                if(isSuperAdmin) {
+                    return <Badge className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300">Super admin</Badge>
                 }
                 return isAdmin
                     ? <Badge className="bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">Admin</Badge>
@@ -148,16 +186,14 @@ function buildColumns(
                 const user = row.original
                 const isAdmin = user.roles.includes('ROLE_ADMIN')
                 const isSelf = user.id === currentUserId
-                const suspendable = !isSelf && (isSuperAdmin ? true : (canEdit && !isAdmin)) /*
-                    - Plus 'const suspendable = canEdit && !isAdmin && !isSelf' pour inclure le super admin, l'admin normal peut suspendre tous sauf un admin et le super admin peut suspendre tous sauf lui même
-                */
-                const editable = canEdit && (isSuperAdmin || !isAdmin)
                 const isAdminGare = user.roles.includes('ROLE_ADMIN_GARE')
-                const hasGare = !!user.gare /*
-                    - Pour vérifier si l'utilisateur est dans une gare
-                */
-                const promouvable = currentUserIsFounder && !isSelf && !user.isFounder && !isAdminGare /*
-                    - On ne peut pas promouvoir en administrateur entreprise si ce n'est pas le fondateur qui agit, si c'est soi même, si la cible est le fondateur et s'il est administrateur de gare
+                const hasGare = !!user.gare
+                // Périmètre de gestion aligné sur le backend (hiérarchie + périmètre gare)
+                const allowed = canManageUser(user, currentUserId, isSuperAdmin, currentIsAdmin, currentUserGareId)
+                const editable = allowed && (isSuperAdmin || canEdit)   // modification (USER_MODIFIER)
+                const suspendable = allowed && canSuspend                // suspension : admins entreprise/super/admin de gare uniquement
+                const promouvable = currentUserIsFounder && !isSelf && !user.isFounder && !isAdminGare && (isAdmin || !hasGare) /*
+                    - On ne peut pas promouvoir en administrateur entreprise si ce n'est pas le fondateur qui agit, si c'est soi même, si la cible est le fondateur, si elle est administrateur de gare, ou si elle est encore liée à une gare (il faut d'abord lui retirer sa gare). Le '(isAdmin || !hasGare)' laisse la rétrogradation possible pour un admin existant
                 */
                 const peutAdminGare = canPromouvoirAdminGare && !isSelf && !user.isFounder && !isAdmin /*
                     - On.. gare si ce n'est pas un administrateur d'entreprise qui agit, si.. et si l'utilisateur est administrateur entreprise
@@ -175,8 +211,8 @@ function buildColumns(
                                 <a href={`/admin/utilisateurs/${user.id}`}>Voir</a>
                             </DropdownMenuItem>
 
-                            {editable && !isAdmin && <DropdownMenuSeparator />}
-                            {editable && !isAdmin && (
+                            {editable &&<DropdownMenuSeparator />}
+                            {editable &&(
                                 <DropdownMenuItem asChild>
                                     <a href={`/admin/utilisateurs/${user.id}/modifier`}>Modifier</a>
                                 </DropdownMenuItem>
@@ -274,43 +310,63 @@ export default function UserTable({
     queryParams,
     canEdit,
     currentUserId,
+    currentUserGareId,
+    isAdmin,
     csrfDelete,
     apiUrl,
     isSuperAdmin,
+    canSuspend,
     currentUserIsFounder,
     canPromouvoirAdminGare,
-    csrfPromouvoirAdminGare
+    csrfPromouvoirAdminGare,
+    canFilterGare = false,
+    gares = []
 }: Props)
 {
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin, canPromouvoirAdminGare, csrfPromouvoirAdminGare, currentUserIsFounder),
-        [queryParams, canEdit, currentUserId, csrfDelete, apiUrl, isSuperAdmin, canPromouvoirAdminGare, csrfPromouvoirAdminGare, currentUserIsFounder]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, currentUserId, currentUserGareId, isAdmin, csrfDelete, apiUrl, isSuperAdmin, canSuspend, canPromouvoirAdminGare, csrfPromouvoirAdminGare, currentUserIsFounder),
+        [queryParams, canEdit, currentUserId, currentUserGareId, isAdmin, csrfDelete, apiUrl, isSuperAdmin, canSuspend, canPromouvoirAdminGare, csrfPromouvoirAdminGare, currentUserIsFounder]
     )
 
-    const filters: ServerTableFilter[] = useMemo(() => [
-        {
-            type: 'text',
-            name: 'search',
-            label: 'Nom',
-            placeholder: 'Filtrer par nom..',
-        },
-        {
-            type: 'text',
-            name: 'email',
-            label: 'Email',
-            placeholder: 'Filtrer par email..'
-        },
-        {
-            type: 'select',
-            name: 'statut',
-            label: 'Statut',
-            options: [
-                { value: 'ACTIF',    label: 'Actif' },
-                { value: 'SUSPENDU', label: 'Suspendu' }
-            ]
+    const filters: ServerTableFilter[] = useMemo(() => {
+        const base: ServerTableFilter[] = [
+            {
+                type: 'text',
+                name: 'search',
+                label: 'Nom',
+                placeholder: 'Filtrer par nom..',
+            },
+            {
+                type: 'text',
+                name: 'email',
+                label: 'Email',
+                placeholder: 'Filtrer par email..'
+            },
+            {
+                type: 'select',
+                name: 'statut',
+                label: 'Statut',
+                options: [
+                    { value: 'ACTIF',    label: 'Actif' },
+                    { value: 'SUSPENDU', label: 'Suspendu' }
+                ]
+            }
+        ]
+        // Filtre gare : réservé à l'administrateur d'entreprise
+        if (canFilterGare && gares.length > 0) {
+            base.push({
+                type: 'select',
+                name: 'gare',
+                label: 'Gare',
+                options: gares.map((g) => ({
+                    value: `${g.id}`,
+                    label: g.ville ? `${g.libelle} - ${g.ville}` : g.libelle,
+                })),
+            })
         }
-    ], [])
+        return base
+    }, [canFilterGare, gares])
 
     return (
         <ServerDataTable

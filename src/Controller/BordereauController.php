@@ -28,13 +28,22 @@ final class BordereauController extends AbstractController
     // #[IsGranted('VOYAGE_VOIR')]
     public function bordereau(Request $request): Response
     {
-        $trajetId = $request->query->get('trajet');
+        $ligneId = $request->query->get('ligne');
         $gareId = $request->query->get('gare');
         $debut = $request->query->get('debut', date('Y-m-01'));
         $fin = $request->query->get('fin', date('Y-m-t'));
 
+        // Un agent rattaché à une gare imprime toujours le bordereau de SA gare → on la force.
+        // (Les lignes sont déjà bornées à sa gare côté API via GareScopeExtension.)
+        $userGare = $this->getUser()->getGare();
+        $userGareId = $userGare['id'] ?? null;
+        $userGareLibelle = $userGare['libelle'] ?? null;
+        if ($userGareId) {
+            $gareId = (string) $userGareId;
+        }
+
         try {
-            $trajets = $this->api->collection('/api/trajets');
+            $lignes = $this->api->collection('/api/lignes');
             $gares = $this->api->collection('/api/gares');
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e);
@@ -44,11 +53,15 @@ final class BordereauController extends AbstractController
         }
 
         $voyages = [];
-        if($trajetId) {
+        if($ligneId) {
             try {
-                $params = http_build_query(['debut' => $debut, 'fin' => $fin, 'itemsPerPage' => 100]);
-                $result = $this->api->item('/api/trajets/' . $trajetId . '/voyages?' . $params);
-                $voyages = $result['member'] ?? [];
+                // Filtre générique sur /api/voyages (ligne.id + plage de dates)
+                $voyages = $this->api->collection('/api/voyages', [
+                    'ligne.id' => $ligneId,
+                    'datedebut[after]' => $debut,
+                    'datedebut[before]' => $fin,
+                    'itemsPerPage' => 100,
+                ]);
             } catch(ApiException $e) {
                 $response = $this->apiExceptionHandler->handle($e);
                 if($response) {
@@ -58,13 +71,15 @@ final class BordereauController extends AbstractController
         }
 
         return $this->render('bordereau/index.html.twig', [
-            'trajets' => $trajets,
+            'lignes' => $lignes,
             'gares' => $gares,
             'voyages' => $voyages,
-            'trajetId'  => $trajetId,
+            'ligneId'  => $ligneId,
             'gareId' => $gareId,
             'debut' => $debut,
-            'fin' => $fin
+            'fin' => $fin,
+            'userGareId' => $userGareId,
+            'userGareLibelle' => $userGareLibelle
         ]);
     }
 

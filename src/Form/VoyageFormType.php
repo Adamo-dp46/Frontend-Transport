@@ -11,27 +11,14 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class VoyageFormType extends AbstractType
 {
-    private function buildGareChoices(array $gares): array
-    {
-        $choices = [];
-        foreach($gares as $g) {
-            $label = $g['libelle'] . ' - ' . ($g['ville'] ?? '');
-            $choices[$label] = $g['id'];
-        }
-        return $choices;
-    }
-
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $gareChoices = $this->buildGareChoices($options['gares']);
-
-        $trajetChoices = [];
-        foreach ($options['trajets'] as $t) {
-            $label = ($t['provenance'] ?? '?') . ' → ' . ($t['destination'] . '-' . $t['codetrajet'] ?? '?');
-            if (!empty($t['datedebut'])) {
-                $label .= ' (' . $t['datedebut'] . ')';
-            }
-            $trajetChoices[$label] = $t['id'];
+        $ligneChoices = [];
+        foreach ($options['lignes'] as $l) {
+            $label = $l['libelle']
+                ?? (($l['gareorigine']['libelle'] ?? '?') . ' → ' . ($l['gareterminus']['libelle'] ?? '?'));
+            $label .= ' (' . ($l['codeligne'] ?? '') . ')';
+            $ligneChoices[$label] = $l['id'];
         }
 
         $carChoices = [];
@@ -41,22 +28,10 @@ class VoyageFormType extends AbstractType
         }
 
         $builder
-            ->add('trajet', ChoiceType::class, [
-                'label' => 'Trajet',
-                'choices' => $trajetChoices,
-                'placeholder' => '-- Sélectionner un trajet --',
-                'constraints' => [new Assert\NotNull()]
-            ])
-            ->add('provenance', ChoiceType::class, [
-                'label' => 'Gare de départ',
-                'choices' => $gareChoices,
-                'placeholder' => '-- Sélectionner une gare de départ --',
-                'constraints' => [new Assert\NotNull()]
-            ])
-            ->add('destination', ChoiceType::class, [
-                'label' => 'Gare d\'arrivée',
-                'choices' => $gareChoices,
-                'placeholder' => '-- Sélectionner une gare d\'arrivée --',
+            ->add('ligne', ChoiceType::class, [
+                'label' => 'Ligne',
+                'choices' => $ligneChoices,
+                'placeholder' => '-- Sélectionner une ligne --',
                 'constraints' => [new Assert\NotNull()]
             ])
             ->add('datedebut', DateTimeType::class, [
@@ -80,8 +55,7 @@ class VoyageFormType extends AbstractType
             'csrf_protection' => true,
             'csrf_field_name' => '_token',
             'csrf_token_id' => 'voyage',
-            'gares' => [],
-            'trajets' => [],
+            'lignes' => [],
             'cars' => []
         ]);
     }

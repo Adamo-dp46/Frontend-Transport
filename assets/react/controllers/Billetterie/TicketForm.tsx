@@ -31,16 +31,6 @@ import {
     Eye,
 } from "lucide-react";
 import { flash } from "../../../elements/Alert"
-import { Tabs, TabsList, TabsTrigger } from "../../../components/ui/tabs"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-} from "../../../components/ui/dialog"
-import { Zap } from "lucide-react"
 
 /*
     interface CreatedTicket { -- Pour le post création sans redirection
@@ -58,7 +48,6 @@ interface Voyage {
     destination: string;
     codevoyage: string;
     placestotal: number;
-    placesoccupees: number;
     car?: {
         id: number;
         matricule: string;
@@ -97,10 +86,26 @@ interface Gare {
     ville: string
 }
 
+interface Arret {
+    id: number
+    libelle: string
+    ville?: string | null
+    ordre: number
+}
+
+interface BeneficiaireRef {
+    id: number
+    nom: string
+    categorie: string
+}
+
 interface TicketFormProps {
     voyages: Voyage[];
     gares: Gare[]
+    beneficiaires: BeneficiaireRef[]
     preselectVoyageId?: number;
+    userGareId?: number | null;       // si l'agent est rattaché à une gare, la montée y est forcée
+    userGareLibelle?: string | null;
 }
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -433,90 +438,7 @@ function PlanCar({
         )
     }
 */
-function QuickConfirmDialog({ // Pour vente rapide
-    siege,
-    voyage,
-    open,
-    onClose,
-    onConfirm,
-    submitting,
-}: {
-    siege: Siege | null
-    voyage: Voyage | null
-    open: boolean
-    onClose: () => void
-    onConfirm: () => void
-    submitting: boolean
-}) {
-    if (!siege || !voyage) return null
-
-    return (
-        <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
-            <DialogContent className="max-w-sm">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-amber-500" />
-                        Confirmer la vente rapide
-                    </DialogTitle>
-                    <DialogDescription>
-                        Vérifiez les informations avant de confirmer.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-3 py-2">
-                    {/* Siège */}
-                    <div className="flex items-center justify-between rounded-lg bg-muted/50 px-4 py-3">
-                        <span className="text-sm text-muted-foreground">Siège</span>
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-600">
-                            {siege.numero}
-                        </div>
-                    </div>
-                    {/* Trajet */}
-                    <div className="flex items-center justify-between rounded-lg bg-muted/50 px-4 py-3">
-                        <span className="text-sm text-muted-foreground">Trajet</span>
-                        <span className="text-sm font-medium">
-                            {voyage.provenance} → {voyage.destination}
-                        </span>
-                    </div>
-                    {/* Info */}
-                    <p className="text-xs text-muted-foreground text-center">
-                        Le ticket sera créé sans informations passager.
-                        Le PDF s'ouvrira automatiquement.
-                    </p>
-                </div>
-
-                <DialogFooter className="gap-2">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={onClose}
-                        disabled={submitting}
-                    >
-                        Annuler
-                    </Button>
-                    <Button
-                        type="button"
-                        onClick={onConfirm}
-                        disabled={submitting}
-                        className="bg-amber-500 hover:bg-amber-600 text-white gap-2"
-                    >
-                        {submitting ? (
-                            <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Création…
-                            </>
-                        ) : (
-                            <>
-                                <Zap className="h-4 w-4" />
-                                Confirmer et imprimer
-                            </>
-                        )}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}
+// (Vente rapide retirée : composant QuickConfirmDialog supprimé)
 
 
 
@@ -525,7 +447,10 @@ function QuickConfirmDialog({ // Pour vente rapide
 export default function TicketForm({
     voyages,
     gares,
+    beneficiaires,
     preselectVoyageId,
+    userGareId,
+    userGareLibelle,
 }: TicketFormProps) {
     const [voyageId, setVoyageId] = useState<string>(
         preselectVoyageId ? String(preselectVoyageId) : ""
@@ -540,10 +465,26 @@ export default function TicketForm({
     const [flashError, setFlashError] = useState<string | null>(null);
     const [flashSuccess, setFlashSuccess] = useState<string | null>(null);
 
+    // Remise (une seule pour la vente, appliquée à chaque billet — même tronçon donc même tarif)
+    const [remiseType, setRemiseType] = useState<"MONTANT" | "POURCENTAGE">("MONTANT");
+    const [remiseValeur, setRemiseValeur] = useState<string>("");
+    const [beneficiaireId, setBeneficiaireId] = useState<string>("");
+    const remiseNum = parseInt(remiseValeur) || 0;
+
     const selectedVoyage = voyages.find((v) => String(v.id) === voyageId);
 
 
-    const [gareId, setGareId] = useState<string>("")
+    // Gares de montée / descente issues des arrêts de la ligne du voyage
+    const [monteeId, setMonteeId] = useState<string>("")
+    const [descenteId, setDescenteId] = useState<string>("")
+    const [arrets, setArrets] = useState<Arret[]>([])
+    const [unitPrice, setUnitPrice] = useState<number | null>(null) // prix d'un ticket sur le tronçon
+    // Estimation du montant déduit par billet (le backend recalcule et fait foi)
+    const remiseParBillet = remiseNum > 0 && unitPrice !== null
+        ? (remiseType === "POURCENTAGE"
+            ? Math.round(unitPrice * Math.min(remiseNum, 100) / 100)
+            : Math.min(remiseNum, unitPrice))
+        : 0;
     /*
         const [createdTickets, setCreatedTickets] = useState<CreatedTicket[]>([]) -- Pour le post création sans redirection, pour l'utiliser on supprime toute la logique de redirection/window.open dans 'handleSubmit'
         const handleNouvelleVente = () => {
@@ -554,66 +495,10 @@ export default function TicketForm({
             // Garder gareId et voyageId pour enchaîner rapidement
         }
     */
-    const [mode, setMode] = useState<"normal" | "rapide">("normal") // Pour la vente rapide
-    const [quickSiege, setQuickSiege] = useState<Siege | null>(null)
-    const [quickSubmitting, setQuickSubmitting] = useState(false)
-    const handleQuickSell = async () => {
-        if (!quickSiege || !voyageId || !gareId) return
-        setQuickSubmitting(true)
-
-        try {
-            const res = await fetch("/ticket/nouveau", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    tickets: [{
-                        voyage:        `/api/voyages/${voyageId}`,
-                        siege:         quickSiege["@id"],
-                        gare:          `/api/gares/${gareId}`,
-                        nomclient:     null,
-                        contactclient: null,
-                    }],
-                }),
-            })
-
-            const data = await res.json()
-
-            if (!res.ok) {
-                setFlashError(data.detail ?? "Erreur lors de la création.")
-                setQuickSiege(null)
-                return
-            }
-
-            if (data.created?.length > 0) {
-                const id = data.created[0]
-
-                /* -- Pour le post création charger les détails du ticket créé pour le panneau
-                    const detail = await fetch(`/ticket/${id}/json`).then(r => r.json())
-                    setCreatedTickets(prev => [...prev, detail])
-                */
-
-                // Impression PDF automatique
-                window.open(`/ticket/${id}/pdf`, "_blank")
-
-                // Recharger le plan
-                await loadSieges(voyageId)
-            }
-
-            if (data.errors?.length > 0) {
-                setFlashError(data.errors.join(" | "))
-            }
-
-        } catch {
-            setFlashError("Erreur réseau. Veuillez réessayer.")
-        } finally {
-            setQuickSubmitting(false)
-            setQuickSiege(null)
-        }
-    }
 
 
     // ── Charger les sièges ────────────────────────────────────────────────────
-    const loadSieges = useCallback(async (id: string) => {
+    const loadSieges = useCallback(async (id: string, montee: string, descente: string) => {
         setLoadingSieges(true);
         setSiegesData(null);
         setSelectedSieges([]);
@@ -621,7 +506,7 @@ export default function TicketForm({
         setFlashError(null);
         setFlashSuccess(null);
         try {
-            const res = await fetch(`/ticket/sieges/${id}`);
+            const res = await fetch(`/ticket/sieges/${id}?montee=${montee}&descente=${descente}`);
             if (!res.ok) throw new Error("Erreur réseau");
             const data: SiegesResponse = await res.json();
             setSiegesData(data);
@@ -638,9 +523,57 @@ export default function TicketForm({
     }, [voyageId, loadSieges]);
     */
     // Après — ne charge que si voyage ET gare sont sélectionnés sinon le plan se charge uniquement quand les deux sont sélectionnés. L'inconvénient : si l'agent change de voyage après avoir déjà sélectionné une gare, le plan se recharge immédiatement — ce qui est le comportement souhaité. Donc les deux approches sont valides
+    // Charger les arrêts de la ligne du voyage (pour les sélecteurs montée/descente)
     useEffect(() => {
-        if (voyageId && gareId) loadSieges(voyageId);
-    }, [voyageId, gareId, loadSieges]);
+        if (!voyageId) {
+            setArrets([]);
+            setMonteeId("");
+            setDescenteId("");
+            return;
+        }
+        fetch(`/ticket/arrets/${voyageId}`)
+            .then((r) => r.json())
+            .then((d) => {
+                const list: Arret[] = d.arrets ?? [];
+                setArrets(list);
+                setDescenteId("");
+                // Agent rattaché à une gare : la montée est forcée à SA gare
+                if (userGareId) {
+                    const onLigne = list.some((a) => a.id === userGareId);
+                    setMonteeId(onLigne ? String(userGareId) : "");
+                } else {
+                    setMonteeId("");
+                }
+            })
+            .catch(() => setArrets([]));
+    }, [voyageId, userGareId]);
+
+    // Charger le plan des sièges pour le tronçon montée → descente
+    useEffect(() => {
+        if (voyageId && monteeId && descenteId) loadSieges(voyageId, monteeId, descenteId);
+    }, [voyageId, monteeId, descenteId, loadSieges]);
+
+    // Charger le prix unitaire du tronçon depuis la grille tarifaire globale
+    useEffect(() => {
+        if (!voyageId || !monteeId || !descenteId) {
+            setUnitPrice(null);
+            return;
+        }
+        let cancelled = false;
+        fetch(`/ticket/tarif?montee=${monteeId}&descente=${descenteId}`)
+            .then((r) => r.json())
+            .then((d) => {
+                if (cancelled) return;
+                setUnitPrice(d.montant === null || d.montant === undefined ? null : Number(d.montant));
+            })
+            .catch(() => { if (!cancelled) setUnitPrice(null); });
+        return () => { cancelled = true; };
+    }, [voyageId, monteeId, descenteId]);
+
+    // Options de descente : uniquement les arrêts situés APRÈS la montée
+    const monteeOrdre = arrets.find((a) => String(a.id) === monteeId)?.ordre ?? -1;
+    const descenteOptions = arrets.filter((a) => a.ordre > monteeOrdre);
+    const userGareOnLigne = !userGareId || arrets.some((a) => a.id === userGareId);
 
     // ── Sélection siège ───────────────────────────────────────────────────────
     const toggleSiege = (siege: Siege) => {
@@ -683,8 +616,13 @@ export default function TicketForm({
             return;
         }
 
-        if(!gareId) {
-            setFlashError("Veuillez sélectionner une gare d'embarquement.")
+        if(!monteeId) {
+            setFlashError("Veuillez sélectionner une gare de montée.")
+            return
+        }
+
+        if(!descenteId) {
+            setFlashError("Veuillez sélectionner une gare de descente.")
             return
         }
 
@@ -693,13 +631,24 @@ export default function TicketForm({
             return;
         }
 
+        // Remise : si saisie, un bénéficiaire est obligatoire (cohérent avec le backend)
+        if (remiseNum > 0 && !beneficiaireId) {
+            setFlashError("Sélectionnez un bénéficiaire pour appliquer la remise.");
+            return;
+        }
+
         // nomclient et contactclient sont optionnels — pas de validation requise
         const tickets = selectedSieges.map((s) => ({
             voyage: `/api/voyages/${voyageId}`,
             siege: s["@id"],  // IRI : /api/sieges/{id}
-            gare: `/api/gares/${gareId}`,
+            gare: `/api/gares/${monteeId}`,         // montée
+            garedescente: `/api/gares/${descenteId}`, // descente
             nomclient: clientInfos[s.id]?.nomclient || null,
             contactclient: clientInfos[s.id]?.contactclient || null,
+            // Remise unique appliquée à chaque billet (même tronçon = même tarif)
+            remisetype: remiseNum > 0 ? remiseType : null,
+            remisevaleur: remiseNum > 0 ? remiseNum : null,
+            beneficiaire: remiseNum > 0 && beneficiaireId ? `/api/beneficiaires/${beneficiaireId}` : null,
         }));
 
         setSubmitting(true);
@@ -727,7 +676,7 @@ export default function TicketForm({
                     // Rediriger vers le ticket créé
                     // window.location.href = `/ticket/${data.created[0]}`; // window.location.href = `/ticket/${data.created[0]}/pdf`;
                     window.open(`/ticket/${data.created[0]}/pdf`, `_blank`)
-                    await loadSieges(voyageId);
+                    await loadSieges(voyageId, monteeId, descenteId);
                 } else {
 
                     const res = await fetch("/ticket/batch/print", {
@@ -763,7 +712,7 @@ export default function TicketForm({
 
                     flash(`${data.created.length} ticket(s) créé(s). Si les onglets n'ont pas ouvert, ` + `imprimez-les depuis la liste des tickets.`, 'success'); // Vu que certains navigateurs bloquent 'window.open' si ce n'est pas déclenché directement par un clic utilisateur
 
-                    await loadSieges(voyageId);
+                    await loadSieges(voyageId, monteeId, descenteId);
                 }
             }
 
@@ -792,8 +741,9 @@ export default function TicketForm({
         }
     };
 
-    const placesRestantes = selectedVoyage
-        ? selectedVoyage.placestotal - selectedVoyage.placesoccupees
+    // Places restantes PAR TRONÇON : nb de sièges LIBRE du plan pour le tronçon (montée → descente) sélectionné
+    const placesRestantes = siegesData
+        ? siegesData.sieges.filter((s) => s.statut === "LIBRE").length
         : null;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -825,25 +775,6 @@ export default function TicketForm({
             */}
 
 
-             {/* Onglets - Pour la vente rapide */}
-            <Tabs value={mode} onValueChange={(v) => {
-                setMode(v as "normal" | "rapide")
-                // Réinitialiser la sélection au changement d'onglet
-                setSelectedSieges([])
-                setClientInfos({})
-                setQuickSiege(null)
-            }}>
-                <TabsList className="w-full">
-                    <TabsTrigger value="normal" className="flex-1">
-                        Vente normale
-                    </TabsTrigger>
-                    <TabsTrigger value="rapide" className="flex-1 gap-1.5">
-                        <Zap className="h-3.5 w-3.5 text-amber-500" />
-                        Vente rapide
-                    </TabsTrigger>
-                </TabsList>
-            </Tabs>
-
             {/* Sélection voyage + gare côte à côte */}
             <Card>
                 <CardHeader className="pb-3">
@@ -853,45 +784,73 @@ export default function TicketForm({
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    {/* Voyage */}
+                    <div className="space-y-1.5">
+                        <Label htmlFor="voyage">Voyage</Label>
+                        <Select value={voyageId} onValueChange={setVoyageId}>
+                            <SelectTrigger id="voyage" className="w-full">
+                                <SelectValue placeholder="Choisir un voyage…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {voyages.map((v) => (
+                                    <SelectItem key={v.id} value={String(v.id)}>
+                                        <span className="font-mono text-xs text-gray-500 mr-2">
+                                            {v.codevoyage}
+                                        </span>
+                                        {v.provenance} → {v.destination}
+                                        <span className="ml-2 text-xs text-gray-400">
+                                            ({v.placestotal} places)
+                                        </span>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Gares de montée / descente côte à côte */}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        {/* Voyage */}
+                        {/* Gare de montée */}
                         <div className="space-y-1.5">
-                            <Label htmlFor="voyage">Voyage</Label>
-                            <Select value={voyageId} onValueChange={setVoyageId}>
-                                <SelectTrigger id="voyage" className="w-full">
-                                    <SelectValue placeholder="Choisir un voyage…" />
+                            <Label htmlFor="montee">
+                                Gare de montée
+                                {userGareId && (
+                                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">(votre gare)</span>
+                                )}
+                            </Label>
+                            <Select
+                                value={monteeId}
+                                onValueChange={(v) => { setMonteeId(v); setDescenteId("") }}
+                                disabled={arrets.length === 0 || !!userGareId}
+                            >
+                                <SelectTrigger id="montee" className="w-full">
+                                    <SelectValue placeholder={arrets.length ? "Gare de montée…" : "Sélectionnez un voyage"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {voyages.map((v) => (
-                                        <SelectItem key={v.id} value={String(v.id)}>
-                                            <span className="font-mono text-xs text-gray-500 mr-2">
-                                                {v.codevoyage}
-                                            </span>
-                                            {v.provenance} → {v.destination}
-                                            <span className="ml-2 text-xs text-gray-400">
-                                                ({v.placestotal - v.placesoccupees} places restantes)
-                                            </span>
+                                    {arrets.map((a) => (
+                                        <SelectItem key={a.id} value={String(a.id)}>
+                                            {a.libelle}
+                                            {a.ville && (
+                                                <span className="ml-2 text-xs text-gray-400">· {a.ville}</span>
+                                            )}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
 
-                        {/* Gare */}
+                        {/* Gare de descente */}
                         <div className="space-y-1.5">
-                            <Label htmlFor="gare">Gare d'embarquement</Label>
-                            <Select value={gareId} onValueChange={setGareId}>
-                                <SelectTrigger id="gare" className="w-full">
-                                    <SelectValue placeholder="Choisir une gare…" />
+                            <Label htmlFor="descente">Gare de descente</Label>
+                            <Select value={descenteId} onValueChange={setDescenteId} disabled={!monteeId}>
+                                <SelectTrigger id="descente" className="w-full">
+                                    <SelectValue placeholder={monteeId ? "Gare de descente…" : "Choisir la montée d'abord"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {gares.map((g) => (
-                                        <SelectItem key={g.id} value={String(g.id)}>
-                                            {g.libelle}
-                                            {g.ville && (
-                                                <span className="ml-2 text-xs text-gray-400">
-                                                    · {g.ville}
-                                                </span>
+                                    {descenteOptions.map((a) => (
+                                        <SelectItem key={a.id} value={String(a.id)}>
+                                            {a.libelle}
+                                            {a.ville && (
+                                                <span className="ml-2 text-xs text-gray-400">· {a.ville}</span>
                                             )}
                                         </SelectItem>
                                     ))}
@@ -899,6 +858,13 @@ export default function TicketForm({
                             </Select>
                         </div>
                     </div>
+
+                    {userGareId && voyageId && arrets.length > 0 && !userGareOnLigne && (
+                        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                            Votre gare{userGareLibelle ? ` (${userGareLibelle})` : ""} n'est pas desservie par ce voyage : vous ne pouvez pas y vendre de tickets.
+                        </div>
+                    )}
 
                     {/* Badges info voyage */}
                     {selectedVoyage && (
@@ -909,11 +875,16 @@ export default function TicketForm({
                             </Badge>
                             <Badge variant="outline" className="gap-1">
                                 <Users className="h-3 w-3" />
-                                {selectedVoyage.placesoccupees} / {selectedVoyage.placestotal} places
+                                {selectedVoyage.placestotal} places
                             </Badge>
                             {placesRestantes !== null && (
                                 <Badge variant={placesRestantes === 0 ? "destructive" : "secondary"}>
-                                    {placesRestantes === 0 ? "Complet" : `${placesRestantes} restante(s)`}
+                                    {placesRestantes === 0 ? "Complet sur ce tronçon" : `${placesRestantes} place(s) sur ce tronçon`}
+                                </Badge>
+                            )}
+                            {unitPrice !== null && (
+                                <Badge variant="outline" className="gap-1 border-emerald-200 text-emerald-700">
+                                    Prix : {unitPrice.toLocaleString("fr-FR")} FCFA
                                 </Badge>
                             )}
                             {selectedVoyage.datefin && (
@@ -939,15 +910,15 @@ export default function TicketForm({
             // Le message "voyage clôturé" et "sélectionnez une gare" peuvent s'afficher ensemble
             // Ajouter une condition exclusive :
             */}
-            {voyageId && !selectedVoyage?.datefin && !gareId && (
+            {voyageId && !selectedVoyage?.datefin && (!monteeId || !descenteId) && (
                 <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                    Veuillez sélectionner une gare d'embarquement avant de choisir un siège.
+                    Veuillez sélectionner la gare de montée et la gare de descente avant de choisir un siège.
                 </div>
-            )} 
+            )}
         {/* Plan + formulaires passagers côte à côte */}
-        {/* Plan du car — comportement selon le mode: Pour la vente rapide  */}
-            {voyageId && gareId && !selectedVoyage?.datefin && (
+        {/* Plan du car */}
+            {voyageId && monteeId && descenteId && !selectedVoyage?.datefin && (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 
                     {/* Plan du véhicule */}
@@ -958,9 +929,7 @@ export default function TicketForm({
                                 Plan du véhicule
                             </CardTitle>
                             <CardDescription>
-                                {mode === "rapide"
-                                    ? "Cliquez sur un siège pour créer et imprimer le ticket immédiatement."
-                                    : "Cliquez sur les sièges disponibles pour les sélectionner."}
+                                Cliquez sur les sièges disponibles pour les sélectionner.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -975,13 +944,7 @@ export default function TicketForm({
                                     siegesGauche={siegesData.siegesGauche}
                                     siegesDroite={siegesData.siegesDroite}
                                     selectedIds={new Set(selectedSieges.map((s) => s.id))}
-                                    onToggle={(siege) => {
-                                        if (mode === "rapide") {
-                                            setQuickSiege(siege)
-                                        } else {
-                                            toggleSiege(siege)
-                                        }
-                                    }}
+                                    onToggle={(siege) => toggleSiege(siege)}
                                 />
                             ) : siegesData ? (
                                 <p className="text-sm text-gray-400 py-6 text-center">
@@ -991,8 +954,8 @@ export default function TicketForm({
                         </CardContent>
                     </Card>
 
-                    {/* Formulaires passagers — mode normal uniquement */}
-                    {mode === "normal" && (
+                    {/* Formulaires passagers */}
+                    {(
                         <div className="flex flex-col gap-4">
                             {selectedSieges.length > 0 ? (
                                 <Card className="flex-1">
@@ -1082,6 +1045,78 @@ export default function TicketForm({
                                 </Card>
                             )}
 
+                            {/* Remise + bénéficiaire (optionnel) */}
+                            {selectedSieges.length > 0 && (
+                                <div className="rounded-xl border bg-card p-4 space-y-3">
+                                    <p className="text-sm font-medium">Remise (optionnel)</p>
+                                    {/* Ancienne version (balises natives) — conservée en commentaire :
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="text-xs text-muted-foreground">Type</label>
+                                            <select value={remiseType} onChange={(e) => setRemiseType(e.target.value as "MONTANT" | "POURCENTAGE")} className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
+                                                <option value="MONTANT">Montant (FCFA)</option>
+                                                <option value="POURCENTAGE">Pourcentage (%)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-muted-foreground">Valeur</label>
+                                            <input type="number" min="0" value={remiseValeur} onChange={(e) => setRemiseValeur(e.target.value)} placeholder="0" className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-muted-foreground">Bénéficiaire</label>
+                                            <select value={beneficiaireId} onChange={(e) => setBeneficiaireId(e.target.value)} className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
+                                                <option value="">— Aucun —</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div className="space-y-1.5">
+                                            <Label>Type</Label>
+                                            <Select value={remiseType} onValueChange={(v) => setRemiseType(v as "MONTANT" | "POURCENTAGE")}>
+                                                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="MONTANT">Montant (FCFA)</SelectItem>
+                                                    <SelectItem value="POURCENTAGE">Pourcentage (%)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label>{remiseType === "POURCENTAGE" ? "Valeur (%)" : "Valeur (FCFA)"}</Label>
+                                            <Input
+                                                type="number" min="0" value={remiseValeur}
+                                                onChange={(e) => setRemiseValeur(e.target.value)}
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label>Bénéficiaire {remiseNum > 0 && <span className="text-red-500">*</span>}</Label>
+                                            <Select value={beneficiaireId} onValueChange={setBeneficiaireId}>
+                                                <SelectTrigger className="w-full"><SelectValue placeholder="— Aucun —" /></SelectTrigger>
+                                                <SelectContent>
+                                                    {beneficiaires.map((b) => (
+                                                        <SelectItem key={b.id} value={String(b.id)}>{b.nom} ({b.categorie})</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <a href="/beneficiaire/nouveau" target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">
+                                            + Nouveau bénéficiaire
+                                        </a>
+                                        {remiseParBillet > 0 && (
+                                            <span className="text-xs text-muted-foreground">
+                                                Remise : −{remiseParBillet.toLocaleString("fr-FR")} FCFA / billet
+                                            </span>
+                                        )}
+                                    </div>
+                                    {remiseNum > 0 && !beneficiaireId && (
+                                        <p className="text-xs text-red-600">Un bénéficiaire est obligatoire pour appliquer la remise.</p>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Barre de confirmation intégrée dans la colonne droite */}
                             {selectedSieges.length > 0 && (
                                 <div className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-5 py-4">
@@ -1091,6 +1126,15 @@ export default function TicketForm({
                                         {selectedVoyage?.car && (
                                             <span className="text-blue-400 ml-1.5">
                                                 · {selectedVoyage.car.matricule}
+                                            </span>
+                                        )}
+                                        {unitPrice !== null && (
+                                            <span className="block text-blue-500 mt-0.5">
+                                                {(unitPrice - remiseParBillet).toLocaleString("fr-FR")} FCFA × {selectedSieges.length} ={" "}
+                                                <span className="font-semibold">
+                                                    {((unitPrice - remiseParBillet) * selectedSieges.length).toLocaleString("fr-FR")} FCFA
+                                                </span>
+                                                {remiseParBillet > 0 && <span className="ml-1 text-blue-400">(remise incluse)</span>}
                                             </span>
                                         )}
                                     </div>
@@ -1119,16 +1163,6 @@ export default function TicketForm({
                     )}
                 </div>
             )}
-
-            {/* Dialog confirmation vente rapide */}
-            <QuickConfirmDialog
-                siege={quickSiege}
-                voyage={selectedVoyage ?? null}
-                open={quickSiege !== null}
-                onClose={() => setQuickSiege(null)}
-                onConfirm={handleQuickSell}
-                submitting={quickSubmitting}
-            />
         </div>
     );
 }

@@ -103,6 +103,18 @@
         <span class="label">Trajet</span>
         <span class="value">{{ bagage.voyage.provenance }} → {{ bagage.voyage.destination }}</span>
     </div>
+    {% if bagage.garedepart %}
+    <div class="row">
+        <span class="label">Départ</span>
+        <span class="value">{{ bagage.garedepart.libelle }}</span>
+    </div>
+    {% endif %}
+    {% if bagage.garedescente %}
+    <div class="row">
+        <span class="label">Descente</span>
+        <span class="value">{{ bagage.garedescente.libelle }}</span>
+    </div>
+    {% endif %}
 
     <div class="separator"></div>
 

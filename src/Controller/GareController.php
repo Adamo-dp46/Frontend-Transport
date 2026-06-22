@@ -42,12 +42,64 @@ final class GareController extends AbstractController
         ]);
     }
 
+    #[Route('/me', name: 'me', methods: ['GET'])]
+    public function me(Request $request): Response
+    {
+        /** @var \App\Entity\ApiUser $user */
+        $user = $this->getUser();
+        $gareRef = $user->getGare();
+
+        // Utilisateur sans gare (admin/central) : on affiche un message, pas d'appel API
+        if(!$gareRef || empty($gareRef['id'])) {
+            return $this->render('gare/me.html.twig', ['gare' => null, 'users' => [], 'stats' => null, 'periode' => 'mois']);
+        }
+
+        $id = $gareRef['id'];
+        $periode = $request->query->get('periode', 'mois');
+        if(!in_array($periode, ['jour', 'mois', 'tout'], true)) {
+            $periode = 'mois';
+        }
+
+        // La recette (dashboard) est réservée à l'admin de gare / admins
+        $peutVoirRecette = $this->isGranted('ROLE_ADMIN_GARE') || $this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPER_ADMIN');
+
+        $users = [];
+        $stats = null;
+        try {
+            // Accessible à tout ROLE_USER ('/api/gares/{id}' n'exige pas GARE_VOIR) : c'est SA gare
+            $gare = $this->api->item('/api/gares/' . $id);
+            if($peutVoirRecette) {
+                $stats = $this->api->item('/api/gares/me/dashboard', ['periode' => $periode]);
+            }
+            if($this->isGranted('USER_VOIR') || $this->isGranted('ROLE_SUPER_ADMIN')) {
+                $users = $this->api->collection('/api/users', ['gare.id' => $id]);
+            }
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e, null, 'home');
+            if($response) {
+                return $response;
+            }
+        }
+
+        return $this->render('gare/me.html.twig', [
+            'gare' => $gare,
+            'users' => $users,
+            'stats' => $stats,
+            'periode' => $periode,
+        ]);
+    }
+
     #[Route('/{id}', name: 'show', methods: ['GET'], requirements: ['id' => Requirement::DIGITS])]
     #[IsGranted('GARE_VOIR')]
     public function show(int $id): Response
     {
+        $users = [];
         try {
             $gare = $this->api->item('/api/gares/' . $id);
+            // On ne charge les utilisateurs de la gare que si l'utilisateur a le droit de les voir
+            if($this->isGranted('USER_VOIR') || $this->isGranted('ROLE_SUPER_ADMIN')) {
+                $users = $this->api->collection('/api/users', ['gare.id' => $id]);
+            }
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e, null, 'gare.index');
             if($response) {
@@ -56,7 +108,8 @@ final class GareController extends AbstractController
         }
 
         return $this->render('gare/show.html.twig', [
-            'gare' => $gare
+            'gare' => $gare,
+            'users' => $users
         ]);
     }
 
@@ -73,7 +126,8 @@ final class GareController extends AbstractController
                 'libelle' => $form->get('libelle')->getData(),
                 'description' => $form->get('description')->getData(),
                 'contact1' => $form->get('contact1')->getData(),
-                'contact2' => $form->get('contact2')->getData()
+                'contact2' => $form->get('contact2')->getData(),
+                'datecreation' => $form->get('datecreation')->getData()?->format('Y-m-d\TH:i:s.v\Z')
             ];
             try {
                 $this->api->post('/api/gares', $payload);
@@ -104,6 +158,9 @@ final class GareController extends AbstractController
                 return $response;
             }
         }
+        if(!empty($gare['datecreation'])) {
+            $gare['datecreation'] = new \DateTimeImmutable($gare['datecreation']);
+        }
         $form = $this->createForm(GareFormType::class, $gare);
         $form->handleRequest($request);
         if($form->isSubmitted() && $form->isValid()) {
@@ -113,7 +170,8 @@ final class GareController extends AbstractController
                 'libelle' => $form->get('libelle')->getData(),
                 'description' => $form->get('description')->getData(),
                 'contact1' => $form->get('contact1')->getData(),
-                'contact2' => $form->get('contact2')->getData()
+                'contact2' => $form->get('contact2')->getData(),
+                'datecreation' => $form->get('datecreation')->getData()?->format('Y-m-d\TH:i:s.v\Z')
             ];
             try {
                 $this->api->patch('/api/gares/' . $id, $payload);

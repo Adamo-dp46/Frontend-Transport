@@ -13,14 +13,14 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class SearchController extends AbstractController
 {
     private const RESOURCES = [
-        'fournisseurs' => ['search' => 'nom', 'label' => 'nom', 'permission' => 'FOURNISSEUR_VOIR'],
-        'pieces' => ['search' => 'libelle', 'label' => 'libelle', 'permission' => 'PIECE_VOIR'],
-        'cars' => ['search' => 'matricule', 'label' => 'matricule', 'permission' => 'CAR_VOIR'],
-        'voyages' => ['search' => 'provenance', 'label' => 'codevoyage', 'permission' => 'VOYAGE_VOIR'],
-        'gares' => ['search' => 'libelle', 'label' => 'libelle', 'permission' => 'GARE_VOIR'],
-        'personnels' => ['search' => 'nom', 'label' => 'nom', 'permission' => 'PERSONNEL_VOIR'],
-        'trajets' => ['search' => 'provenance', 'label' => 'codetrajet', 'permission' => 'TRAJET_VOIR'],
-        'users' => ['search' => 'nom', 'label' => 'nom', 'permission' => 'USER_VOIR']
+        'fournisseurs' => ['search' => 'nom', 'label' => 'nom'],
+        'pieces' => ['search' => 'libelle', 'label' => 'libelle'],
+        'cars' => ['search' => 'matricule', 'label' => 'matricule'],
+        'voyages' => ['search' => 'provenance', 'label' => 'codevoyage'],
+        'gares' => ['search' => 'libelle', 'label' => 'libelle'],
+        'personnels' => ['search' => 'nom', 'label' => 'nom'],
+        'lignes' => ['search' => 'libelle', 'label' => 'codeligne'],
+        'users' => ['search' => 'nom', 'label' => 'nom'] // 'permission' => 'USER_VOIR'
     ];
 
     public function __construct(
@@ -41,9 +41,11 @@ final class SearchController extends AbstractController
         }
         $config = self::RESOURCES[$resource];
 
+        /*
         if(!$this->isGranted($config['permission'])) {
             return $this->json(['error' => 'Accès refusé'], 403);
         }
+        */
 
         if($q !== '' && mb_strlen($q) < 2) {
             return $this->json([]);

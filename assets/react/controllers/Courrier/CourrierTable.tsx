@@ -26,6 +26,8 @@ type Props = {
     canEdit: boolean
     canDelete: boolean
     csrfDelete: string
+    userGareId: number | null
+    isAdmin: boolean
 }
 
 const statutConfig: Record<string, { label: string; cls: string }> = {
@@ -37,10 +39,11 @@ const statutConfig: Record<string, { label: string; cls: string }> = {
     PERDU: { label: 'Perdu', cls: 'bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300' }
 }
 
-const paiementConfig: Record<string, { label: string; cls: string }> = {
-    ENVOI: { label: 'À l\'envoi', cls: 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300' },
-    RECEPTION: { label: 'À la réception', cls: 'bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300' }
-}
+// paiementConfig désactivé (modepaiement non affiché — paiement toujours à l'envoi) :
+// const paiementConfig: Record<string, { label: string; cls: string }> = {
+//     ENVOI: { label: 'À l\'envoi', cls: 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300' },
+//     RECEPTION: { label: 'À la réception', cls: 'bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300' }
+// }
 
 function buildColumns(
     getSortToggleUrl: (f: string) => string,
@@ -48,7 +51,9 @@ function buildColumns(
     getSortState: (f: string) => 'asc' | 'desc' | false,
     canEdit: boolean,
     canDelete: boolean,
-    csrfDelete: string
+    csrfDelete: string,
+    userGareId: number | null,
+    isAdmin: boolean
 ): ColumnDef<Courrier>[]
 {
     const sortUrls = (field: string) => ({
@@ -95,13 +100,19 @@ function buildColumns(
         {
             id: "itineraire",
             header: "Itinéraire",
-            cell: ({ row }) => (
-                <div className="text-sm">
-                    <span className="font-medium">{row.original.garedepart.libelle}</span>
-                    <span className="text-muted-foreground mx-1">→</span>
-                    <span className="font-medium">{row.original.garearrivee.libelle}</span>
-                </div>
-            )
+            cell: ({ row }) => {
+                const { garedepart, garearrivee } = row.original
+                if (!garedepart || !garearrivee) {
+                    return <span className="text-muted-foreground text-xs">Non défini</span>
+                }
+                return (
+                    <div className="text-sm">
+                        <span className="font-medium">{garedepart.libelle}</span>
+                        <span className="text-muted-foreground mx-1">→</span>
+                        <span className="font-medium">{garearrivee.libelle}</span>
+                    </div>
+                )
+            }
         },
         {
             id: "voyage",
@@ -138,6 +149,7 @@ function buildColumns(
                 return <Badge className={cfg.cls}>{cfg.label}</Badge>
             },
         },
+        /* Colonne « Paiement » désactivée (paiement toujours à l'envoi dans ce déploiement) :
         {
             accessorKey: "modepaiement",
             header: "Paiement",
@@ -146,6 +158,7 @@ function buildColumns(
                 return <Badge className={cfg.cls}>{cfg.label}</Badge>
             },
         },
+        */
         {
             accessorKey: "createdAt",
             header: ({ column }) => (
@@ -159,11 +172,14 @@ function buildColumns(
             id: "actions",
             cell: ({ row }) => {
                 const courrier = row.original
-                const editable = canEdit && courrier.statut === 'EN_ATTENTE'
-                const deletable = canDelete && courrier.statut === 'EN_ATTENTE'
-                const livrable = canEdit && courrier.statut === 'RECEPTIONNE'
-                const annulable = canEdit && courrier.statut === 'EN_ATTENTE'
-                const perduable = canEdit && courrier.statut === 'EN_TRANSIT'
+                // Agir réservé à la gare concernée (destination pour livrer/perdu ; émettrice — gares nulles en
+                // EN_ATTENTE → central/admin). Admin / central (sans gare) : non restreints.
+                const peutAgir = isAdmin || userGareId == null || courrier.garearrivee?.id === userGareId
+                const editable = canEdit && courrier.statut === 'EN_ATTENTE' && peutAgir
+                const deletable = canDelete && courrier.statut === 'EN_ATTENTE' && peutAgir
+                const livrable = canEdit && courrier.statut === 'RECEPTIONNE' && peutAgir
+                const annulable = canEdit && courrier.statut === 'EN_ATTENTE' && peutAgir
+                const perduable = canEdit && courrier.statut === 'EN_TRANSIT' && peutAgir
                 const imprimable = courrier.statut === 'EN_TRANSIT'
 
                 return (
@@ -286,13 +302,15 @@ export default function CourrierTable({
     gares,
     canEdit,
     canDelete,
-    csrfDelete
+    csrfDelete,
+    userGareId,
+    isAdmin
 }: Props)
 {
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete),
-        [queryParams, canEdit, canDelete, csrfDelete]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete, userGareId, isAdmin),
+        [queryParams, canEdit, canDelete, csrfDelete, userGareId, isAdmin]
     )
     const filters: ServerTableFilter[] = useMemo(() => [
         {

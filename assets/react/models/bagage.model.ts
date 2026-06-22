@@ -1,3 +1,4 @@
+import { Gare } from "./gare.model"
 import { Voyage } from "./voyage.model"
 
 export interface Bagage {
@@ -12,5 +13,7 @@ export interface Bagage {
     montantforce: boolean
     statut: string
     voyage?: Voyage
+    garedepart?: Gare
+    garedescente?: Gare
     createdAt: string
 }

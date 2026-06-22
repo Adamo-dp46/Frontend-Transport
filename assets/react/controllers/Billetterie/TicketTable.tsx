@@ -27,6 +27,8 @@ type Props = {
     canEdit: boolean,
     canDelete: boolean,
     csrfDelete: string
+    userGareId: number | null   // gare de l'agent (null = central/admin sans gare)
+    isAdmin: boolean
 }
 
 function buildColumns(
@@ -35,7 +37,9 @@ function buildColumns(
     getSortState: (f: string) => 'asc' | 'desc' | false,
     canEdit: boolean,
     canDelete: boolean,
-    csrfDelete: string
+    csrfDelete: string,
+    userGareId: number | null,
+    isAdmin: boolean
 ): ColumnDef<Ticket>[] {
 
     const sortUrls = (field: string) => ({
@@ -95,9 +99,25 @@ function buildColumns(
             header: "Contact du client"
         },
         {
-            accessorFn: (row) => row.voyage?.codevoyage ?? "",
+            id: "trajet",
+            header: "trajet",
+            //  accessorFn: (row) => `${row.gare.libelle} → ${row.garedescente.libelle}`,
+            cell: ({ row }) => (
+                <span className="text-sm">
+                    <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                        {row.original.gare.libelle}
+                    </Badge>
+                    <span className="mx-1.5 text-muted-foreground">→</span>
+                    <Badge className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">
+                        {row.original.garedescente.libelle}
+                    </Badge>
+                </span>
+            )
+        },
+        {
             id: "voyage",
             header: "Voyage",
+            accessorFn: (row) => row.voyage?.codevoyage ?? "",
             cell: ({ row }) =>
                 row.original.voyage
                 ? <Badge variant="secondary">{row.original.voyage.codevoyage}</Badge>
@@ -113,6 +133,30 @@ function buildColumns(
                         </div>
                     )
                 */
+        },
+        {
+            id: "statut",
+            header: "Statut",
+            accessorFn: (row) => row.statut,
+            cell: ({ row }) => {
+                const s = row.original.statut
+                const styles: Record<string, string> = {
+                    VALIDE:  "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+                    REPORTE: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+                    ANNULE:  "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
+                }
+                const labels: Record<string, string> = { VALIDE: "Valide", REPORTE: "Reporté", ANNULE: "Annulé" }
+                return (
+                    <div className="flex flex-col gap-0.5">
+                        <Badge className={styles[s] ?? ""}>{labels[s] ?? s}</Badge>
+                        {row.original.ticketOrigine && (
+                            <a href={`/ticket/${row.original.ticketOrigine.id}`} className="text-[11px] text-muted-foreground hover:underline">
+                                ← {row.original.ticketOrigine.codeticket}
+                            </a>
+                        )}
+                    </div>
+                )
+            },
         },
         {
             accessorKey: "prix",
@@ -140,6 +184,9 @@ function buildColumns(
             id: "actions",
             cell: ({ row }) => {
                 const ticket = row.original
+                // Agir (modifier / désister / supprimer) seulement sur les tickets de SA gare émettrice ;
+                // un agent d'une autre gare ne peut que VOIR. Admin / central (sans gare) : non restreints.
+                const peutAgir = isAdmin || userGareId == null || ticket.gare?.id === userGareId
                 return (
                     <div className="flex gap-2 items-center">
                         <DropdownMenu>
@@ -154,17 +201,23 @@ function buildColumns(
                                     <a href={`/ticket/${ticket.id}`}>Voir</a>
                                 </DropdownMenuItem>
 
-                                {canEdit && <DropdownMenuSeparator />}
+                                {canEdit && peutAgir && <DropdownMenuSeparator />}
 
-                                {canEdit && (
+                                {canEdit && peutAgir && (
                                     <DropdownMenuItem asChild>
                                         <a href={`/ticket/${ticket.id}/modifier`}>Modifier</a>
                                     </DropdownMenuItem>
                                 )}
 
-                                {canEdit && canDelete && <DropdownMenuSeparator />}
+                                {canEdit && peutAgir && ticket.statut === "VALIDE" && !ticket.voyage?.datefin && (
+                                    <DropdownMenuItem asChild>
+                                        <a href={`/ticket/${ticket.id}/desister`} className="text-orange-600 focus:text-orange-700">Désister</a>
+                                    </DropdownMenuItem>
+                                )}
 
-                                {canDelete && (
+                                {canDelete && peutAgir && <DropdownMenuSeparator />}
+
+                                {canDelete && peutAgir && (
                                     <DropdownMenuItem asChild>
                                         <form
                                             method="POST"
@@ -197,12 +250,12 @@ function buildColumns(
     ]
 }
 
-export default function TicketTable({tickets, meta, queryParams, voyages, canEdit, canDelete, csrfDelete}: Props) {
+export default function TicketTable({tickets, meta, queryParams, voyages, canEdit, canDelete, csrfDelete, userGareId, isAdmin}: Props) {
 
     const { getSortState, getSortToggleUrl, getSortExplicitUrl } = useServerTable(queryParams)
     const columns = useMemo(
-        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete),
-        [queryParams, canEdit, canDelete, csrfDelete]
+        () => buildColumns(getSortToggleUrl, getSortExplicitUrl, getSortState, canEdit, canDelete, csrfDelete, userGareId, isAdmin),
+        [queryParams, canEdit, canDelete, csrfDelete, userGareId, isAdmin]
     )
     const filters: ServerTableFilter[] = useMemo(() => [
         {

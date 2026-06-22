@@ -151,6 +151,7 @@ final class PersonnelController extends AbstractController
                 'contact' => (string)$form->get('contact')->getData(),
                 'code' => strtoupper(trim($form->get('code')->getData())),
                 'typepersonnel' => '/api/typepersonnels/' . $typeId,
+                'dateembauche' => $form->get('dateembauche')->getData()?->format('Y-m-d\TH:i:s.v\Z'),
                 'image' => $mediaObject['@id'] ?? null
             ];
   
@@ -191,7 +192,10 @@ final class PersonnelController extends AbstractController
 
         $form = $this->createForm(PersonnelEditFormType::class, array_merge(
             $personnel ?? [],
-            ['typepersonnel' => $currentTypeId]
+            [
+                'typepersonnel' => $currentTypeId,
+                'dateembauche' => !empty($personnel['dateembauche']) ? new \DateTimeImmutable($personnel['dateembauche']) : null
+            ]
         ), [
             'types' => $types,
         ]);
@@ -223,6 +227,7 @@ final class PersonnelController extends AbstractController
                 'contact' => $form->get('contact')->getData(),
                 'code' => strtoupper(trim($form->get('code')->getData())),
                 'typepersonnel' => '/api/typepersonnels/' . $typeId,
+                'dateembauche' => $form->get('dateembauche')->getData()?->format('Y-m-d\TH:i:s.v\Z'),
                 'image' => $mediaObjectIri // nouvelle IRI ou ancienne conservée
             ];
 

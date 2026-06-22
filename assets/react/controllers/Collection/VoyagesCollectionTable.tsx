@@ -70,13 +70,13 @@ function buildColumns(
                 : <span className="text-muted-foreground">Non clôturé</span>
         },
         {
-            accessorFn: (row) => row.trajet?.codetrajet ?? "",
-            id: "trajet",
-            header: "Trajet",
+            accessorFn: (row) => row.ligne?.codeligne ?? "",
+            id: "ligne",
+            header: "Ligne",
             cell: ({ row }) =>
-                row.original.trajet
-                ? <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">{row.original.trajet.codetrajet}</Badge>
-                : <span className="text-muted-foreground">Aucun</span>
+                row.original.ligne
+                ? <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">{row.original.ligne.codeligne}</Badge>
+                : <span className="text-muted-foreground">Aucune</span>
         },
         {
             accessorKey: "placestotal",
@@ -85,8 +85,8 @@ function buildColumns(
             ),
         },
         {
-            accessorKey: "placesoccupees",
-            header: "Place ocuupées"
+            accessorKey: "ticketsCount",
+            header: "Tickets vendus"
         },
         {
             id: "nbcourriers",

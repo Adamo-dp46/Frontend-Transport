@@ -101,8 +101,10 @@ final class HomeController extends AbstractController
     {
         ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
 
+        $details = ['desistements' => [], 'remises' => [], 'matriceOD' => ['gares' => [], 'cells' => []], 'heures' => []];
         try {
             $billetterie = $this->api->item('/api/stats/billetterie?' . $periode);
+            $details = $this->api->item('/api/stats/billetterie/details?' . $periode);
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e);
             if($response) {
@@ -120,6 +122,7 @@ final class HomeController extends AbstractController
 
         return $this->render('home/billetterie.html.twig', [
             'billetterie' => $billetterie,
+            'details' => $details,
             'debut' => $debut,
             'fin' => $fin
         ]);
@@ -192,8 +195,10 @@ final class HomeController extends AbstractController
     {
         ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
 
+        $details = ['disponibilite' => ['parEtat' => [], 'tauxDispo' => 0, 'total' => 0, 'disponibles' => 0], 'pannes' => ['parType' => [], 'nb' => 0, 'coutMoyen' => 0, 'typeFrequent' => null]];
         try {
             $flotte = $this->api->item('/api/stats/flotte/activite?' . $periode);
+            $details = $this->api->item('/api/stats/flotte/details?' . $periode);
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e);
             if($response) {
@@ -209,8 +214,35 @@ final class HomeController extends AbstractController
 
         return $this->render('home/flotte.html.twig', [
             'flotteActivite' => $flotte,
+            'details' => $details,
             'debut' => $debut,
             'fin' => $fin
+        ]);
+    }
+
+    #[Route('/stats/stock', name: 'stats.stock', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function statsStock(Request $request): Response
+    {
+        ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
+
+        $stock = ['totalPieces' => 0, 'piecesCritiques' => 0, 'stockParPiece' => []];
+        $details = ['valeurStock' => ['valeur' => 0, 'unites' => 0, 'nbPieces' => 0], 'consommation' => ['topPieces' => [], 'quantiteTotale' => 0, 'coutTotal' => 0, 'rotation' => 0], 'achatsParFournisseur' => []];
+        try {
+            $stock = $this->api->item('/api/stats/stock?' . $periode);
+            $details = $this->api->item('/api/stats/stock/details?' . $periode);
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e);
+            if($response) {
+                return $response;
+            }
+        }
+
+        return $this->render('home/stock.html.twig', [
+            'stock' => $stock,
+            'details' => $details,
+            'debut' => $debut,
+            'fin' => $fin,
         ]);
     }
 
@@ -221,7 +253,7 @@ final class HomeController extends AbstractController
         ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
 
         try {
-            $trajet = $this->api->item('/api/stats/trajet/performance?' . $periode);
+            $ligne = $this->api->item('/api/stats/ligne/performance?' . $periode);
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e);
             if($response) {
@@ -229,13 +261,13 @@ final class HomeController extends AbstractController
             }
         }
 
-        $trajet = [
-            'totalTrajets' => $trajet['totalTrajets'] ?? 0,
-            'performances' => $trajet['performances'] ?? []
+        $lignes = [
+            'totalLignes' => $ligne['totalLignes'] ?? 0,
+            'performances' => $ligne['performances'] ?? []
         ];
 
         return $this->render('home/trajet.html.twig', [
-            'trajets' => $trajet,
+            'lignes' => $lignes,
             'debut' => $debut,
             'fin' => $fin
         ]);
@@ -265,7 +297,8 @@ final class HomeController extends AbstractController
             'recetteBagages' => $caisse['recetteBagages'] ?? 0,
             'recetteTotale' => $caisse['recetteTotale'] ?? 0,
             'parAgent' => $caisse['parAgent'] ?? [],
-            'parJour' => $caisse['parJour'] ?? []
+            'parJour' => $caisse['parJour'] ?? [],
+            'parGare' => $caisse['parGare'] ?? []
         ];
 
         return $this->render('home/caisse.html.twig', [
@@ -275,14 +308,51 @@ final class HomeController extends AbstractController
         ]);
     }
 
+    #[Route('/stats/gares', name: 'stats.gares', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function statsGares(Request $request): Response
+    {
+        ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
+
+        $stats = ['parGare' => [], 'joursAxis' => []];
+        $trafic = ['parGare' => [], 'topTroncons' => []];
+        $exploitation = ['parGare' => []];
+        $colis = ['courriersParGare' => [], 'bagagesParGare' => []];
+        $pilotage = ['parGare' => [], 'periodePrecedente' => []];
+        try {
+            $stats = $this->api->item('/api/stats/gares?' . $periode);
+            $trafic = $this->api->item('/api/stats/gares/trafic?' . $periode);
+            $exploitation = $this->api->item('/api/stats/gares/exploitation?' . $periode);
+            $colis = $this->api->item('/api/stats/gares/colis?' . $periode);
+            $pilotage = $this->api->item('/api/stats/gares/pilotage?' . $periode);
+        } catch(ApiException $e) {
+            $response = $this->apiExceptionHandler->handle($e);
+            if($response) {
+                return $response;
+            }
+        }
+
+        return $this->render('home/gares.html.twig', [
+            'stats' => $stats,
+            'trafic' => $trafic,
+            'exploitation' => $exploitation,
+            'colis' => $colis,
+            'pilotage' => $pilotage,
+            'debut' => $debut,
+            'fin' => $fin,
+        ]);
+    }
+
     #[Route('/stats/courrier', name: 'stats.courrier', methods: ['GET'])]
     #[IsGranted('ROLE_ADMIN')]
     public function courrier(Request $request): Response
     {
         ['debut' => $debut, 'fin' => $fin, 'periode' => $periode] = $this->getPeriode($request);
 
+        $details = ['parTranche' => [], 'delaiMoyenHeures' => null, 'nbLivres' => 0];
         try {
             $courrier = $this->api->item('/api/stats/courriers?' . $periode);
+            $details = $this->api->item('/api/stats/courriers/details?' . $periode);
         } catch(ApiException $e) {
             $response = $this->apiExceptionHandler->handle($e);
             if($response) {
@@ -305,6 +375,7 @@ final class HomeController extends AbstractController
 
         return $this->render('home/courrier.html.twig', [
             'courrier' => $courrier,
+            'details' => $details,
             'debut' => $debut,
             'fin' => $fin
         ]);
